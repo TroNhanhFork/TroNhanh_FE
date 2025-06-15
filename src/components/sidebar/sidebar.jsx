@@ -94,6 +94,7 @@ import {
   ShoppingOutlined,
   TeamOutlined,
   LogoutOutlined,
+  CommentOutlined
 } from "@ant-design/icons"
 import { useNavigate, useLocation } from "react-router-dom"
 
@@ -107,9 +108,10 @@ const AdminSidebar = () => {
     { label: "System Overview", key: "/admin/dashboard", icon: <DashboardOutlined /> },
     { label: "Users", key: "/admin/users", icon: <UserOutlined /> },
     { label: "Posts", key: "/admin/posts", icon: <FileTextOutlined /> },
+    { label: "Membership", key: "/admin/membership", icon: <ShoppingOutlined /> },
+    { label: "Reports", key: "/admin/reports", icon: <CommentOutlined /> },
     { label: "Comunication", key: "/admin/communication", icon: <TeamOutlined /> },
-    { label: "Transactions", key: "/admin/transactions", icon: <ShoppingOutlined /> },
-    { label: "Logout", key: "/admin/logout", icon: <LogoutOutlined />,},
+    { label: "Logout", key: "/admin/logout", icon: <LogoutOutlined />, },
   ]
 
   const handleMenuClick = (e) => {
