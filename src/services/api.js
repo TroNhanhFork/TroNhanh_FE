@@ -24,7 +24,7 @@ export const setupInterceptors = (contextLogout) => {
         contextLogout('token expired');
         return Promise.reject(new Error('Token expired'));
       }
-
+        
       config.headers.Authorization = `Bearer ${token}`;
       return config;
     },

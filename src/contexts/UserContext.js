@@ -5,13 +5,16 @@ const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // Để kiểm tra trạng thái tải ban đầu
 
   const fetchUser = async () => {
     try {
       const res = await getUserInfo();
       setUser(res.data);
     } catch (err) {
-      setUser(null);
+      setUser(null); // Khi token không hợp lệ hoặc hết hạn
+    } finally {
+      setLoading(false); // Tải xong dù thành công hay thất bại
     }
   };
 
@@ -21,17 +24,21 @@ export const UserProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    fetchUser();
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetchUser();
+    } else {
+      setLoading(false); 
+    }
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser, fetchUser, logout }}>
+    <UserContext.Provider value={{ user, setUser, fetchUser, logout, loading }}>
       {children}
     </UserContext.Provider>
   );
 };
 
-// 👉 export default
 const useUser = () => {
   const context = useContext(UserContext);
   if (!context) {

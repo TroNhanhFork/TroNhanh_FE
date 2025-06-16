@@ -11,7 +11,7 @@ import useUser, { UserProvider } from './contexts/UserContext';
 import { setupInterceptors } from './services/api';
 function App() {
   const location = useLocation();
-  const { logout } = useUser();
+  const { logout,loading } = useUser();
 
   useEffect(() => {
     setupInterceptors(logout); 
@@ -29,7 +29,7 @@ function App() {
     };
   }, [location, logout]); 
 
-
+if (loading) return <p>Loading...</p>;
   return (
     <>
       <Routes>

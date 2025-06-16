@@ -80,7 +80,7 @@ export const refreshAccessToken = async () => {
     return null;
   }
 };
-
+  
 export const resetLoggedOut = () => {
   loggedOut = false;
 };
