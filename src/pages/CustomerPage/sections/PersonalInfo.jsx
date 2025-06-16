@@ -19,7 +19,7 @@ import {
   getUserInfo,
   updateUserInfo,
 } from '../../../services/profileServices';
-import useUser from '../../../hooks/useUser';
+import useUser from '../../../contexts/UserContext';
 import './PersonalInfo.css';
 
 const { Title, Text } = Typography;

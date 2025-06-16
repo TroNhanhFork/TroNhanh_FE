@@ -1,26 +1,23 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { getUserInfo } from "../services/profileServices";
 
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState({}); 
-  const [loading, setLoading] = useState(true); 
+  const [user, setUser] = useState(null);
 
   const fetchUser = async () => {
     try {
       const res = await getUserInfo();
       setUser(res.data);
     } catch (err) {
-      setUser({});
-    } finally {
-      setLoading(false);
+      setUser(null);
     }
   };
 
   const logout = () => {
-    setUser({});
-    document.cookie = "token=; Max-Age=0; path=/;"; // clear token nếu dùng cookie
+    setUser(null);
+    localStorage.removeItem("token");
   };
 
   useEffect(() => {
@@ -28,10 +25,19 @@ export const UserProvider = ({ children }) => {
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser, fetchUser, logout, loading }}>
+    <UserContext.Provider value={{ user, setUser, fetchUser, logout }}>
       {children}
     </UserContext.Provider>
   );
 };
 
-export default UserContext;
+// 👉 export default
+const useUser = () => {
+  const context = useContext(UserContext);
+  if (!context) {
+    throw new Error("useUser must be used within a UserProvider");
+  }
+  return context;
+};
+
+export default useUser;

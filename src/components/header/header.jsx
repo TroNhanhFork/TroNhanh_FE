@@ -13,7 +13,7 @@ import {
   SettingOutlined,
   DashboardOutlined,
 } from "@ant-design/icons";
-import useUser from "../../hooks/useUser"; 
+import useUser from "../../contexts/UserContext"; 
 import "./header.css";
 
 const { Header } = Layout;
@@ -105,7 +105,7 @@ const HeaderComponent = () => {
 
     return items;
   };
-
+if (!user) return null; 
   return (
     <>
       {contextHolder}

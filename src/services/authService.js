@@ -17,18 +17,6 @@ const addRefreshSubscriber = (callback) => {
   refreshSubscribers.push(callback);
 };
 
-export const logout = (reason = 'unknown') => {
-  if (loggedOut) return; 
-  loggedOut = true;
-
-  console.log('[Auth] 🔒 Logging out. Reason:', reason);
-  stopAutoLogout();
-  localStorage.removeItem('token');
-  localStorage.removeItem('tokenExpire');
-  localStorage.removeItem('refreshToken');
-  window.location.href = '/login';
-};
-
 export const saveAccessToken = (accessToken, expiresInMs, refreshToken) => {
   const expireTime = Date.now() + expiresInMs;
   localStorage.setItem('token', accessToken);
@@ -89,7 +77,6 @@ export const refreshAccessToken = async () => {
     return accessToken;
   } catch (error) {
     console.error('[Auth] ❌ Refresh token thất bại:', error);
-    logout('refresh failed');
     return null;
   }
 };
