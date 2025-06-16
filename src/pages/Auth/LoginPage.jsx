@@ -11,32 +11,47 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [form] = Form.useForm();
-  const onFinish = async (values) => {
+const onFinish = async (values) => {
   setLoading(true);
   try {
     const res = await login(values);
-    saveAccessToken(res.data.accessToken, 30 *60* 1000, res.data.refreshToken);
-    
-     initAutoLogout();
+
+
+    saveAccessToken(res.data.accessToken, 30 * 60 * 1000, res.data.refreshToken);
+    initAutoLogout();
+
+
+    const role = res.data.user.role?.toLowerCase();
+
+    if (role === 'admin') {
+      navigate('/admin/dashboard');
+    } else if (role === 'owner') {
+      navigate('/owner/manage-room');
+    } else if (role === 'customer') {
+      navigate('/customer/profile/personal-info');
+    } else {
+      message.error('Role không hợp lệ hoặc chưa được phân quyền!');
+
+      return;
+    }
+
     message.success('Login successful!');
-    navigate('/customer/profile/personal-info');
   } catch (err) {
     const errors = err.response?.data?.errors;
     if (Array.isArray(errors)) {
-      form.setFields(
-        errors.map(error => ({
-          name: error.param,  
-          errors: [error.msg],
-        }))
-      );
+      form.setFields(errors.map(error => ({
+        name: error.param,
+        errors: [error.msg],
+      })));
     } else {
-        console.log('Login error:', err);
+      console.log('Login error:', err);
       message.error(err.response?.data?.message || 'Login failed');
     }
   } finally {
     setLoading(false);
   }
 };
+
 
   return (
     <div className={styles.container}>
