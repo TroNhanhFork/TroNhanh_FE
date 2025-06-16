@@ -1,0 +1,97 @@
+.rating-wrapper {
+  padding: 30px;
+  background-color: white;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+h2 {
+  margin-bottom: 20px;
+  color: #49735a;
+}
+
+.view-rating-btn {
+  background-color: white;
+  color: #49735a;
+  border: 1px solid #49735a;
+  transition: all 0.3s ease;
+}
+
+.view-rating-btn:hover {
+  background-color: #49735a !important;
+  color: white !important;
+  border: 1px solid #49735a !important;
+}
+
+.overall-rating {
+  background-color: #eaf4ee;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #49735a;
+  display: inline-block;
+}
+
+@media (max-width: 768px) {
+  .rating-wrapper {
+    padding: 20px 16px;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  .overall-rating {
+    font-size: 14px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+  }
+
+  .view-rating-btn {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+
+  .ant-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .ant-table {
+    min-width: 600px; /* Table scrolls horizontally if needed */
+  }
+}
+
+@media (max-width: 480px) {
+  .rating-wrapper {
+    padding: 16px 12px;
+  }
+
+  h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .overall-rating {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+
+  .view-rating-btn {
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+
+  .ant-modal {
+    width: 95% !important;
+  }
+
+  .ant-table {
+    font-size: 13px;
+  }
+
+  .ant-rate {
+    font-size: 16px;
+  }
+}
