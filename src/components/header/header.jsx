@@ -25,7 +25,7 @@ const HeaderComponent = () => {
 
   const handleLogout = async () => {
     await messageApi.success("Logout successfully", 2);
-    logout(); // gọi hàm trong context
+    logout(); 
     navigate("/");
   };
 
