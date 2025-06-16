@@ -69,7 +69,7 @@ function App() {
 function AppWrapper() {
   return (
     <BrowserRouter>
-      <UserProvider> {/* Bọc ở đây */}
+      <UserProvider>
         <App />
       </UserProvider>
     </BrowserRouter>
