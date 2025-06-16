@@ -6,7 +6,7 @@ import { propertySampleData } from "../../seeders/propertySampleData";
 
 const PropertyList = () => {
   const navigate = useNavigate();
-  const [visibleCount] = useState(5); // show 5
+  const [visibleCount] = useState(7); // show 5
 
   const handleShowMore = () => {
     navigate("/apartments");

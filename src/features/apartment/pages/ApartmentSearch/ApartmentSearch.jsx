@@ -1,10 +1,10 @@
 import { Row, Col } from "antd";
-import Filters from "../../components/filters/filters";
-import PropertyList from "../../components/PropertyList/PropertyList";
-import MapView from "../../components/MapView/MapView";
-import FAQSection from "../../components/FAQSection/FAQSection";
+import Filters from "../../../../components/filters/filters";
+import PropertyList from "../../../../components/PropertyList/PropertyList";
+import MapView from "../../../../components/MapView/MapView";
+import FAQSection from "../../../../components/FAQSection/FAQSection";
 
-const Search = () => {
+const ApartmentSearch = () => {
   return (
     <div>
       <Filters />
@@ -23,4 +23,4 @@ const Search = () => {
   );
 };
 
-export default Search;
+export default ApartmentSearch;
