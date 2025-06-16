@@ -71,6 +71,17 @@ const RegisterPage = () => {
           <Input.Password placeholder="Enter your password" />
         </Form.Item>
 
+         <Form.Item
+  label="Phone"
+  name="phone"
+  rules={[
+    { required: true, message: 'Please enter your phone number' },
+    { pattern: /^\d{10}$/, message: 'Phone number must be 10 digits' }
+  ]}
+>
+  <Input placeholder="Enter your phone number" maxLength={10} />
+</Form.Item>
+
         <Form.Item
           label="Gender"
           name="gender"

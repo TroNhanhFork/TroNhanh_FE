@@ -13,7 +13,7 @@ import {
   SettingOutlined,
   DashboardOutlined,
 } from "@ant-design/icons";
-// import NotificationsButton from "../../NotificationComponents/NotificationsButton";
+import useUser from "../../hooks/useUser"; 
 import "./header.css";
 
 const { Header } = Layout;
@@ -21,34 +21,18 @@ const { Header } = Layout;
 const HeaderComponent = () => {
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
-
-  // Fake user data
-  const user = {
-    fullName: "Nguyen Van A",
-    email: "vana@example.com",
-    avatarUrl: "",
-    wallet: {
-      balance: 500000
-    },
-    roles: [
-      // { name: "CUSTOMER" },
-      // { name: "OWNER" },
-      { name: "ADMIN" } 
-    ]
-  };
+  const { user, logout } = useUser(); 
 
   const handleLogout = async () => {
     await messageApi.success("Logout successfully", 2);
+    logout(); // gọi hàm trong context
     navigate("/");
-    window.location.reload();
   };
 
   const getUserMenuItems = (userRoles) => {
     const hasRole = (roleName) => userRoles?.some((r) => r.name === roleName);
-
     const items = [];
 
-    // ===== Customer =====
     if (hasRole("CUSTOMER")) {
       items.push(
         {
@@ -66,7 +50,6 @@ const HeaderComponent = () => {
       );
     }
 
-    // ===== Owner =====
     if (hasRole("OWNER")) {
       items.push(
         {
@@ -84,7 +67,6 @@ const HeaderComponent = () => {
       );
     }
 
-    // ===== Admin =====
     if (hasRole("ADMIN")) {
       items.push({
         key: "dashboard",
@@ -94,13 +76,12 @@ const HeaderComponent = () => {
       });
     }
 
-    // ===== Common Items =====
     items.push(
       {
         key: "profile",
         label: "Profile",
         icon: <UserOutlined />,
-        onClick: () => navigate("/user-profile"),
+        onClick: () => navigate("/customer/profile/personal-info"),
       },
       {
         key: "contact",
@@ -125,7 +106,6 @@ const HeaderComponent = () => {
     return items;
   };
 
-
   return (
     <>
       {contextHolder}
@@ -141,7 +121,7 @@ const HeaderComponent = () => {
           <Menu.Item key="about">
             <Link to="/about-us">About Us</Link>
           </Menu.Item>
-          {user.roles.some(role => role.name === "USER") && (
+          {user.roles?.some(role => role.name === "USER") && (
             <Menu.Item key="bookings">
               <Link to="/user/rent-room">Rent Room</Link>
             </Menu.Item>
@@ -153,19 +133,19 @@ const HeaderComponent = () => {
             <Link to="/chat">Chat</Link>
           </Menu.Item>
           <Menu.Item key="profile">
-            <Link to="/user-profile">Profile</Link>
+            <Link to="/customer/profile/personal-info">Profile</Link>
           </Menu.Item>
-          {user.roles.some(role => role.name === "CUSTOMER") && (
-          <Menu.Item key="room">
-            <Link to="/customer/room">My Room</Link>
-          </Menu.Item>
+          {user.roles?.some(role => role.name === "CUSTOMER") && (
+            <Menu.Item key="room">
+              <Link to="/customer/room">My Room</Link>
+            </Menu.Item>
           )}
-          {user.roles.some(role => role.name === "OWNER") && (
+          {user.roles?.some(role => role.name === "OWNER") && (
             <Menu.Item key="owner">
               <Link to="/owners/calendar">Room Owner</Link>
             </Menu.Item>
           )}
-          {user.roles.some(role => role.name === "ADMIN") && (
+          {user.roles?.some(role => role.name === "ADMIN") && (
             <Menu.Item key="admin-page">
               <Link to="/admin/dashboard">Dashboard</Link>
             </Menu.Item>
@@ -173,18 +153,17 @@ const HeaderComponent = () => {
         </Menu>
 
         <div className="user-menu">
-          {/* <NotificationsButton currentUser={user} /> */}
           <Dropdown
-            menu={{ items: getUserMenuItems(user.roles) }} // <-- gọi hàm để lấy mảng
+            menu={{ items: getUserMenuItems(user.roles || []) }}
             placement="bottomRight"
             trigger={["click"]}
             overlayClassName="user-dropdown"
           >
             <div className="user-info">
-              <Avatar src={user.avatarUrl || null} className="user-avatar" size={40}>
-                {!user.avatarUrl && user.fullName.charAt(0)}
+              <Avatar src={user.avatar || null} className="user-avatar" size={40}>
+                {!user.avatar && user.name?.charAt(0)}
               </Avatar>
-              <span className="user-name">{user.fullName || user.email}</span>
+              <span className="user-name">{user.name || user.email}</span>
               <DownOutlined className="dropdown-icon" />
             </div>
           </Dropdown>

@@ -1,38 +1,42 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, message, Typography } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../services/authService';
+import { login} from '../../services/authService';
 import styles from './LoginPage.module.css';
-
+import { saveAccessToken } from '../../services/authService';
+import { initAutoLogout } from '../../services/autoLogout';
 const { Title } = Typography;
 
-const LoginPage = () => {
+const LoginPage = () => {    
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const onFinish = async (values) => {
-    setLoading(true);
-    try {
-      const res = await login(values);
-      localStorage.setItem('token', res.data.token);
-      message.success('Login successful!');
-      navigate('/');
-    }catch (err) {
-  const errors = err.response?.data?.errors;
-  if (Array.isArray(errors)) {
-    form.setFields(
-    errors.map(error => ({
-      name: error.param,  
-      errors: [error.msg],
-    }))
-  );
-  } else {
-    message.error(err.response?.data?.message || 'Login failed');
-  }
-} finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    const res = await login(values);
+    saveAccessToken(res.data.accessToken, 30 *60* 1000, res.data.refreshToken);
+    
+     initAutoLogout();
+    message.success('Login successful!');
+    navigate('/customer/profile/personal-info');
+  } catch (err) {
+    const errors = err.response?.data?.errors;
+    if (Array.isArray(errors)) {
+      form.setFields(
+        errors.map(error => ({
+          name: error.param,  
+          errors: [error.msg],
+        }))
+      );
+    } else {
+        console.log('Login error:', err);
+      message.error(err.response?.data?.message || 'Login failed');
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className={styles.container}>
