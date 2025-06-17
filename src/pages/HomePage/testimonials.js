@@ -1,6 +1,7 @@
 import { Carousel, Avatar } from 'antd';
 import { useRef, useState } from 'react';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { Row, Col, Button } from 'antd';
 
 const testimonials = [
   {
@@ -75,14 +76,22 @@ export default function TestimonialCarousel() {
             );
           })}
         </Carousel>
-        <div className='d-flex justify-content-center align-items-center mt-3'>
-          <button className="nav-button prev mx-2" onClick={handlePrev}>
-            <LeftOutlined />
-          </button>
-          <button className="nav-button next mx-2" onClick={handleNext}>
-            <RightOutlined />
-          </button>
-        </div>
+        <Row justify="center" className="mt-4">
+          <Col>
+            <Button
+              shape="circle"
+              icon={<LeftOutlined />}
+              onClick={handlePrev}
+              className="mx-2"
+            />
+            <Button
+              shape="circle"
+              icon={<RightOutlined />}
+              onClick={handleNext}
+              className="mx-2"
+            />
+          </Col>
+        </Row>
       </div>
     </div>
   );

@@ -96,13 +96,21 @@
     width: 45%;
 }
 
-.service_box_container{
-    margin: 20px;
+.service_box_container {
+  width: 1373px;
+  margin: 20px auto; 
+  margin-bottom: 50px;
+  background-color: #fff;
+  padding: 50px 20px;
+  border-radius: 16px; /* bo tròn */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* tùy chọn: bóng đổ để nổi bật hơn */
 }
+
 
 .service_box {
   background-color: #e8fbe8; /* màu xanh nhẹ */
   min-height: 250px;
+  max-height: 250px;
   min-width: 300px;
   max-width: 300px;
   padding: 20px;

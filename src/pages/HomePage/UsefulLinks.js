@@ -1,28 +1,33 @@
 import React from 'react';
+import { Row, Col, Typography } from 'antd';
+
+const { Title, Link } = Typography;
 
 export default function UsefulLinks() {
-    return (
-        <div className="container py-5">
-            <h5 className="fw-bold">Useful links</h5>
-            <div className="row">
-                <div className="col-md-6">
-                    <ul className="list-unstyled">
-                        <li><a href="#">West London Apartments →</a></li>
-                        <li><a href="#">Riverside Apartments →</a></li>
-                        <li><a href="#">Apartments in Finance Sector City of London →</a></li>
-                        <li><a href="#">Apartments in Soho, Fitrovia →</a></li>
-                        <li><a href="#">East London Apartments →</a></li>
-                    </ul>
-                </div>
-                <div className="col-md-6">
-                    <ul className="list-unstyled">
-                        <li><a href="#">Suitable for Families or Groups →</a></li>
-                        <li><a href="#">Apartments with Parking →</a></li>
-                        <li><a href="#">Apartments with Elevator →</a></li>
-                        <li><a href="#">Apartments suitable for physical disabilities →</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    );
+  return (
+    <div className="container py-5">
+      <Title level={5} strong>
+        Useful links
+      </Title>
+      <Row gutter={[32, 16]}>
+        <Col xs={24} md={12}>
+          <ul className="list-unstyled">
+            <li><Link href="#">West London Apartments →</Link></li>
+            <li><Link href="#">Riverside Apartments →</Link></li>
+            <li><Link href="#">Apartments in Finance Sector City of London →</Link></li>
+            <li><Link href="#">Apartments in Soho, Fitrovia →</Link></li>
+            <li><Link href="#">East London Apartments →</Link></li>
+          </ul>
+        </Col>
+        <Col xs={24} md={12}>
+          <ul className="list-unstyled">
+            <li><Link href="#">Suitable for Families or Groups →</Link></li>
+            <li><Link href="#">Apartments with Parking →</Link></li>
+            <li><Link href="#">Apartments with Elevator →</Link></li>
+            <li><Link href="#">Apartments suitable for physical disabilities →</Link></li>
+          </ul>
+        </Col>
+      </Row>
+    </div>
+  );
 }

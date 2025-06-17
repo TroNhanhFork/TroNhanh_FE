@@ -1,4 +1,8 @@
 import React from "react";
+import { Row, Col, Card, Typography, Button } from "antd";
+import { ClockCircleOutlined } from "@ant-design/icons";
+
+const { Title, Paragraph, Text } = Typography;
 
 const blogData = [
   {
@@ -27,27 +31,41 @@ const blogData = [
 
 const BlogSection = () => {
   return (
-    <div className="container py-5">
-      <h2 className="text-center fw-bold mb-4">Read our blog</h2>
-      <div className="row g-4">
+    <div style={{ padding: "50px 20px", backgroundColor: "#fff" }}>
+      <Title level={2} style={{ textAlign: "center", fontWeight: "bold" }}>
+        Read our blog
+      </Title>
+
+      <Row gutter={[24, 24]} justify="center">
         {blogData.map((item) => (
-          <div className="col-md-4" key={item.id}>
-            <div className="blog-card h-100">
-              <img src={item.image} alt={item.title} className="blog-img" />
-              <div className="p-3 text-center">
-                <h5 className="fw-semibold">{item.title}</h5>
-                <p className="text-muted small mb-2">{item.description}</p>
-                <span className="text-dark small">
-                  <i className="bi bi-clock me-1"></i>
-                  {item.time}
-                </span>
-              </div>
-            </div>
-          </div>
+          <Col xs={24} sm={12} md={8} key={item.id}>
+            <Card
+              hoverable
+              cover={
+                <img
+                  alt={item.title}
+                  src={item.image}
+                  style={{ height: 200, objectFit: "cover" }}
+                />
+              }
+            >
+              <Title level={5}>{item.title}</Title>
+              <Paragraph type="secondary" style={{ fontSize: "13px" }}>
+                {item.description}
+              </Paragraph>
+              <Text type="secondary">
+                <ClockCircleOutlined style={{ marginRight: 6 }} />
+                {item.time}
+              </Text>
+            </Card>
+          </Col>
         ))}
-      </div>
-      <div className="text-center mt-4">
-        <button className="btn btn-dark rounded-pill px-4">Read more</button>
+      </Row>
+
+      <div style={{ textAlign: "center", marginTop: 30 }}>
+        <Button type="primary" shape="round" size="large">
+          Read more
+        </Button>
       </div>
     </div>
   );
