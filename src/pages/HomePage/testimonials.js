@@ -1,7 +1,6 @@
 import { Carousel, Avatar } from 'antd';
 import { useRef, useState } from 'react';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
-import './testimonials_css.css';
 
 const testimonials = [
   {

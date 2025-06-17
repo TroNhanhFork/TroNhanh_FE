@@ -133,7 +133,6 @@ const HeaderComponent = () => {
         <div className="logo">
           <Link to={"/"}>
             <img src="Logo_TrọNhanh.png" alt="Logo" className="logo-image" />
-            <span className="logo-text">Tro Nhanh</span>
           </Link>
         </div>
 
@@ -141,23 +140,20 @@ const HeaderComponent = () => {
           <Menu.Item key="about">
             <Link to="/about-us">About Us</Link>
           </Menu.Item>
-          {user.roles.some(role => role.name === "USER") && (
+          {/* {user.roles.some(role => role.name === "USER") && (
             <Menu.Item key="bookings">
               <Link to="/user/rent-room">Rent Room</Link>
             </Menu.Item>
-          )}
+          )} */}
           <Menu.Item key="contact">
             <Link to="/contact">Contact & Reports</Link>
           </Menu.Item>
           <Menu.Item key="chat">
             <Link to="/chat">Chat</Link>
           </Menu.Item>
-          <Menu.Item key="profile">
-            <Link to="/user-profile">Profile</Link>
-          </Menu.Item>
           {user.roles.some(role => role.name === "CUSTOMER") && (
           <Menu.Item key="room">
-            <Link to="/customer/room">My Room</Link>
+            <Link to="/customer/room">Accomodation</Link>
           </Menu.Item>
           )}
           {user.roles.some(role => role.name === "OWNER") && (
