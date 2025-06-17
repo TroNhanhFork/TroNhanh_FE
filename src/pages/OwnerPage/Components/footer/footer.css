@@ -1,0 +1,68 @@
+.footer-container {
+    background-color: white;
+    padding: 20px;
+    text-align: left;
+    border-top: 1px solid #e8e8e8;
+}
+
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+}
+
+.footer-section, .guests-section, .privacy-section, .subscribe-section {
+    flex: 1;
+    min-width: 150px;
+    margin: 10px;
+}
+
+.footer-logo {
+    width: 100px;
+    margin-bottom: 10px;
+}
+
+.footer-section p, .guests-section p, .privacy-section p, .subscribe-section p {
+    margin: 5px 0;
+    color: #333;
+    font-size: 14px;
+}
+
+.footer-section p:first-child, .guests-section p:first-child, .privacy-section p:first-child, .subscribe-section p:first-child {
+    font-weight: bold;
+}
+
+.social-icons {
+    margin: 10px 0;
+}
+
+.social-icons span {
+    margin-right: 10px;
+    color: #5c6b57;
+}
+
+.email-input {
+    width: 100%;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.subscribe-btn {
+    width: 100%;
+    padding: 8px;
+    background-color: #5c6b57;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.subscribe-btn:hover {
+    background-color: #4a5a47;
+}
