@@ -20,7 +20,7 @@ const dummyData = [
     location: "123 Lê Lợi, Quận 1",
     price: 3000000,
     description: "Phòng rộng rãi, có máy lạnh",
-    photos: roomImage0, 
+    photos: roomImage0,
     status: "Available",
   },
   {
@@ -29,7 +29,7 @@ const dummyData = [
     location: "456 Võ Văn Ngân, Thủ Đức",
     price: 2500000,
     description: "Gần đại học, tiện đi lại",
-    photos: roomImage0, 
+    photos: roomImage0,
     status: "Unavailable",
   },
   {
@@ -105,13 +105,13 @@ const Accommodation = () => {
   const [editingRow, setEditingRow] = useState(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [newAccommodation, setNewAccommodation] = useState({
-  title: "",
-  location: "",
-  price: "",
-  description: "",
-  photos: roomImage1,
-  status: "Available",
-});
+    title: "",
+    location: "",
+    price: "",
+    description: "",
+    photos: roomImage1,
+    status: "Available",
+  });
 
   const handleView = (record) => {
     setSelectedRow(record);
@@ -124,8 +124,8 @@ const Accommodation = () => {
   };
 
   const handleUpdate = (record) => {
-  setEditingRow({ ...record }); // clone record để sửa
-  setIsUpdateModalVisible(true);
+    setEditingRow({ ...record }); // clone record để sửa
+    setIsUpdateModalVisible(true);
   };
 
 
@@ -171,82 +171,82 @@ const Accommodation = () => {
       </div>
 
       <Table columns={columns} dataSource={data} pagination={false} />
-       
+
       <Modal
-  title="Add New Accommodation"
-  open={isAddModalVisible}
-  onCancel={() => setIsAddModalVisible(false)}
-  onOk={() => {
-    const newEntry = {
-      ...newAccommodation,
-      key: (data.length + 1).toString(),
-      price: Number(newAccommodation.price),
-    };
-    setData([...data, newEntry]);
-    setIsAddModalVisible(false);
-    setNewAccommodation({
-      title: "",
-      location: "",
-      price: "",
-      description: "",
-      photos: roomImage1,
-      status: "Available",
-    });
-  }}
-  okText="Add"
-  cancelText="Cancel"
->
-  <div className="modal-form">
-    <label>Choose photos option:</label>
-    <div className="photo-options">
-      {photoOptions.map((photo, index) => (
-        <img
-          key={index}
-          src={photo.value}
-          alt={`photo-${index}`}
-          className={`photo-thumb ${newAccommodation.photos === photo.value ? "selected" : ""}`}
-          onClick={() => setNewAccommodation({ ...newAccommodation, photos: photo.value })}
-        />
-      ))}
-    </div>
+        title="Add New Accommodation"
+        open={isAddModalVisible}
+        onCancel={() => setIsAddModalVisible(false)}
+        onOk={() => {
+          const newEntry = {
+            ...newAccommodation,
+            key: (data.length + 1).toString(),
+            price: Number(newAccommodation.price),
+          };
+          setData([...data, newEntry]);
+          setIsAddModalVisible(false);
+          setNewAccommodation({
+            title: "",
+            location: "",
+            price: "",
+            description: "",
+            photos: roomImage1,
+            status: "Available",
+          });
+        }}
+        okText="Add"
+        cancelText="Cancel"
+      >
+        <div className="modal-form">
+          <label>Choose photos option:</label>
+          <div className="photo-options">
+            {photoOptions.map((photo, index) => (
+              <img
+                key={index}
+                src={photo.value}
+                alt={`photo-${index}`}
+                className={`photo-thumb ${newAccommodation.photos === photo.value ? "selected" : ""}`}
+                onClick={() => setNewAccommodation({ ...newAccommodation, photos: photo.value })}
+              />
+            ))}
+          </div>
 
-    <label>Title:</label>
-    <input
-      type="text"
-      value={newAccommodation.title}
-      onChange={(e) => setNewAccommodation({ ...newAccommodation, title: e.target.value })}
-    />
+          <label>Title:</label>
+          <input
+            type="text"
+            value={newAccommodation.title}
+            onChange={(e) => setNewAccommodation({ ...newAccommodation, title: e.target.value })}
+          />
 
-    <label>Location:</label>
-    <input
-      type="text"
-      value={newAccommodation.location}
-      onChange={(e) => setNewAccommodation({ ...newAccommodation, location: e.target.value })}
-    />
+          <label>Location:</label>
+          <input
+            type="text"
+            value={newAccommodation.location}
+            onChange={(e) => setNewAccommodation({ ...newAccommodation, location: e.target.value })}
+          />
 
-    <label>Price (VND):</label>
-    <input
-      type="number"
-      value={newAccommodation.price}
-      onChange={(e) => setNewAccommodation({ ...newAccommodation, price: e.target.value })}
-    />
+          <label>Price (VND):</label>
+          <input
+            type="number"
+            value={newAccommodation.price}
+            onChange={(e) => setNewAccommodation({ ...newAccommodation, price: e.target.value })}
+          />
 
-    <label>Description:</label>
-    <textarea
-      value={newAccommodation.description}
-      onChange={(e) => setNewAccommodation({ ...newAccommodation, description: e.target.value })}
-    />
+          <label>Description:</label>
+          <textarea
+            value={newAccommodation.description}
+            onChange={(e) => setNewAccommodation({ ...newAccommodation, description: e.target.value })}
+          />
 
-    <label>Status:</label>
-    <select
-      value={newAccommodation.status}
-      onChange={(e) => setNewAccommodation({ ...newAccommodation, status: e.target.value })}
-    >
-      <option value="Available">Available</option>
-      <option value="Unavailable">Unavailable</option>
-    </select>
-  </div>
-</Modal>
+          <label>Status:</label>
+          <select
+            value={newAccommodation.status}
+            onChange={(e) => setNewAccommodation({ ...newAccommodation, status: e.target.value })}
+          >
+            <option value="Available">Available</option>
+            <option value="Unavailable">Unavailable</option>
+          </select>
+        </div>
+      </Modal>
 
 
 
@@ -269,90 +269,89 @@ const Accommodation = () => {
       </Modal>
 
       <Modal
-  title="Update Accommodation"
-  open={isUpdateModalVisible}
-  onCancel={() => setIsUpdateModalVisible(false)}
-  onOk={() => {
-    const updatedData = data.map((item) =>
-      item.key === editingRow.key ? editingRow : item
-    );
-    setData(updatedData);
-    setIsUpdateModalVisible(false);
-  }}
-  okText="Save"
-  cancelText="Cancel"
->
-{editingRow && (
-  <div className="modal-form">
-    <label>Choose photos option:</label>
-    <div className="photo-options">
-      {photoOptions.map((photo, index) => (
-        <img
-          key={index}
-          src={photo.value}
-          alt={`photo-${index}`}
-          className={`photo-thumb ${
-            editingRow.photos === photo.value ? "selected" : ""
-          }`}
-          onClick={() =>
-            setEditingRow({ ...editingRow, photos: photo.value })
-          }
-        />
-      ))}
-    </div>
+        title="Update Accommodation"
+        open={isUpdateModalVisible}
+        onCancel={() => setIsUpdateModalVisible(false)}
+        onOk={() => {
+          const updatedData = data.map((item) =>
+            item.key === editingRow.key ? editingRow : item
+          );
+          setData(updatedData);
+          setIsUpdateModalVisible(false);
+        }}
+        okText="Save"
+        cancelText="Cancel"
+      >
+        {editingRow && (
+          <div className="modal-form">
+            <label>Choose photos option:</label>
+            <div className="photo-options">
+              {photoOptions.map((photo, index) => (
+                <img
+                  key={index}
+                  src={photo.value}
+                  alt={`photo-${index}`}
+                  className={`photo-thumb ${editingRow.photos === photo.value ? "selected" : ""
+                    }`}
+                  onClick={() =>
+                    setEditingRow({ ...editingRow, photos: photo.value })
+                  }
+                />
+              ))}
+            </div>
 
-    <label>Title:</label>
-    <input
-      type="text"
-      value={editingRow.title}
-      onChange={(e) =>
-        setEditingRow({ ...editingRow, title: e.target.value })
-      }
-    />
+            <label>Title:</label>
+            <input
+              type="text"
+              value={editingRow.title}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, title: e.target.value })
+              }
+            />
 
-    <label>Location:</label>
-    <input
-      type="text"
-      value={editingRow.location}
-      onChange={(e) =>
-        setEditingRow({ ...editingRow, location: e.target.value })
-      }
-    />
+            <label>Location:</label>
+            <input
+              type="text"
+              value={editingRow.location}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, location: e.target.value })
+              }
+            />
 
-    <label>Price (VND):</label>
-    <input
-      type="number"
-      value={editingRow.price}
-      onChange={(e) =>
-        setEditingRow({ ...editingRow, price: Number(e.target.value) })
-      }
-    />
+            <label>Price (VND):</label>
+            <input
+              type="number"
+              value={editingRow.price}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, price: Number(e.target.value) })
+              }
+            />
 
-    <label>Description:</label>
-    <textarea
-      value={editingRow.description}
-      onChange={(e) =>
-        setEditingRow({ ...editingRow, description: e.target.value })
-      }
-    />
+            <label>Description:</label>
+            <textarea
+              value={editingRow.description}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, description: e.target.value })
+              }
+            />
 
-    <label>Status:</label>
-    <select
-      value={editingRow.status}
-      onChange={(e) =>
-        setEditingRow({ ...editingRow, status: e.target.value })
-      }
-    >
-      <option value="Available">Available</option>
-      <option value="Unavailable">Unavailable</option>
-    </select>
-  </div>
-)}
+            <label>Status:</label>
+            <select
+              value={editingRow.status}
+              onChange={(e) =>
+                setEditingRow({ ...editingRow, status: e.target.value })
+              }
+            >
+              <option value="Available">Available</option>
+              <option value="Unavailable">Unavailable</option>
+            </select>
+          </div>
+        )}
 
-</Modal>
+      </Modal>
 
 
-      
+
     </div>
   );
 };

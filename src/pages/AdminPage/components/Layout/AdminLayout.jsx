@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Layout, Row, Col, Drawer, Button } from "antd";
 import { Outlet } from "react-router-dom";
 import { MenuOutlined } from "@ant-design/icons";
 import AdminSidebar from "../sidebar/sidebar";
-import Dashboard from "../../pages/AdminPage/Dashboard/dashboard";
 import "./layout.css";
 
 const { Content } = Layout;
@@ -13,7 +12,7 @@ const AdminPage = () => {
 
     return (
         <Content>
-            <div className="profile-wrapper">
+            <div className="profile-wrapper-admin">
                 <Row>
                     <Col xs={24} md={0}>
                         <Button
@@ -32,15 +31,15 @@ const AdminPage = () => {
                 </Drawer>
 
                 {/* Main Content */}
-                <div className="profile-layout">
-                    <aside className="profile-sidebar">
+                <div className="profile-layout-admin">
+                    <aside className="profile-sidebar-admin">
                         <Col xs={0} sm={24}>
                             <AdminSidebar />
                         </Col>
                     </aside>
 
-                    <main className="profile-content">
-                        <div className="admin-container">
+                    <main className="profile-content-admin">
+                        <div className="admin-container-admin">
                             <Outlet />
                         </div>
                     </main>

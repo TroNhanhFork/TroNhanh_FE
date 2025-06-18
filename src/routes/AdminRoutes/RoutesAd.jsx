@@ -1,6 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import AdminLayout from "../../components/Layout/layout";
+import AdminLayout from "../../pages/AdminPage/components/Layout/AdminLayout";
 import Dashboard from "../../pages/AdminPage/Dashboard/dashboard";
 import Users from "../../pages/AdminPage/User/Users";
 import Posts from "../../pages/AdminPage/Post/Posts";
@@ -12,6 +12,7 @@ function App() {
   return (
       <Routes>
         <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/users" element={<Users />} />
