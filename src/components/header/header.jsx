@@ -33,7 +33,7 @@ const HeaderComponent = () => {
     },
     roles: [
       // { name: "CUSTOMER" },
-      { name: "OWNER" }
+      { name: "OWNER" },
       // { name: "ADMIN" } 
     ]
   };
@@ -150,11 +150,13 @@ const HeaderComponent = () => {
           <Menu.Item key="profile">
             <Link to="/user-profile">Profile</Link>
           </Menu.Item>
+          
           {user.roles.some(role => role.name === "CUSTOMER") && (
           <Menu.Item key="room">
-            <Link to="/customer/room">My Room</Link>
+            <Link to="/customer/search">Room</Link>
           </Menu.Item>
           )}
+
           {user.roles.some(role => role.name === "OWNER") && (
             <>
             <Menu.Item key="communication">
@@ -164,6 +166,7 @@ const HeaderComponent = () => {
               <Link to="/owner/accommodation">Manage Room</Link>
             </Menu.Item>
           </>
+
           )}
           {user.roles.some(role => role.name === "ADMIN") && (
             <Menu.Item key="admin-page">

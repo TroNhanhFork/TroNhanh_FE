@@ -1,10 +1,11 @@
 // App.js
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
-import './App.css';
+import "./App.css";
 import RoutesOw from "./routes/OwnerRoutes/RoutesOw";
 import RoutesAd from "./routes/AdminRoutes/RoutesAd";
 import HeaderComponent from './components/header/header';
+import RoutesCus from "./routes/CustomerRoutes/RoutesCus";
 import FooterComponent from "./components/footer/footer";
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
       <HeaderComponent />
       <RoutesOw />
       <RoutesAd/>
+      <RoutesCus />
       <FooterComponent />
     </BrowserRouter>
   );
