@@ -84,6 +84,7 @@ const Dashboard = () => {
             bodyStyle={{ padding: '8px 16px' }}
           >
             <Table
+            style={{backgroundColor:'unset'}}
               columns={userColumns}
               dataSource={userData}
               {...tableProps}

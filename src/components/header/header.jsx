@@ -1,3 +1,4 @@
+// File: src/components/header/header.jsx
 import { Layout, Menu, Button, Dropdown, Avatar, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -32,8 +33,8 @@ const HeaderComponent = () => {
     },
     roles: [
       // { name: "CUSTOMER" },
-      // { name: "OWNER" },
-      { name: "ADMIN" } 
+      { name: "OWNER" },
+      // { name: "ADMIN" } 
     ]
   };
 
@@ -70,17 +71,11 @@ const HeaderComponent = () => {
     if (hasRole("OWNER")) {
       items.push(
         {
-          key: "manage-room",
-          label: "Manage Room",
+          key: "accommodation",
+          label: "Accommodation",
           icon: <SettingOutlined />,
-          onClick: () => navigate("/owner/manage-room"),
+          onClick: () => navigate("/owner/accommodation"),
         },
-        {
-          key: "transaction",
-          label: "Transaction",
-          icon: <TransactionOutlined />,
-          onClick: () => navigate("/owner/transaction"),
-        }
       );
     }
 
@@ -131,9 +126,8 @@ const HeaderComponent = () => {
       {contextHolder}
       <Header className="header">
         <div className="logo">
-          <Link to={"/"}>
-            <img src="/" alt="Logo" className="logo-image" />
-            <span className="logo-text">Tro Nhanh</span>
+          <Link to={"/homepage"}>
+            <img src="Logo_TrọNhanh.png" alt="Logo" className="logo-image" />
           </Link>
         </div>
 
@@ -141,11 +135,11 @@ const HeaderComponent = () => {
           <Menu.Item key="about">
             <Link to="/about-us">About Us</Link>
           </Menu.Item>
-          {user.roles.some(role => role.name === "USER") && (
+          {/* {user.roles.some(role => role.name === "USER") && (
             <Menu.Item key="bookings">
               <Link to="/user/rent-room">Rent Room</Link>
             </Menu.Item>
-          )}
+          )} */}
           <Menu.Item key="contact">
             <Link to="/contact">Contact & Reports</Link>
           </Menu.Item>
@@ -155,15 +149,23 @@ const HeaderComponent = () => {
           <Menu.Item key="profile">
             <Link to="/user-profile">Profile</Link>
           </Menu.Item>
+          
           {user.roles.some(role => role.name === "CUSTOMER") && (
           <Menu.Item key="room">
-            <Link to="/customer/room">My Room</Link>
+            <Link to="/customer/search">Room</Link>
           </Menu.Item>
           )}
+
           {user.roles.some(role => role.name === "OWNER") && (
-            <Menu.Item key="owner">
-              <Link to="/owners/calendar">Room Owner</Link>
+            <>
+            <Menu.Item key="communication">
+              <Link to="/owner/communication">Communication</Link>
             </Menu.Item>
+            <Menu.Item key="manage-room">
+              <Link to="/owner/accommodation">Manage Room</Link>
+            </Menu.Item>
+          </>
+
           )}
           {user.roles.some(role => role.name === "ADMIN") && (
             <Menu.Item key="admin-page">

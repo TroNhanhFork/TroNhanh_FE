@@ -1,3 +1,4 @@
+/* file src/components/header/header.css */
 :root {
   --primary-gradient: linear-gradient(to right, #064749, #c4f7d8);
   --primary-lightgreen: #c4f7d8;
@@ -23,7 +24,17 @@
   z-index: 1000;
 }
 
+body {
+  padding-top: 64px; /* để tránh nội dung bị đè bởi header */
+}
+
 /* Logo */
+.logo {
+  flex: 0 0 200px; /* Fixed width */
+  display: flex;
+  justify-content: flex-start;
+}
+
 .logo a {
   display: flex;
   align-items: center;
@@ -31,7 +42,7 @@
 }
 
 .logo-image {
-  height: 32px;
+  height: 60px;
   width: auto;
 }
 
@@ -46,9 +57,11 @@
 /* Navigation */
 .nav-menu {
   flex: 1;
+  display: flex;
   justify-content: center;
   border-bottom: none !important;
   background: transparent !important;
+  margin: 0 40px;
 }
 
 .nav-menu .ant-menu-item {
@@ -71,8 +84,10 @@
 
 /* User Menu */
 .user-menu {
+  flex: 0 0 200px;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 
