@@ -1,10 +1,10 @@
-.profile-wrapper {
+.profile-wrapper-admin {
     width: 100%;
     min-height: 100vh;
     background: #f5f7fa;
 }
 
-.profile-layout {
+.profile-layout-admin {
     display: flex;
     flex-direction: row;
     width: 100%;
@@ -12,7 +12,7 @@
     margin: 0 auto;
 }
 
-.profile-sidebar {
+.profile-sidebar-admin {
     width: 280px;
     min-width: 280px;
     height: 100vh;
@@ -25,13 +25,13 @@
     transition: all 0.3s ease;
 }
 
-.profile-content {
+.profile-content-admin {
     flex: 1;
     padding: 24px;
     background: #f5f7fa;
 }
 
-.admin-container {
+.admin-container-admin {
     width: 100%;
 }
 
@@ -64,39 +64,39 @@
 }
 
 @media (max-width: 767px) {
-    .profile-layout {
+    .profile-layout-admin {
         flex-direction: column;
     }
 
-    .profile-sidebar {
+    .profile-sidebar-admin {
         display: none;
     }
 
-    .profile-content {
+    .profile-content-admin {
         padding: 16px;
     }
 
-    .profile-wrapper {
+    .profile-wrapper-admin {
         padding-top: 16px;
     }
 
-    .admin-container {
+    .admin-container-admin {
         padding: 0;
     }
 }
 
 @media (min-width: 768px) {
-    .profile-wrapper .ant-btn {
+    .profile-wrapper-admin .ant-btn {
         display: none;
     }
 
-    .profile-sidebar {
+    .profile-sidebar-admin {
         display: block;
     }
 }
 
 @media (max-width: 576px) {
-    .profile-content {
+    .profile-content-admin {
         padding: 12px;
     }
 

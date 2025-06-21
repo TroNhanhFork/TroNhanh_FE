@@ -22,9 +22,9 @@ h2 {
 }
 
 .open-modal-btn {
-  background-color: white;
-  color: #49735A;
-  border: 2px solid #49735A ;
+  background-color: white !important;
+  color: #49735A !important;
+  border: 2px solid #49735A !important;
   font-weight: 600;
   transition: 0.3s ease;
 }
@@ -78,6 +78,33 @@ h2 {
   background-color: #ffccc7;
   color: #cf1322;
 }
+
+.report-table {
+  background-color: #F5FBF6;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Tiêu đề cột */
+.report-table .ant-table-thead > tr > th {
+  background-color: #DDEBDD !important;
+  color: #2f3e2f;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Nội dung bảng */
+.report-table .ant-table-tbody > tr > td {
+  background-color: #F5FBF6;
+  color: #3e3e3e;
+  font-size: 14px;
+}
+
+/* Hover row */
+.report-table .ant-table-tbody > tr:hover > td {
+  background-color: #e8f5ea !important;
+}
+
 
 /* Responsive adjustments */
 @media (max-width: 768px) {

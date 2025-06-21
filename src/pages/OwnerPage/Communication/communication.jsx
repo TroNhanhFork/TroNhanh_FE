@@ -76,7 +76,7 @@ const Communication = () => {
       return;
     }
     if (containsBlacklistedWord(messageInput)) {
-      alert("Message cannot contain inappropriate word!");
+      alert("Không có chửi tục nha má! Block chừ!");
       return;
     }
     if (dailySentCount >= MAX_MESSAGES_PER_DAY) {

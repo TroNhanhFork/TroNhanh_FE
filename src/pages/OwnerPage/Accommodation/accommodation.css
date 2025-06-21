@@ -22,9 +22,9 @@ h2 {
 }
 
 .add-btn {
-  background-color: #ffffff;
-  color: #49735A;
-  border: 1px solid #49735A;
+  background-color: #ffffff !important;
+  color: #49735A  !important;
+  border: 1px solid #49735A !important;
   padding: 8px 16px;
   border-radius: 6px;
   font-weight: 500;
@@ -39,8 +39,8 @@ h2 {
   transform: translateY(-1px);
 }
 
-
-.ant-table {
+/*đoạn code mặc định cho ant design*/
+/* .ant-table {
   background-color: #F5FBF6;
   border-radius: 10px;
   overflow: hidden;
@@ -61,7 +61,38 @@ h2 {
 
 .ant-table-tbody > tr:hover > td {
   background-color: #e8f5ea !important;
+} */
+
+
+
+/* Chỉ áp dụng cho bảng trong Accommodation */
+.accommodation-table {
+  background-color: #F5FBF6;
+  border-radius: 10px;
+  overflow: hidden;
 }
+
+/* Tiêu đề cột */
+.accommodation-table .ant-table-thead > tr > th {
+  background-color: #DDEBDD !important;
+  color: #2f3e2f;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Nội dung bảng */
+.accommodation-table .ant-table-tbody > tr > td {
+  background-color: #F5FBF6;
+  color: #3e3e3e;
+  font-size: 14px;
+}
+
+/* Hover row */
+.accommodation-table .ant-table-tbody > tr:hover > td {
+  background-color: #e8f5ea !important;
+}
+
+
 
 .action-buttons button {
   margin-right: 8px;

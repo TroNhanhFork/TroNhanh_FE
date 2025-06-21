@@ -33,8 +33,8 @@ const HeaderComponent = () => {
     },
     roles: [
       // { name: "CUSTOMER" },
-      // { name: "OWNER" },
-      { name: "ADMIN" } 
+      { name: "OWNER" }
+      // { name: "ADMIN" } 
     ]
   };
 
@@ -71,17 +71,11 @@ const HeaderComponent = () => {
     if (hasRole("OWNER")) {
       items.push(
         {
-          key: "manage-room",
-          label: "Manage Room",
+          key: "accommodation",
+          label: "Accommodation",
           icon: <SettingOutlined />,
-          onClick: () => navigate("/owner/manage-room"),
+          onClick: () => navigate("/owner/accommodation"),
         },
-        {
-          key: "transaction",
-          label: "Transaction",
-          icon: <TransactionOutlined />,
-          onClick: () => navigate("/owner/transaction"),
-        }
       );
     }
 
@@ -162,9 +156,14 @@ const HeaderComponent = () => {
           </Menu.Item>
           )}
           {user.roles.some(role => role.name === "OWNER") && (
-            <Menu.Item key="owner">
-              <Link to="/owners/calendar">Room Owner</Link>
+            <>
+            <Menu.Item key="communication">
+              <Link to="/owner/communication">Communication</Link>
             </Menu.Item>
+            <Menu.Item key="manage-room">
+              <Link to="/owner/accommodation">Manage Room</Link>
+            </Menu.Item>
+          </>
           )}
           {user.roles.some(role => role.name === "ADMIN") && (
             <Menu.Item key="admin-page">

@@ -1,7 +1,7 @@
 // File: src/routes/OwnerRoutes/RoutesOw.jsx
 import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
-import OwnerLayout from "../../pages/OwnerPage/Components/Layout/layout";
+import OwnerLayout from "../../pages/OwnerPage/Components/Layout/OwnerLayout";
 import Profile from "../../pages/OwnerPage/Profile/profile";
 import Accommodation from "../../pages/OwnerPage/Accommodation/accommodation";
 import Report from "../../pages/OwnerPage/Report/report";

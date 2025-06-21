@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { Layout, Row, Col, Drawer, Button } from "antd";
 import { Outlet } from "react-router-dom";
 import { MenuOutlined } from "@ant-design/icons";
-import HeaderComponent from "../../../../components/header/header"; 
 import Sidebar from "../sidebar/sidebar"; 
 import "./layout.css";
 
@@ -24,10 +23,9 @@ const OwnerLayout = () => {
 
   return (
     <Layout>
-      <HeaderComponent />
 
       <Content>
-        <div className="profile-wrapper">
+        <div className="profile-wrapper-owner">
           <Row>
             {isMobile && (
               <Col xs={24}>
@@ -53,16 +51,16 @@ const OwnerLayout = () => {
             <Sidebar />
           </Drawer>
 
-          <div className="profile-layout">
+          <div className="profile-layout-owner">
             {/* 👇 Chỉ render Sidebar nếu không phải mobile */}
             {!isMobile && (
-              <aside className="profile-sidebar">
+              <aside className="profile-sidebar-owner">
                 <Sidebar />
               </aside>
             )}
 
-            <main className="profile-content">
-              <div className="owner-container">
+            <main className="profile-content-owner">
+              <div className="owner-container-owner">
                 <Outlet />
               </div>
             </main>
