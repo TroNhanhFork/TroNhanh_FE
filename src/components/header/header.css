@@ -29,6 +29,12 @@ body {
 }
 
 /* Logo */
+.logo {
+  flex: 0 0 200px; /* Fixed width */
+  display: flex;
+  justify-content: flex-start;
+}
+
 .logo a {
   display: flex;
   align-items: center;
@@ -51,9 +57,11 @@ body {
 /* Navigation */
 .nav-menu {
   flex: 1;
+  display: flex;
   justify-content: center;
   border-bottom: none !important;
   background: transparent !important;
+  margin: 0 40px;
 }
 
 .nav-menu .ant-menu-item {
@@ -76,8 +84,10 @@ body {
 
 /* User Menu */
 .user-menu {
+  flex: 0 0 200px;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 12px;
 }
 

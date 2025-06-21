@@ -33,8 +33,8 @@ const HeaderComponent = () => {
     },
     roles: [
       // { name: "CUSTOMER" },
-      // { name: "OWNER" },
-      { name: "ADMIN" } 
+      { name: "OWNER" },
+      // { name: "ADMIN" } 
     ]
   };
 
