@@ -1,20 +1,22 @@
-import { Routes, Route } from "react-router-dom";
+import React from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import CustomerLayout from "../../pages/CustomerPage/components/layout/CustomerLayout";
 import ApartmentSearch from "../../pages/CustomerPage/ApartmentSearch/ApartmentSearch";
 import ApartmentDetails from "../../pages/CustomerPage/ApartmentDetails/ApartmentDetails";
 import OwnerInformation from "../../pages/CustomerPage/OwnerInfo/OwnerInfo";
-import NotFound from "../../pages/CustomerPage/NotFound/NotFound";
 import CheckoutPage from "../../pages/CustomerPage/Checkout/CheckoutPage";
 
 const RoutesCus = () => {
   return (
     <Routes>
       <Route element={<CustomerLayout />}>
-        <Route path="/customer/search" element={<ApartmentSearch />} />
-        <Route path="/customer/property/:id" element={<ApartmentDetails />} />
-        <Route path="/customer/owner/:id" element={<OwnerInformation />} />
-        <Route path="/customer/checkout" element={<CheckoutPage />} />
-        <Route path="*" element={<NotFound />} />
+        <Route index element={<ApartmentSearch />} />
+        <Route path="search" element={<ApartmentSearch />} />
+        <Route path="property/:id" element={<ApartmentDetails />} />
+        <Route path="owner/:id" element={<OwnerInformation />} />
+        <Route path="checkout" element={<CheckoutPage />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
+
       </Route>
     </Routes>
   );

@@ -1,11 +1,12 @@
 import React from "react";
-import { Divider } from "antd";
-import { 
-  FaFacebookF, 
-  FaInstagram, 
-  FaTwitter, 
-  FaGithub, 
-  FaYoutube 
+import { Input, Button } from "antd";
+import {
+  FaFacebookF,
+  FaInstagram,
+  FaTwitter,
+  FaGithub,
+  FaYoutube,
+  FaLinkedin
 } from "react-icons/fa";
 import './footer.css';
 
@@ -13,41 +14,51 @@ const FooterComponent = () => {
   return (
     <footer className="footer-compact">
       <div className="footer-content">
-        <div className="footer-main">
-          {/* Brand Section */}
-          <div className="footer-brand">
-            <div className="brand-info">
-              <img src="/logo" alt="Logo" className="footer-logo" />
-              <span className="brand-name">Tro Nhanh</span>
-            </div>
+        <div className="footer-grid">
+          {/* Logo & Contact */}
+          <div className="footer-column">
+            <img src="Logo_TrọNhanh.png" alt="Logo" className="footer-logo" />
+            <p className="contact-number">Contact number: 02033074477</p>
             <div className="social-links">
-              <a href="#" className="social-link"><FaFacebookF /></a>
-              <a href="#" className="social-link"><FaInstagram /></a>
-              <a href="#" className="social-link"><FaTwitter /></a>
-              <a href="#" className="social-link"><FaGithub /></a>
-              <a href="#" className="social-link"><FaYoutube /></a>
+              <a href="#"><FaFacebookF /></a>
+              <a href="#"><FaInstagram /></a>
+              <a href="#"><FaTwitter /></a>
+              <a href="#"><FaGithub /></a>
+              <a href="#"><FaYoutube /></a>
             </div>
+            <p className="footer-copy">© 2021 Flex Living</p>
           </div>
 
-          {/* Quick Links */}
-          <div className="footer-links">
-            <div className="link-group">
-              <a href="#">About</a>
-              <a href="#">Courses</a>
-              <a href="#">Support</a>
-              <a href="#">Contact</a>
-            </div>
-            <Divider type="vertical" className="divider" />
-            <div className="link-group">
-              <a href="#">Terms</a>
-              <a href="#">Privacy</a>
-              <a href="#">Help</a>
-            </div>
+          {/* Company */}
+          <div className="footer-column">
+            <h4>Company</h4>
+            <a href="#">Home</a>
+            <a href="#">About us</a>
+            <a href="#">Our team</a>
           </div>
-        </div>
 
-        <div className="footer-bottom">
-          <p>© 2024 Tro Nhanh. All rights reserved.</p>
+          {/* Guests */}
+          <div className="footer-column">
+            <h4>Guests</h4>
+            <a href="#">Blog</a>
+            <a href="#">FAQ</a>
+            <a href="#">Career</a>
+          </div>
+
+          {/* Privacy */}
+          <div className="footer-column">
+            <h4>Privacy</h4>
+            <a href="#">Terms of Service</a>
+            <a href="#">Privacy Policy</a>
+          </div>
+
+          {/* Subscribe */}
+          <div className="footer-column">
+            <h4>Stay up to date</h4>
+            <p>Be the first to know about our newest apartments</p>
+            <Input placeholder="Email address" className="email-input" />
+            <Button type="primary" className="subscribe-button">Subscribe</Button>
+          </div>
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 // File: src/routes/OwnerRoutes/RoutesOw.jsx
 import React from "react";
-import { Route, Routes, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import OwnerLayout from "../../pages/OwnerPage/Components/Layout/OwnerLayout";
 import Profile from "../../pages/OwnerPage/Profile/profile";
 import Accommodation from "../../pages/OwnerPage/Accommodation/accommodation";
@@ -14,9 +14,8 @@ import Cancellation from "../../pages/OwnerPage/Cancellation/cancellation";
 const RoutesOw = () => {
     return (
         <Routes>
-            <Route path="/" element={<Navigate to="/owner/profile" />} />
-
-            <Route path="/owner" element={<OwnerLayout />}>
+            <Route element={<OwnerLayout />}>
+                <Route index element={<Profile />} />
                 <Route path="profile" element={<Profile />} />
                 <Route path="accommodation" element={<Accommodation />} />
                 <Route path="report" element={<Report />} />

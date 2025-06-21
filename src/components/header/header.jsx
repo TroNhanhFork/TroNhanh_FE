@@ -33,8 +33,8 @@ const HeaderComponent = () => {
     },
     roles: [
       // { name: "CUSTOMER" },
-      { name: "OWNER" },
-      // { name: "ADMIN" } 
+      // { name: "OWNER" },
+      { name: "ADMIN" } 
     ]
   };
 
@@ -126,9 +126,8 @@ const HeaderComponent = () => {
       {contextHolder}
       <Header className="header">
         <div className="logo">
-          <Link to={"/"}>
-            <img src="/" alt="Logo" className="logo-image" />
-            <span className="logo-text">Tro Nhanh</span>
+          <Link to={"/homepage"}>
+            <img src="Logo_TrọNhanh.png" alt="Logo" className="logo-image" />
           </Link>
         </div>
 
@@ -136,11 +135,11 @@ const HeaderComponent = () => {
           <Menu.Item key="about">
             <Link to="/about-us">About Us</Link>
           </Menu.Item>
-          {user.roles.some(role => role.name === "USER") && (
+          {/* {user.roles.some(role => role.name === "USER") && (
             <Menu.Item key="bookings">
               <Link to="/user/rent-room">Rent Room</Link>
             </Menu.Item>
-          )}
+          )} */}
           <Menu.Item key="contact">
             <Link to="/contact">Contact & Reports</Link>
           </Menu.Item>
