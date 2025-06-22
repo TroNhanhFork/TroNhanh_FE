@@ -5,7 +5,7 @@ import ApartmentSearch from "../../pages/CustomerPage/ApartmentSearch/ApartmentS
 import ApartmentDetails from "../../pages/CustomerPage/ApartmentDetails/ApartmentDetails";
 import OwnerInformation from "../../pages/CustomerPage/OwnerInfo/OwnerInfo";
 import CheckoutPage from "../../pages/CustomerPage/Checkout/CheckoutPage";
-
+import ProfilePage from "../../pages/CustomerPage/Profile/Profile";
 const RoutesCus = () => {
   return (
     <Routes>
@@ -16,7 +16,7 @@ const RoutesCus = () => {
         <Route path="owner/:id" element={<OwnerInformation />} />
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="*" element={<Navigate to="/404" replace />} />
-
+        <Route path="profile/*" element={<ProfilePage />} />
       </Route>
     </Routes>
   );

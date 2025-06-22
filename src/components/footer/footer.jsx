@@ -17,7 +17,7 @@ const FooterComponent = () => {
         <div className="footer-grid">
           {/* Logo & Contact */}
           <div className="footer-column">
-            <img src="Logo_TrọNhanh.png" alt="Logo" className="footer-logo" />
+            <img src="/Logo_TrọNhanh.png" alt="Logo" className="footer-logo" />
             <p className="contact-number">Contact number: 02033074477</p>
             <div className="social-links">
               <a href="#"><FaFacebookF /></a>

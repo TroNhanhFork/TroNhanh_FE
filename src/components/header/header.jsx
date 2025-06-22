@@ -1,11 +1,10 @@
-// File: src/components/header/header.jsx
-import { Layout, Menu, Button, Dropdown, Avatar, message } from "antd";
+
+import { Layout, Menu, Dropdown, Avatar, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import {
   DownOutlined,
   LogoutOutlined,
   UserOutlined,
-  PlusOutlined,
   TransactionOutlined,
   MailOutlined,
   MessageOutlined,
@@ -14,7 +13,7 @@ import {
   SettingOutlined,
   DashboardOutlined,
 } from "@ant-design/icons";
-// import NotificationsButton from "../../NotificationComponents/NotificationsButton";
+import useUser from "../../contexts/UserContext";
 import "./header.css";
 
 const { Header } = Layout;
@@ -22,35 +21,21 @@ const { Header } = Layout;
 const HeaderComponent = () => {
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
+  const { user, logout, loading } = useUser(); 
 
-  // Fake user data
-  const user = {
-    fullName: "Nguyen Van A",
-    email: "vana@example.com",
-    avatarUrl: "",
-    wallet: {
-      balance: 500000
-    },
-    roles: [
-      // { name: "CUSTOMER" },
-      { name: "OWNER" },
-      // { name: "ADMIN" } 
-    ]
-  };
+
+  if (loading) return null;
 
   const handleLogout = async () => {
     await messageApi.success("Logout successfully", 2);
-    navigate("/");
-    window.location.reload();
+    logout();
+    navigate("/homepage");
   };
 
-  const getUserMenuItems = (userRoles) => {
-    const hasRole = (roleName) => userRoles?.some((r) => r.name === roleName);
-
+  const getUserMenuItems = (role) => {
     const items = [];
 
-    // ===== Customer =====
-    if (hasRole("CUSTOMER")) {
+    if (role === "Customer") {
       items.push(
         {
           key: "my-room",
@@ -67,20 +52,24 @@ const HeaderComponent = () => {
       );
     }
 
-    // ===== Owner =====
-    if (hasRole("OWNER")) {
+    if (role === "Owner") {
       items.push(
         {
-          key: "accommodation",
-          label: "Accommodation",
+          key: "manage-room",
+          label: "Manage Room",
           icon: <SettingOutlined />,
           onClick: () => navigate("/owner/accommodation"),
         },
+        {
+          key: "transaction",
+          label: "Transaction",
+          icon: <TransactionOutlined />,
+          onClick: () => navigate("/owner/transaction"),
+        }
       );
     }
 
-    // ===== Admin =====
-    if (hasRole("ADMIN")) {
+    if (role === "Admin") {
       items.push({
         key: "dashboard",
         label: "Dashboard",
@@ -89,13 +78,17 @@ const HeaderComponent = () => {
       });
     }
 
-    // ===== Common Items =====
+    // COMMON
     items.push(
       {
         key: "profile",
         label: "Profile",
         icon: <UserOutlined />,
-        onClick: () => navigate("/user-profile"),
+        onClick: () => {
+          if (role === "Customer") navigate("/customer/profile/personal-info");
+          else if (role === "Owner") navigate("/owner/profile");
+          else navigate("/profile");
+        },
       },
       {
         key: "contact",
@@ -120,14 +113,13 @@ const HeaderComponent = () => {
     return items;
   };
 
-
   return (
     <>
       {contextHolder}
       <Header className="header">
         <div className="logo">
           <Link to={"/homepage"}>
-            <img src="Logo_TrọNhanh.png" alt="Logo" className="logo-image" />
+            <img src="/Logo_TrọNhanh.png" alt="Logo" className="logo-image" />
           </Link>
         </div>
 
@@ -135,65 +127,82 @@ const HeaderComponent = () => {
           <Menu.Item key="about">
             <Link to="/about-us">About Us</Link>
           </Menu.Item>
-          {/* {user.roles.some(role => role.name === "USER") && (
-            <Menu.Item key="bookings">
-              <Link to="/user/rent-room">Rent Room</Link>
+
+          {user?.role === "Customer" && (
+            <>
+              <Menu.Item key="room">
+                <Link to="/customer/search">Room</Link>
+              </Menu.Item>
+              <Menu.Item key="profile">
+                <Link to="/customer/profile/personal-info">Profile</Link>
+              </Menu.Item>
+            </>
+          )}
+
+          {user?.role === "Owner" && (
+            <>
+              <Menu.Item key="communication">
+                <Link to="/owner/communication">Communication</Link>
+              </Menu.Item>
+              <Menu.Item key="manage-room">
+                <Link to="/owner/accommodation">Manage Room</Link>
+              </Menu.Item>
+              <Menu.Item key="profile">
+                <Link to="/owner/profile">Profile</Link>
+              </Menu.Item>
+            </>
+          )}
+
+          {user?.role === "Admin" && (
+            <Menu.Item key="admin-page">
+              <Link to="/admin/dashboard">Dashboard</Link>
             </Menu.Item>
-          )} */}
+          )}
+
           <Menu.Item key="contact">
             <Link to="/contact">Contact & Reports</Link>
           </Menu.Item>
           <Menu.Item key="chat">
             <Link to="/chat">Chat</Link>
           </Menu.Item>
-          <Menu.Item key="profile">
-            <Link to="/user-profile">Profile</Link>
-          </Menu.Item>
-          
-          {user.roles.some(role => role.name === "CUSTOMER") && (
-          <Menu.Item key="room">
-            <Link to="/customer/search">Room</Link>
-          </Menu.Item>
-          )}
-
-          {user.roles.some(role => role.name === "OWNER") && (
-            <>
-            <Menu.Item key="communication">
-              <Link to="/owner/communication">Communication</Link>
-            </Menu.Item>
-            <Menu.Item key="manage-room">
-              <Link to="/owner/accommodation">Manage Room</Link>
-            </Menu.Item>
-          </>
-
-          )}
-          {user.roles.some(role => role.name === "ADMIN") && (
-            <Menu.Item key="admin-page">
-              <Link to="/admin/dashboard">Dashboard</Link>
-            </Menu.Item>
-          )}
         </Menu>
 
         <div className="user-menu">
-          {/* <NotificationsButton currentUser={user} /> */}
-          <Dropdown
-            menu={{ items: getUserMenuItems(user.roles) }} // <-- gọi hàm để lấy mảng
-            placement="bottomRight"
-            trigger={["click"]}
-            overlayClassName="user-dropdown"
-          >
-            <div className="user-info">
-              <Avatar src={user.avatarUrl || null} className="user-avatar" size={40}>
-                {!user.avatarUrl && user.fullName.charAt(0)}
-              </Avatar>
-              <span className="user-name">{user.fullName || user.email}</span>
-              <DownOutlined className="dropdown-icon" />
-            </div>
-          </Dropdown>
+      {user ? (
+  <Dropdown
+    menu={{ items: getUserMenuItems(user.role) }}
+    placement="bottomRight"
+    trigger={["click"]}
+    overlayClassName="user-dropdown"
+  >
+    <div className="user-info">
+      <Avatar
+        src={user.avatar || null}
+        className="user-avatar"
+        size={40}
+      >
+        {!user.avatar && user.name?.charAt(0)}
+      </Avatar>
+      <span className="user-name">{user.name || user.email}</span>
+      <DownOutlined className="dropdown-icon" />
+    </div>
+  </Dropdown>
+) : (
+  <div className="auth-buttons">
+    <Link to="/login">
+      <button className="login-button">Login</button>
+    </Link>
+    <Link to="/register">
+      <button className="register-button">Register</button>
+    </Link>
+  </div>
+)}
+
         </div>
       </Header>
     </>
   );
 };
+
 
 export default HeaderComponent;

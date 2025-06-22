@@ -1,156 +1,232 @@
-import React, { useState } from "react";
-import { Card, Descriptions, message } from "antd";
-import "./profile.css";
+// src/pages/owner/profile/OwnerProfile.jsx
+import React, { useEffect, useState } from "react";
+import {
+  Card,
+  Descriptions,
+  Button,
+  Input,
+  Avatar,
+  Modal,
+  message,
+  Upload,
+} from "antd";
+import {
+  SaveOutlined,
+  EditOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
+import { updateUserInfo } from "../../../services/profileServices";
+import useUser from "../../../contexts/UserContext";
+import "./profile.css"; 
 
-const Profile = () => {
-  const [isEditing, setIsEditing] = useState(false);
+const OwnerProfile = () => {
+  const { user, fetchUser } = useUser();
+  const [formData, setFormData] = useState({});
+  const [editingField, setEditingField] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const [isModalVisible, setIsModalVisible] = useState(false);
+const [messageApi, contextHolder] = message.useMessage();
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name,
+        phone: user.phone,
+        gender: user.gender,
+        address: user.address || "Chưa có địa chỉ",
+        email: user.email,
+        role: user.role,
+      });
+      setAvatarPreview(user.avatar);
+    }
+  }, [user]);
 
-  const [formData, setFormData] = useState({
-    fullName: "Your Full Name",
-    password: "Your Password",
-    gender: "Male/Female",
-    address: "Your Address",
-    phone: "Phone Number .. ",
-  });
+  const handleEdit = (field) => setEditingField(field);
 
-  const [backupData, setBackupData] = useState({ ...formData });
-
-  // Avatar state
-  const defaultAvatar = require("../../../assets/images/avatar.png");
-  const [avatar, setAvatar] = useState(null); // lưu file
-  const [avatarPreview, setAvatarPreview] = useState(defaultAvatar); // hiển thị
-
-  const handleChange = (e, field) => {
-    setFormData({ ...formData, [field]: e.target.value });
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleEditClick = () => {
-    setBackupData({ ...formData });
-    setIsEditing(true);
+  const handleSave = async (field) => {
+    setLoading(true);
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append(field, formData[field]);
+      await updateUserInfo(formDataToSend);
+      await fetchUser();
+      messageApi.success("Cập nhật thành công");
+      setEditingField("");
+    } catch (error) {
+      messageApi.error("Cập nhật thất bại");
+    }
+    setLoading(false);
   };
 
-  const handleCancel = () => {
-    setFormData({ ...backupData });
-    setAvatar(null);
-    setAvatarPreview(defaultAvatar);
-    setIsEditing(false);
-  };
-
-  const handleSave = () => {
-    // Gửi dữ liệu và ảnh avatar nếu có (giả lập ở đây)
-    setIsEditing(false);
-    message.success("Profile updated successfully!");
-  };
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setAvatar(file);
-      setAvatarPreview(URL.createObjectURL(file));
+  const handleAvatarChange = async ({ file }) => {
+    const formDataToSend = new FormData();
+    formDataToSend.append("avatar", file);
+    try {
+      await updateUserInfo(formDataToSend);
+      await fetchUser();
+      message.success("Cập nhật ảnh đại diện thành công");
+    } catch {
+      message.error("Không thể cập nhật ảnh đại diện");
     }
   };
 
+  if (!user) return <p style={{ textAlign: "center", marginTop: 40 }}>Đang tải...</p>;
+
   return (
+    <>
+      {contextHolder}
     <div className="profile-container">
       <Card className="profile-card">
         <div className="profile-header">
           <div className="avatar-container">
-            <img
+            <Avatar
               src={avatarPreview}
-              alt="Profile"
+              size={120}
               className="profile-pic"
+              onClick={() => setIsModalVisible(true)}
             />
-            {isEditing && (
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="avatar-upload"
-              />
-            )}
+            <Upload
+              showUploadList={false}
+              accept="image/*"
+              maxCount={1}
+              customRequest={({ file, onSuccess }) => {
+                handleAvatarChange({ file });
+                setTimeout(() => onSuccess("ok"), 0);
+              }}
+            >
+               <Button
+    icon={<UploadOutlined />}
+    size="small"
+    style={{ marginTop: 12 ,marginRight:14}} 
+  >
+    Đổi ảnh
+  </Button>
+            </Upload>
           </div>
 
-          <div className="profile-header-content">
-            <div className="profile-info">
-              <h2>{formData.fullName}</h2>
-              <p>Owner@gmail.com</p>
-            </div>
-
-            {isEditing ? (
-              <div className="edit-button-group">
-                <button className="edit-btn" onClick={handleSave}>Save</button>
-                <button className="edit-btn cancel-btn" onClick={handleCancel}>Cancel</button>
-              </div>
-            ) : (
-              <button className="edit-btn" onClick={handleEditClick}>Edit</button>
-            )}
+          <div className="profile-info">
+            <h2>{formData.name}</h2>
+            <p>{formData.email}</p>
           </div>
         </div>
 
-        <Descriptions column={2} layout="vertical">
-          <Descriptions.Item label="Full Name">
-            <input
-              type="text"
-              className="profile-input"
-              value={formData.fullName}
-              disabled={!isEditing}
-              onChange={(e) => handleChange(e, "fullName")}
-            />
+        <Descriptions column={2} layout="horizontal"
+         labelStyle={{ fontWeight: "bold", width: 120 }}
+  contentStyle={{ whiteSpace: "nowrap" }}>
+          {/* Name */}
+          <Descriptions.Item label="Họ và tên">
+            {editingField === "name" ? (
+              <>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                  size="small"
+                />
+                <Button
+                  icon={<SaveOutlined />}
+                  onClick={() => handleSave("name")}
+                  loading={loading}
+                  size="small"
+                  type="primary"
+                  style={{ marginTop: 8 }}
+                >
+                  Lưu
+                </Button>
+              </>
+            ) : (
+              <>
+                <span>{formData.name}</span>
+                <Button
+                  icon={<EditOutlined />}
+                  type="link"
+                  size="small"
+                  onClick={() => handleEdit("name")}
+                  style={{ paddingLeft: 8 }}
+                >
+                  Chỉnh sửa
+                </Button>
+              </>
+            )}
           </Descriptions.Item>
-          <Descriptions.Item label="Password">
-            <input
-              type="password"
-              className="profile-input"
-              value={formData.password}
-              disabled={!isEditing}
-              onChange={(e) => handleChange(e, "password")}
-            />
+
+          {/* Phone */}
+          <Descriptions.Item label="Số điện thoại">
+            {editingField === "phone" ? (
+              <>
+                <Input
+                  value={formData.phone}
+                  onChange={(e) => handleChange("phone", e.target.value)}
+                  size="small"
+                />
+                <Button
+                  icon={<SaveOutlined />}
+                  onClick={() => handleSave("phone")}
+                  loading={loading}
+                  size="small"
+                  type="primary"
+                  style={{ marginTop: 8 }}
+                >
+                  Lưu
+                </Button>
+              </>
+            ) : (
+              <>
+                <span>{formData.phone}</span>
+                <Button
+                  icon={<EditOutlined />}
+                  type="link"
+                  size="small"
+                  onClick={() => handleEdit("phone")}
+                  style={{ paddingLeft: 8 }}
+                >
+                  Chỉnh sửa
+                </Button>
+              </>
+            )}
           </Descriptions.Item>
-          <Descriptions.Item label="Gender">
-            <input
-              type="text"
-              className="profile-input"
-              value={formData.gender}
-              disabled={!isEditing}
-              onChange={(e) => handleChange(e, "gender")}
-            />
+
+          {/* Gender */}
+          <Descriptions.Item label="Giới tính">
+            <span>{formData.gender}</span>
           </Descriptions.Item>
-          <Descriptions.Item label="Address">
-            <input
-              type="text"
-              className="profile-input"
-              value={formData.address}
-              disabled={!isEditing}
-              onChange={(e) => handleChange(e, "address")}
-            />
+
+          {/* Địa chỉ */}
+          <Descriptions.Item label="Địa chỉ">
+            <span>{formData.address}</span>
           </Descriptions.Item>
-          <Descriptions.Item label="Phone Number">
-            <input
-              type="text"
-              className="profile-input phone-input"
-              value={formData.phone}
-              disabled={!isEditing}
-              onChange={(e) => handleChange(e, "phone")}
-            />
+
+          {/* Email */}
+          <Descriptions.Item label="Email">
+            <span>{formData.email}</span>
+          </Descriptions.Item>
+
+          {/* Role */}
+          <Descriptions.Item label="Quyền">
+            <span>{formData.role}</span>
           </Descriptions.Item>
         </Descriptions>
-
-        <div className="email-section">
-          <img
-            src={avatarPreview}
-            alt="Email Avatar"
-            className="email-avatar"
-          />
-          <div className="email-info">
-            <span className="email-label">My email address</span>
-            <p className="email-name">{formData.fullName}</p>
-            <p className="email-address">owner@gmail.com</p>
-            <span className="update-time">1 month ago</span>
-          </div>
-        </div>
       </Card>
+
+      {/* Avatar Preview Modal */}
+      <Modal
+        open={isModalVisible}
+        footer={null}
+        onCancel={() => setIsModalVisible(false)}
+        centered
+      >
+        <img
+          src={avatarPreview}
+          alt="Avatar Preview"
+          style={{ width: "100%", maxHeight: "80vh", objectFit: "contain" }}
+        />
+      </Modal>
     </div>
+    </>
   );
 };
 
-export default Profile;
+export default OwnerProfile;
