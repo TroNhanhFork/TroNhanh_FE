@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const PropertyCard = ({ property }) => {
   return (
     <Link
-      to={`/customer/property/${property.id}`}
+      to={`/customer/properties/${property._id}`}
       style={{ textDecoration: "none", color: "inherit" }}
     >
       <div
@@ -58,7 +58,10 @@ const PropertyCard = ({ property }) => {
               Available {property.available}
             </Tag>
             <span style={{ fontSize: "16px" }}>
-              from <span style={{ fontWeight: "bold" }}>£{property.price}</span>{" "}
+              from{" "}
+              <span style={{ fontWeight: "bold" }}>
+                {property.price.toLocaleString("vi-VN")}₫
+              </span>{" "}
               /month
             </span>
           </div>

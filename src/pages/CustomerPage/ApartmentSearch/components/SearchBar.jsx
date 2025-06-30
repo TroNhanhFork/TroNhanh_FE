@@ -9,7 +9,7 @@ const SearchBar = () => (
     <Row gutter={16} align="middle">
       <Col>
         <Select placeholder="Select a city" style={{ width: 160 }}>
-          <Select.Option value="london">London</Select.Option>
+          <Select.Option value="Da Nang">Da Nang</Select.Option>
         </Select>
       </Col>
       <Col>

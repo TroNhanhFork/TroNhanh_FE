@@ -1,7 +1,5 @@
-import { useState } from "react";
 import {
   InputNumber,
-  DatePicker,
   Button,
   Select,
   Dropdown,
@@ -14,71 +12,20 @@ import {
   DownOutlined,
   SearchOutlined,
   UserOutlined,
-  CalendarOutlined,
 } from "@ant-design/icons";
 
-const Filters = () => {
-  const [selectedCity, setSelectedCity] = useState(null);
-  const [selectedBedrooms, setSelectedBedrooms] = useState(null);
-  const [selectedBathrooms, setSelectedBathrooms] = useState(null);
-  const [features, setFeatures] = useState({
-    disabledAccess: false,
-    parking: false,
-    elevator: false,
-    washingMachine: false,
-  });
-  const [moveInDate, setMoveInDate] = useState(null);
-  const [moveOutDate, setMoveOutDate] = useState(null);
-  const [guestCount, setGuestCount] = useState("");
-  const [errors, setErrors] = useState({});
-
+const Filters = ({
+  filters,
+  setFilters,
+  filteredProperties,
+  sortBy,
+  setSortBy,
+}) => {
   const cityOptions = [
     { label: "Thua Thien - Hue", value: "Thua Thien - Hue" },
-    { label: "Danang", value: "Danang" },
+    { label: "Da Nang", value: "Da Nang" },
     { label: "Quang Nam", value: "Quang Nam" },
   ];
-
-  const handleSearch = () => {
-    const newErrors = {};
-
-    if (!selectedCity) newErrors.city = "City is required";
-    if (!moveInDate) newErrors.moveIn = "Move-in date is required";
-    if (!moveOutDate) newErrors.moveOut = "Move-out date is required";
-    if (!guestCount || isNaN(guestCount) || parseInt(guestCount) < 1)
-      newErrors.guests = "Please enter a valid number of guests";
-
-    if (moveInDate && moveOutDate && moveInDate.isAfter(moveOutDate)) {
-      newErrors.dateRange = "Move-in must be before move-out";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      // Show all errors in one notification
-      notification.error({
-        message: "Search Validation Failed",
-        description: Object.values(newErrors).join(". "),
-        duration: 4,
-      });
-      return;
-    }
-
-    // If no errors, continue with search
-    console.log("Valid filters:", {
-      selectedCity,
-      moveInDate,
-      moveOutDate,
-      guestCount,
-      selectedBedrooms,
-      selectedBathrooms,
-      features,
-    });
-  };
-
-  const handleFeatureChange = (featureName, checked) => {
-    setFeatures((prev) => ({
-      ...prev,
-      [featureName]: checked,
-    }));
-  };
 
   const moreFiltersMenu = (
     <Menu>
@@ -89,10 +36,11 @@ const Filters = () => {
         <Select
           style={{ width: "100%" }}
           placeholder="Select Bedrooms"
-          value={selectedBedrooms}
-          onChange={setSelectedBedrooms}
+          value={filters.bedrooms}
+          onChange={(value) =>
+            setFilters((prev) => ({ ...prev, bedrooms: value }))
+          }
         >
-          <Select.Option value="studio">Studio</Select.Option>
           <Select.Option value="1">1</Select.Option>
           <Select.Option value="2">2</Select.Option>
           <Select.Option value="3">3</Select.Option>
@@ -108,8 +56,10 @@ const Filters = () => {
         <Select
           style={{ width: "100%" }}
           placeholder="Select Bathrooms"
-          value={selectedBathrooms}
-          onChange={setSelectedBathrooms}
+          value={filters.bathrooms}
+          onChange={(value) =>
+            setFilters((prev) => ({ ...prev, bathrooms: value }))
+          }
         >
           <Select.Option value="1">1</Select.Option>
           <Select.Option value="2">2</Select.Option>
@@ -125,29 +75,45 @@ const Filters = () => {
       <Menu.Item key="features-checkboxes" style={{ padding: 8 }}>
         <Space direction="vertical">
           <Checkbox
-            checked={features.disabledAccess}
+            checked={filters.disabledAccess}
             onChange={(e) =>
-              handleFeatureChange("disabledAccess", e.target.checked)
+              setFilters((prev) => ({
+                ...prev,
+                disabledAccess: e.target.checked,
+              }))
             }
           >
             Disabled accesses
           </Checkbox>
           <Checkbox
-            checked={features.parking}
-            onChange={(e) => handleFeatureChange("parking", e.target.checked)}
+            checked={filters.parking}
+            onChange={(e) =>
+              setFilters((prev) => ({
+                ...prev,
+                parking: e.target.checked,
+              }))
+            }
           >
             Parking
           </Checkbox>
           <Checkbox
-            checked={features.elevator}
-            onChange={(e) => handleFeatureChange("elevator", e.target.checked)}
+            checked={filters.elevator}
+            onChange={(e) =>
+              setFilters((prev) => ({
+                ...prev,
+                elevator: e.target.checked,
+              }))
+            }
           >
             Elevator
           </Checkbox>
           <Checkbox
-            checked={features.washingMachine}
+            checked={filters.washingMachine}
             onChange={(e) =>
-              handleFeatureChange("washingMachine", e.target.checked)
+              setFilters((prev) => ({
+                ...prev,
+                washingMachine: e.target.checked,
+              }))
             }
           >
             Washing machine
@@ -188,48 +154,10 @@ const Filters = () => {
             style={{ flex: 1 }}
             bordered={false}
             options={cityOptions}
-            value={selectedCity}
-            onChange={setSelectedCity}
-          />
-        </div>
-
-        {/* Move-in */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "8px 16px",
-            flex: "1",
-            minWidth: "150px",
-            borderRight: "1px solid #004d47",
-          }}
-        >
-          <CalendarOutlined style={{ marginRight: 8 }} />
-          <DatePicker
-            placeholder="Move-in"
-            style={{ flex: 1 }}
-            bordered={false}
-            value={moveInDate}
-            onChange={setMoveInDate}
-          />
-        </div>
-
-        {/* Move-out */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            padding: "8px 16px",
-            flex: "1",
-            minWidth: "150px",
-            borderRight: "1px solid #004d47",
-          }}
-        >
-          <CalendarOutlined style={{ marginRight: 8 }} />
-          <DatePicker
-            placeholder="Move-out"
-            style={{ flex: 1 }}
-            bordered={false}
+            value={filters.city}
+            onChange={(value) =>
+              setFilters((prev) => ({ ...prev, city: value }))
+            }
           />
         </div>
 
@@ -250,12 +178,14 @@ const Filters = () => {
             min={1}
             style={{ flex: 1 }}
             bordered={false}
-            value={guestCount}
-            onChange={setGuestCount}
+            value={filters.guestCount}
+            onChange={(value) =>
+              setFilters((prev) => ({ ...prev, guestCount: value }))
+            }
           />
         </div>
 
-        {/* Search button */}
+        {/* Search button
         <div>
           <Button
             type="primary"
@@ -271,10 +201,10 @@ const Filters = () => {
           >
             Search
           </Button>
-        </div>
+        </div> */}
       </div>
 
-      {/* Bottom filters */}
+      {/* bottom filters */}
       <div
         style={{
           display: "flex",
@@ -285,7 +215,7 @@ const Filters = () => {
           gap: "12px",
         }}
       >
-        {/* More filters */}
+        {/* more filters */}
         <Dropdown overlay={moreFiltersMenu} trigger={["click"]}>
           <Button
             style={{
@@ -301,20 +231,36 @@ const Filters = () => {
           </Button>
         </Dropdown>
 
-        {/* Result summary */}
+        {/* result summary */}
         <div style={{ fontSize: "16px" }}>
-          <span style={{ fontWeight: "bold" }}>52 results</span> for{" "}
+          Found{" "}
+          <span style={{ fontWeight: "bold" }}>
+            {filteredProperties.length}{" "}
+            {filteredProperties.length === 1
+              ? "accommodation"
+              : "accommodations"}
+          </span>{" "}
+          in{" "}
           <span style={{ fontStyle: "italic" }}>
-            "1 Bedroom property in West London"
+            {filters.city || "Vietnam"}
           </span>
         </div>
 
-        {/* Sort by */}
-        <div style={{ fontSize: "16px" }}>
-          <span style={{ fontWeight: "bold" }}>Sort by: </span>
-          <span style={{ color: "#49735A", cursor: "pointer" }}>
-            Availability <DownOutlined style={{ fontSize: "12px" }} />
-          </span>
+        {/* sort by dropdown */}
+        <div
+          style={{ fontSize: "16px", display: "flex", alignItems: "center" }}
+        >
+          <span style={{ fontWeight: "bold", marginRight: 8 }}>Sort by:</span>
+          <Select value={sortBy} onChange={setSortBy} style={{ width: 180 }}>
+            <Select.Option value="availability">Availability</Select.Option>
+            <Select.Option value="priceLowToHigh">
+              Price (Low to High)
+            </Select.Option>
+            <Select.Option value="priceHighToLow">
+              Price (High to Low)
+            </Select.Option>
+            <Select.Option value="rating">Top Rating</Select.Option>
+          </Select>
         </div>
       </div>
     </div>

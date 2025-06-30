@@ -1,16 +1,41 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { Row, Col, Button, DatePicker, Input, Divider } from "antd";
-import { UserOutlined, CalendarOutlined } from "@ant-design/icons";
-import { propertySampleData } from "../../../seeders/propertySampleData";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { Row, Col, Button, Input, Divider, Spin } from "antd";
+import { UserOutlined } from "@ant-design/icons";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./ApartmentDetails.css";
 
 const PropertyDetails = () => {
   const { id } = useParams();
-  const property = propertySampleData.find((p) => p.id === parseInt(id));
   const navigate = useNavigate();
+  const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  console.log(">>> [DEBUG] Property ID from URL:", id);
+  console.log(`${process.env.REACT_APP_API_URL}/properties/${id}`);
+
+  useEffect(() => {
+    const fetchProperty = async () => {
+      try {
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/properties/${id}`
+        );
+        setProperty(res.data);
+      } catch (err) {
+        console.error("Failed to load property", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProperty();
+  }, [id]);
+
+  if (loading)
+    return (
+      <Spin size="large" style={{ marginTop: "100px", display: "block" }} />
+    );
   if (!property) {
     return <div className="property-not-found">Property not found.</div>;
   }
@@ -52,7 +77,7 @@ const PropertyDetails = () => {
       <Row gutter={32} className="property-main-content">
         <Col xs={24} md={16}>
           <h1 className="property-title">{property.title}</h1>
-          <p className="property-location">{property.location}</p>
+          <p className="property-location">{property.city}</p>
 
           <div className="property-summary">
             {property.summary.map((item, idx) => (
@@ -62,55 +87,45 @@ const PropertyDetails = () => {
 
           <h2>Description</h2>
           <p>{property.description}</p>
-
-          <h3>In sed</h3>
-          <p>
-            In nullam eget urna suspendisse odio nunc. Eu sodales vestibulum,
-            donec rutrum justo, amet porttitor vitae.
-          </p>
-
-          <h3>Adipiscing risus, fermentum</h3>
-          <p>
-            Laoreet risus accumsan pellentesque lacus, in nulla eu elementum.
-            Mollis enim fringilla aenean diam tellus diam.
-          </p>
         </Col>
 
         <Col xs={24} md={8}>
           <div className="booking-card">
-            <h2 className="booking-price">£{property.price} / Month</h2>
-
-            <div className="booking-dates">
-              <DatePicker
-                placeholder="Move in"
-                suffixIcon={<CalendarOutlined />}
-              />
-              <DatePicker
-                placeholder="Move out"
-                suffixIcon={<CalendarOutlined />}
-              />
-            </div>
+            <h2 className="booking-price">
+              <span style={{ fontWeight: "bold" }}>
+                {property.price.toLocaleString("vi-VN")}₫
+              </span>
+              /month
+            </h2>
 
             <div className="booking-guests">
               <UserOutlined />
-              <Input type="number" placeholder="Guests" defaultValue={1} />
+              <Input type="number" placeholder="guest" defaultValue={1} />
             </div>
 
             <p>All utilities are included</p>
             <Divider />
 
+            {/* 
+
+            - The base cost is calculated first.
+            - Then, promotions (like general deals or special monthly discounts) are subtracted.
+            -> This leads to the final total is charged.
+            */}
             <div className="booking-costs">
               <div className="cost-row">
                 <span>Average monthly rent</span>
-                <span>£{(property.price * 0.93).toFixed(2)}</span>
+                <span>{(property.price).toLocaleString("vi-VN")}₫</span>
               </div>
               <div className="cost-row">
                 <span>Pay upon booking</span>
-                <span>£{(property.price * 0.9998).toFixed(2)}</span>
+                <span>
+                  {(property.price * 0.9998).toLocaleString("vi-VN")}₫
+                </span>
               </div>
               <div className="cost-row total-cost">
                 <span>Total costs</span>
-                <span>£{(property.price * 1.003).toFixed(2)}</span>
+                <span>{(property.price * 1.003).toLocaleString("vi-VN")}₫</span>
               </div>
             </div>
 

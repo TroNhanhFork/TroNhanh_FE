@@ -5,103 +5,164 @@ const { Paragraph, Title } = Typography;
 const items = [
   {
     key: "1",
-    label:
-      "Integer morbi semper sodales sit facilisi habitant pulvinar sed venenatis?",
+    label: "What types of accommodations are available for rent?",
     children: (
       <Paragraph>
-        Magnis congue neque sociis ut nisl. Quis dui lobortis lectus viverra.
+        We offer a variety of rental options including studio apartments, one-
+        to three-bedroom flats, shared rooms, serviced apartments, and entire
+        houses. Both furnished and unfurnished units are available.{" "}
       </Paragraph>
     ),
   },
   {
     key: "2",
-    label: "Massa massa nulla rhoncus a quam consectetur sed purus, enim?",
+    label: "What is typically included in the rental price?",
     children: (
       <Paragraph>
-        Nunc molestie sit in sed sodales. Bibendum pharetra, id viverra
-        suspendisse pharetra ac aenean neque. Sodales ornare penatibus eros
-        consectetur potenti in feugiat purus. Posuere amet, sodales nibh eget.
+        This varies by listing. Some rentals include utilities such as water,
+        electricity, Wi-Fi, and maintenance, while others may require separate
+        payment. Check the property details for specifics.
       </Paragraph>
     ),
   },
   {
     key: "3",
-    label: "Dignissim congue rutrum pretium nunc sed nibh vitae tortor ut?",
-    children: <Paragraph>Example content here...</Paragraph>,
+    label: "Are short-term rentals available?",
+    children: (
+      <Paragraph>
+        Yes. Many listings offer flexible lease terms, including daily, weekly,
+        or monthly stays. Short-term availability depends on the property and
+        the landlord’s policy.
+      </Paragraph>
+    ),
   },
   {
     key: "4",
-    label: "Vulputate imperdiet fusce vivamus nunc leo morbi scelerisque in?",
-    children: <Paragraph>Example content here...</Paragraph>,
+    label: "Is a security deposit required?",
+    children: (
+      <Paragraph>
+        In most cases, yes. Landlords usually require a refundable security
+        deposit, typically equal to one or two months' rent, to cover any
+        potential damages or unpaid rent.
+      </Paragraph>
+    ),
   },
   {
     key: "5",
-    label: "Sit rhoncus rhoncus malesuada massa adipiscing arcu, semper ut in?",
-    children: <Paragraph>Example content here...</Paragraph>,
+    label: "Are pets allowed in the rental properties?",
+    children: (
+      <Paragraph>
+        Some accommodations are pet-friendly, while others have restrictions. Be
+        sure to check the listing details or inquire directly with the landlord.
+      </Paragraph>
+    ),
   },
   {
     key: "6",
-    label: "Vulputate nisl non neque iaculis lacus dui, habitant gravida?",
-    children: <Paragraph>Example content here...</Paragraph>,
+    label: "Can I visit the property before renting?",
+    children: (
+      <Paragraph>
+        Yes, most landlords or agents offer property viewings. You can schedule
+        a visit in advance to inspect the accommodation before making a
+        decision.
+      </Paragraph>
+    ),
   },
   {
     key: "7",
-    label: "Est felis a velit at vitae venenatis rhoncus?",
-    children: <Paragraph>Example content here...</Paragraph>,
+    label: "How do I apply to rent a property?",
+    children: (
+      <Paragraph>
+        You can usually apply by submitting a rental application, valid ID, and
+        proof of income. Some landlords may also require references or a
+        background check.
+      </Paragraph>
+    ),
   },
   {
     key: "8",
-    label: "Eget nam accumsan elementum accumsan imperdiet eu, cras?",
-    children: <Paragraph>Example content here...</Paragraph>,
+    label: "Are there any fees for booking through the platform?",
+    children: (
+      <Paragraph>
+        Some platforms may charge a service or processing fee, while others
+        allow direct contact with landlords at no cost. Check our terms of
+        service or listing conditions for details.
+      </Paragraph>
+    ),
   },
   {
     key: "9",
-    label: "Fermentum et semper aliquet justo, facilisis?",
-    children: <Paragraph>Example content here...</Paragraph>,
+    label: " What happens if I need to cancel my rental?",
+    children: (
+      <Paragraph>
+        Cancellation policies vary. Some rentals offer free cancellation up to a
+        certain date, while others may retain a portion of the deposit. Review
+        the cancellation policy before booking.
+      </Paragraph>
+    ),
   },
   {
     key: "10",
-    label: "A vulputate est diam tempus condimentum in?",
-    children: <Paragraph>Example content here...</Paragraph>,
+    label: "Is internet access included in the accommodation?",
+    children: (
+      <Paragraph>
+        Many furnished apartments and serviced units include Wi-Fi, but not all
+        do. You can find this information in the amenities section of each
+        listing.
+      </Paragraph>
+    ),
   },
 ];
 
 const FAQ = () => {
   return (
     <div style={{ margin: "0 auto", padding: "40px 16px" }}>
-      <Title level={2}>Apartments for rent in London</Title>
+      <Title level={2}>Find Your Perfect Living Space with Ease</Title>
       <Paragraph>
-        A truly global city, London has long been considered a cutting-edge
-        metropolis and hub for culture, style and finance. With each borough,
-        Tube zone and neighborhood of London sporting its own vibe and lifestyle
-        advantages, it can be downright difficult to settle on where to look for
-        a furnished apartment in London . Whether you’re a digital nomad looking
-        for a studio apartment in London or just seeking a month to month rental
-        in London, Blueground has you covered. With a pub on almost every corner
-        and beautiful parks in all major neighborhoods, you’ll feel right at
-        home across all of Blueground’s exquisite London flats.
+        Looking for a comfortable and reliable place to stay? Whether you're
+        relocating for work, studying in a new city, planning an extended visit,
+        or simply seeking a change of scenery, our wide selection of rental
+        accommodations is here to meet your needs. From affordable studio
+        apartments to luxurious family homes, our listings cover a variety of
+        styles, sizes, and budgets.
       </Paragraph>
       <Paragraph>
-        Furnished apartment rentals in London. Getting the most out of living in
-        London starts with securing a furnished flat for rent. Fortunately,
-        Blueground’s flats for rent across London marry convenient locations
-        close to public transportation, top notch interiors and modern
-        furnishings, and support from our local team. Zero in on the ideal
-        serviced apartment in London from studios to two-bedroom apartments by
-        filtering for your date, area, and must-have amenities on our site.
-        Moving to London has never been simpler!
+        Each property is carefully listed with detailed information, including
+        location, rental price, amenities, nearby services, and high-quality
+        photos to help you make an informed decision. Whether you prefer a quiet
+        neighborhood, a vibrant city center, or somewhere close to public
+        transportation, you will find options that match your lifestyle.
       </Paragraph>
       <Paragraph>
-        The choice is yours from Chelsea to Soho to Shoreditch, always within a
-        short walk from Tube stops and local hangouts. Show up and start living
-        in your new London accommodation with furnishings and a fully-equipped
-        setup taken care of before your arrival by the team at Blueground. So
-        book today, and move in tomorrow so you can enjoy all a Blueground
-        London flat has to offer: premium work from home setups, a user-friendly
-        guest app service, flexible contracts, and a booking process free of
-        broker’s fees (and stresses!).
+        Discover a wide range of rental accommodations tailored to suit your
+        lifestyle and budget. Whether you're looking for a cozy studio, a
+        spacious apartment, or a fully furnished house, our listings offer
+        comfortable and convenient living spaces in desirable locations. Browse
+        detailed property information, amenities, and photos to find the perfect
+        place to call home.
       </Paragraph>
-
+      <Paragraph>
+        Our accommodations include:
+        <ul
+          style={{
+            paddingLeft: "1.5rem",
+            marginTop: "0.5rem",
+            lineHeight: "1.8",
+          }}
+        >
+          <li>Short-term and long-term rentals</li>
+          <li>Furnished and unfurnished units</li>
+          <li>Private rooms, shared spaces, and full apartments</li>
+          <li>Utilities and Wi-Fi included (select listings)</li>
+          <li>Flexible lease terms and pet-friendly options</li>
+        </ul>
+      </Paragraph>
+      <Paragraph>
+        Browse properties with confidence and convenience. We prioritize
+        transparency, security, and ease of access, ensuring that your rental
+        experience is smooth from start to finish. Begin your search today and
+        discover a place you will be proud to call home.
+      </Paragraph>
       <Collapse
         accordion
         expandIconPosition="end"

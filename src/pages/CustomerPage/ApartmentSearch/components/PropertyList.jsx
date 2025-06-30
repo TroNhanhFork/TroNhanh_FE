@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { Button } from "antd";
 import { useNavigate } from "react-router-dom";
 import PropertyCard from "./PropertyCard";
-import { propertySampleData } from "../../../../seeders/propertySampleData";
+// import { propertySampleData } from "../../../../seeders/propertySampleData";
 
-const PropertyList = () => {
+const PropertyList = ({ properties }) => {
   const navigate = useNavigate();
   const [visibleCount] = useState(7); // show 7
 
@@ -14,8 +15,8 @@ const PropertyList = () => {
 
   return (
     <div>
-      {propertySampleData.slice(0, visibleCount).map((property) => (
-        <PropertyCard key={property.id} property={property} />
+      {properties.slice(0, visibleCount).map((property) => (
+        <PropertyCard key={property._id || property.id} property={property} />
       ))}
 
       {/* Show More button */}

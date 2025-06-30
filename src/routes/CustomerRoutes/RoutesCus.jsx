@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import CustomerLayout from "../../pages/CustomerPage/components/layout/CustomerLayout";
 import ApartmentSearch from "../../pages/CustomerPage/ApartmentSearch/ApartmentSearch";
-import ApartmentDetails from "../../pages/CustomerPage/ApartmentDetails/ApartmentDetails";
+import PropertyDetails from "../../pages/CustomerPage/ApartmentDetails/ApartmentDetails";
 import OwnerInformation from "../../pages/CustomerPage/OwnerInfo/OwnerInfo";
 import NotFound from "../../pages/CustomerPage/NotFound/NotFound";
 import CheckoutPage from "../../pages/CustomerPage/Checkout/CheckoutPage";
@@ -15,6 +15,7 @@ const RoutesCus = () => {
         <Route path="/customer/owner/:id" element={<OwnerInformation />} />
         <Route path="/customer/checkout" element={<CheckoutPage />} />
         <Route path="*" element={<NotFound />} />
+        <Route path="profile/*" element={<ProfilePage />} />
       </Route>
     </Routes>
   );
