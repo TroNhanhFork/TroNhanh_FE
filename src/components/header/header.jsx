@@ -32,8 +32,8 @@ const HeaderComponent = () => {
       balance: 500000
     },
     roles: [
-      // { name: "CUSTOMER" },
-      { name: "OWNER" },
+      { name: "CUSTOMER" },
+      // { name: "OWNER" },
       // { name: "ADMIN" } 
     ]
   };
@@ -95,7 +95,7 @@ const HeaderComponent = () => {
         key: "profile",
         label: "Profile",
         icon: <UserOutlined />,
-        onClick: () => navigate("/user-profile"),
+        onClick: () => navigate("/customer/user-profile"),
       },
       {
         key: "contact",
@@ -146,25 +146,34 @@ const HeaderComponent = () => {
           <Menu.Item key="chat">
             <Link to="/chat">Chat</Link>
           </Menu.Item>
-          <Menu.Item key="profile">
-            <Link to="/user-profile">Profile</Link>
-          </Menu.Item>
-          
+
           {user.roles.some(role => role.name === "CUSTOMER") && (
-          <Menu.Item key="room">
-            <Link to="/customer/search">Room</Link>
-          </Menu.Item>
+            <Menu.Item key="profile">
+              <Link to="/customer/user-profile">Profile</Link>
+            </Menu.Item>
+          )}
+
+          {user.roles.some(role => role.name === "OWNER") && (
+            <Menu.Item key="profile">
+              <Link to="/owner/user-profile">Profile</Link>
+            </Menu.Item>
+          )}
+
+          {user.roles.some(role => role.name === "CUSTOMER") && (
+            <Menu.Item key="room">
+              <Link to="/customer/search">Room</Link>
+            </Menu.Item>
           )}
 
           {user.roles.some(role => role.name === "OWNER") && (
             <>
-            <Menu.Item key="communication">
-              <Link to="/owner/communication">Communication</Link>
-            </Menu.Item>
-            <Menu.Item key="manage-room">
-              <Link to="/owner/accommodation">Manage Room</Link>
-            </Menu.Item>
-          </>
+              <Menu.Item key="communication">
+                <Link to="/owner/communication">Communication</Link>
+              </Menu.Item>
+              <Menu.Item key="manage-room">
+                <Link to="/owner/accommodation">Manage Room</Link>
+              </Menu.Item>
+            </>
 
           )}
           {user.roles.some(role => role.name === "ADMIN") && (

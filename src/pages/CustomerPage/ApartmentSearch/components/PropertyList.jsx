@@ -1,24 +1,39 @@
 import { useState } from "react";
-import { Button } from "antd";
+import { Button, Card } from "antd";
 import { useNavigate } from "react-router-dom";
 import PropertyCard from "./PropertyCard";
 import { propertySampleData } from "../../../../seeders/propertySampleData";
 
-const PropertyList = () => {
+const PropertyList = ({ data }) => {
   const navigate = useNavigate();
   const [visibleCount] = useState(7); // show 7
 
   const handleShowMore = () => {
     navigate("/customer/apartments");
   };
+  // Nếu không có data
+  if (!data || data.length === 0) {
+    return (
+      <div>
+        <p>No results found</p>
+        {/* Optional: render mẫu khi chưa có search */}
+        {propertySampleData.slice(0, visibleCount).map((property) => (
+          <PropertyCard key={property.id} property={property} />
+        ))}
+      </div>
+    );
+  }
 
+  // Nếu có data từ BE
   return (
     <div>
-      {propertySampleData.slice(0, visibleCount).map((property) => (
-        <PropertyCard key={property.id} property={property} />
+      {data.map((item) => (
+        <Card key={item._id} title={item.title}>
+          <p>{item.location?.street}, {item.location?.district}</p>
+          <p>Price: {item.price}</p>
+        </Card>
       ))}
 
-      {/* Show More button */}
       <div style={{ marginTop: "35px", textAlign: "center" }}>
         <Button
           style={{
@@ -37,5 +52,6 @@ const PropertyList = () => {
     </div>
   );
 };
+
 
 export default PropertyList;
