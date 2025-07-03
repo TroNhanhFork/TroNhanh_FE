@@ -1,7 +1,6 @@
 // api.js
 import axios from 'axios';
 import { getValidAccessToken } from './authService';
-
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
   withCredentials: false,
@@ -20,11 +19,14 @@ export const setupInterceptors = (contextLogout) => {
       }
 
       const token = await getValidAccessToken();
-      if (!token) {
-        contextLogout('token expired');
-        return Promise.reject(new Error('Token expired'));
-      }
-        
+  if (!token) {
+  alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+  contextLogout();
+  window.location.href = "/login";
+  return Promise.reject(new Error("Token expired"));
+}
+
+
       config.headers.Authorization = `Bearer ${token}`;
       return config;
     },

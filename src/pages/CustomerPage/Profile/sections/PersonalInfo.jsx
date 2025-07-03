@@ -4,11 +4,11 @@ import {
   Card,
   Button,
   Input,
-  message,
   Avatar,
   Upload,
   Modal,
   Divider,
+  message as antMessage 
 } from 'antd';
 import {
   EditOutlined,
@@ -16,7 +16,6 @@ import {
   UploadOutlined,
 } from '@ant-design/icons';
 import {
-  getUserInfo,
   updateUserInfo,
 } from '../../../../services/profileServices';
 import useUser from '../../../../contexts/UserContext';
@@ -32,7 +31,7 @@ const { user, setUser, fetchUser } = useUser();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
-
+ const [messageApi, contextHolder] = antMessage.useMessage();
   useEffect(() => {
     
     if (user) {
@@ -58,10 +57,10 @@ const { user, setUser, fetchUser } = useUser();
       formData.append(field, fieldValues[field]);
       await updateUserInfo(formData);
       await fetchUser(); 
-      message.success("Cập nhật thành công");
+      messageApi.success("Cập nhật thành công");
       setEditingField('');
     } catch {
-      message.error("Cập nhật thất bại");
+      messageApi.error("Cập nhật thất bại");
     }
     setLoading(false);
   };
@@ -72,9 +71,9 @@ const { user, setUser, fetchUser } = useUser();
     try {
       await updateUserInfo(formData);
       await fetchUser(); 
-      message.success("Cập nhật ảnh đại diện thành công");
+      messageApi.success("Cập nhật ảnh đại diện thành công");
     } catch {
-      message.error("Không thể cập nhật ảnh đại diện");
+      messageApi.error("Không thể cập nhật ảnh đại diện");
     }
   };
 
@@ -86,6 +85,7 @@ const { user, setUser, fetchUser } = useUser();
 
   return (
     <div className="personal-info-container">
+       {contextHolder}
       <Card className="personal-info-card" bodyStyle={{ padding: 0 }}>
         {/* Avatar */}
         <div className="avatar-container">

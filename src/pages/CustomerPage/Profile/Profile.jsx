@@ -35,7 +35,10 @@ return error ? (
     {error}
   </div>
 ) : (
-  <Layout style={{ minHeight: '100vh' }}>
+   <div style={{ marginTop: '-80px' }}>
+  <Layout style={{ minHeight: '100vh' ,width: '100vw',
+    marginLeft: 'calc(-50vw + 50%)',
+    marginRight: 'calc(-50vw + 50%)'}}>
     <Sider width={250} className="bg-white shadow">
       <Sidebar
         selectedKey={location.pathname}
@@ -50,6 +53,7 @@ return error ? (
       </Routes>
     </Content>
   </Layout>
+  </div>
 );
 }
 export default ProfilePage;
