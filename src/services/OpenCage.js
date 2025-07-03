@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const OPENCAGE_API_KEY = "51e840c1acc24e539a17b51d1e2fff99"; // Thay bằng key bạn lấy được
+const OPENCAGE_API_KEY = "51e840c1acc24e539a17b51d1e2fff99";
 
 export const geocodeWithOpenCage = async (address) => {
   try {
@@ -8,8 +8,8 @@ export const geocodeWithOpenCage = async (address) => {
       params: {
         q: address,
         key: OPENCAGE_API_KEY,
-        language: "vi",         // ưu tiên tiếng Việt
-        countrycode: "vn",      // giới hạn Việt Nam
+        language: "vi",       
+        countrycode: "vn",     
       },
     });
 
