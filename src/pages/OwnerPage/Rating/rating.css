@@ -11,9 +11,9 @@ h2 {
 }
 
 .view-rating-btn {
-  background-color: white;
-  color: #49735a;
-  border: 1px solid #49735a;
+  background-color: white !important;
+  color: #49735a !important;
+  border: 1px solid #49735a !important;
   transition: all 0.3s ease;
 }
 
@@ -32,6 +32,32 @@ h2 {
   font-weight: bold;
   color: #49735a;
   display: inline-block;
+}
+
+.rating-table {
+  background-color: #F5FBF6;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Tiêu đề cột */
+.rating-table .ant-table-thead > tr > th {
+  background-color: #DDEBDD !important;
+  color: #2f3e2f;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Nội dung bảng */
+.rating-table .ant-table-tbody > tr > td {
+  background-color: #F5FBF6;
+  color: #3e3e3e;
+  font-size: 14px;
+}
+
+/* Hover row */
+.rating-table .ant-table-tbody > tr:hover > td {
+  background-color: #e8f5ea !important;
 }
 
 @media (max-width: 768px) {

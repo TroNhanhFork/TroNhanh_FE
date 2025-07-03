@@ -170,9 +170,10 @@ const Accommodation = () => {
 
       </div>
 
-      <Table columns={columns} dataSource={data} pagination={false} />
+      <Table className="accommodation-table" columns={columns} dataSource={data} pagination={false} />
 
       <Modal
+        
         title="Add New Accommodation"
         open={isAddModalVisible}
         onCancel={() => setIsAddModalVisible(false)}

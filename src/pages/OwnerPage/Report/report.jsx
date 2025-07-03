@@ -72,7 +72,7 @@ const Report = () => {
         </Button>
       </div>
 
-      <Table dataSource={reportList} columns={columns} pagination={false} />
+      <Table className="report-table" dataSource={reportList} columns={columns} pagination={false} />
 
       <Modal
         title="New Report"

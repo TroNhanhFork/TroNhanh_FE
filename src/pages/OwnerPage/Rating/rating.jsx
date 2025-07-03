@@ -132,6 +132,7 @@ const Rating = () => {
 )}
 
       <Table
+        className="rating-table"
         dataSource={accommodations.map((a) => ({ ...a, key: a.id }))}
         columns={columns}
         pagination={false}
