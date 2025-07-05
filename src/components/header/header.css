@@ -24,9 +24,10 @@
   z-index: 1000;
 }
 
-body {
-  padding-top: 64px; /* để tránh nội dung bị đè bởi header */
-}
+/* để tránh nội dung bị đè bởi header */
+/* body {
+  padding-top: 64px; 
+} */
 
 /* Logo */
 .logo {
@@ -159,26 +160,6 @@ body {
 }
 
 
-/* Login Register Button */
-.auth-buttons {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.login-button,
-.register-button {
-  padding: 6px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-  outline: none;
-}
-
-
 :root {
   --green-main: #52c41a;
   --green-hover: #389e0d;
@@ -186,29 +167,57 @@ body {
 }
 
 
-.login-button {
-  background-color: white;
-  color: var(--green-main);
-  border: 1.5px solid var(--green-main);
+.auth-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 20px;
 }
 
-.login-button:hover {
-  background-color: var(--green-light);
-  color: var(--green-hover);
-  border-color: var(--green-hover);
+.auth-buttons .login-button,
+.auth-buttons .register-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1.5px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 90px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
 }
 
-
-.register-button {
-  background-color: var(--green-main);
+/* Login Button */
+.auth-buttons .login-button {
+  background-color: #ffffff;
+  color: #49735A;
+  border: 1.5px solid #49735A;
+}
+.auth-buttons .login-button:hover {
+  background-color: #49735A;
   color: white;
-  border: 1.5px solid var(--green-main);
 }
 
-.register-button:hover {
-  background-color: var(--green-hover);
-  border-color: var(--green-hover);
+/* Register Button */
+.auth-buttons .register-button {
+  background-color: #E2F1E8;
+  color: #49735A;
+  border: 1.5px solid #E2F1E8;
 }
+.auth-buttons .register-button:hover {
+  background-color: #49735A;
+  color: white;
+  border-color: #49735A;
+}
+
+/* Active animation */
+.auth-buttons button:active {
+  transform: scale(0.96);
+}
+
 
 
 /* Responsive Design */

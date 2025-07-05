@@ -1,14 +1,16 @@
 /* file communication.css */
 .comm-container {
-  display: flex;
+  max-width: 1200px; /* 👈 Giới hạn chiều ngang */
+  margin: 0 auto; /* 👈 Căn giữa khung */
+  width: 100%;
   height: 87vh;
   font-family: "Segoe UI", sans-serif;
-  border: 2px solid #b5dbc4; /* Màu xanh lá nhạt */
+  border: 2px solid #b5dbc4;
   border-radius: 12px;
   overflow: hidden;
   background-color: #ffffff;
+  margin-bottom: 30px;
 }
-
 
 .comm-sidebar {
   width: 280px;
@@ -33,7 +35,6 @@
   margin-bottom: 16px;
   padding-left: 4px;
 }
-
 
 .owner-info {
   display: flex;
@@ -93,13 +94,13 @@
   object-fit: cover;
 }
 
-
-
 .chat-list {
   flex-grow: 1;
   overflow-y: auto;
-    max-height: calc(87vh - 0px); /* ← có thể chỉnh lại nếu thêm header bên trên */
-      scrollbar-width: none; /* Firefox */
+  max-height: calc(
+    87vh - 0px
+  ); /* ← có thể chỉnh lại nếu thêm header bên trên */
+  scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* Internet Explorer / Edge */
 }
 
@@ -119,6 +120,9 @@
 
 .chat-item:hover {
   background-color: #f0f7f3;
+  transform: scale(1.01);
+  transition: all 0.2s ease;
+  border-radius: 8px;
 }
 
 .chat-item.selected {
@@ -252,3 +256,59 @@
   margin-top: 4px;
 }
 
+.typing-indicator {
+  font-size: 13px;
+  color: #888;
+  font-style: italic;
+  margin-left: 770px;
+  animation: blink 1.2s infinite;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+
+.unread-bold {
+  font-weight: 700;
+  color: #111;
+}
+
+.message {
+  animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .comm-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .comm-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+    border-radius: 0;
+  }
+
+  .comm-chat {
+    width: 100%;
+  }
+}

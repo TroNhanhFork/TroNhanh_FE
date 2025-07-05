@@ -45,9 +45,9 @@ const Sidebar = () => {
         <Menu.Item key="cancellation" icon={<WarningOutlined />}>
           <Link to="/owner/cancellation">Cancellation</Link>
         </Menu.Item>
-        <Menu.Item key="communication" icon={<MessageOutlined />}>
+        {/* <Menu.Item key="communication" icon={<MessageOutlined />}>
           <Link to="/owner/communication">Communication</Link>
-        </Menu.Item>
+        </Menu.Item> */}
         <Menu.Item key="rating" icon={<StarOutlined />}>
           <Link to="/owner/rating">Rating</Link>
         </Menu.Item>

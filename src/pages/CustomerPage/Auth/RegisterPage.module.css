@@ -1,54 +1,71 @@
 .registerPageWrapper {
   min-height: 100vh;
-  background: linear-gradient(135deg, #006400 0%, #9acd32 100%);
+  background: #E2F1E8;
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 40px 20px;
+  font-family: 'Segoe UI', sans-serif;
 }
+
 .container {
-   width: 30%; 
-  margin: auto;
-  margin-top: 30px;
-  padding: 2rem 3rem;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 480px;
+  background-color: #ffffff;
+  padding: 2.5rem 3rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border: 2px solid #E2F1E8;
 }
 
 .title {
   text-align: center;
-  margin-bottom: 24px;
-  color: #000000e5; 
-  font-weight: 600;
+  margin-bottom: 30px;
+  font-size: 24px;
+  font-weight: bold;
+  color: #49735A;
 }
 
 .formItem {
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
-.wrapper{
-    display: flex;
-    justify-content: center;
-    margin-top: 10px;
+.wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
 }
 
 .submitButton {
-  margin:  auto;
-  border-radius: 10px;
+  width: 100%;
+  max-width: 180px;
+  background-color: #E2F1E8;
+  border-color: #E2F1E8;
+  color: #49735A;
   font-weight: 600;
-  max-width: 120px;
-  color: #fff;
-   width: 100%;
-  background-color: #006400;
-  transition: background-color 0.3s ease;
+  border-radius: 8px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
+
 .submitButton:hover {
-  background-color: #9acd32 !important;  
-  border-color: #9acd32 !important;
+  background-color: #49735A !important;
+  border-color: #49735A !important;
   color: white !important;
 }
 
-.login{
-    text-align: center;
+.login {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 14px;
+  color: #49735A;
+}
+
+.login a {
+  color: #49735A;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login a:hover {
+  text-decoration: underline;
 }

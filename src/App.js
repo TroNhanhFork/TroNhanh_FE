@@ -1,3 +1,4 @@
+// file: src/App.js
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import HeaderComponent from './components/header/header';
@@ -12,6 +13,7 @@ import RegisterPage from './pages/CustomerPage/Auth/RegisterPage';
 import { initAutoLogout, stopAutoLogout } from './services/autoLogout';
 import useUser, { UserProvider } from './contexts/UserContext';
 import { setupInterceptors } from './services/api';
+import Communication from './components/Communication/communication';
 
 function AppRoutes() {
   const location = useLocation();
@@ -37,7 +39,7 @@ function AppRoutes() {
 
   if (loading) return <p>Loading...</p>;
 
-const hideLayout = ["/login", "/register"].some(path => location.pathname.startsWith(path));
+  const hideLayout = ["/login", "/register"].some(path => location.pathname.startsWith(path));
 
   return (
     <>
@@ -45,7 +47,7 @@ const hideLayout = ["/login", "/register"].some(path => location.pathname.starts
 
       <main className="main-container" style={{ marginTop: hideLayout ? '0px' : '80px' }}>
         <Routes>
-            <Route index element={<Navigate to="/homepage" replace />} />
+          <Route index element={<Navigate to="/homepage" replace />} />
           {/* Auth routes */}
 
           <Route path="/login" element={<LoginPage />} />
@@ -56,6 +58,7 @@ const hideLayout = ["/login", "/register"].some(path => location.pathname.starts
           <Route path="/owner/*" element={<RoutesOw />} />
           <Route path="/admin/*" element={<RoutesAd />} />
           <Route path="/customer/*" element={<RoutesCus />} />
+          <Route path="/chat" element={<Communication />} />
 
           {/* Exception route */}
           <Route path="*" element={<ExceptionRoutes />} />
