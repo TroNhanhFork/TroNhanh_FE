@@ -5,7 +5,7 @@ import Sidebar from './sidebar/SideBarCustomer';
 import PersonalInfo from './sections/PersonalInfo';
 import Favorites from './sections/Favorites';
 import Messages from './sections/Messages';
-import { getUserInfo, getUserMessages, getUserFavorites } from '../../../src/services/profileServices';
+import { getUserInfo, getUserMessages, getUserFavorites } from '../../../services/profileServices';
 
 const { Sider, Content } = Layout;
 

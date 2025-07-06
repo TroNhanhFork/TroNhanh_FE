@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Card, Spin, Row, Col, Pagination,Modal,Button,message as antMessage  } from "antd";
-import { getUserFavorites } from "../../../../src/services/profileServices";
-import useUser from "../../../../src/contexts/UserContext";
-import { removeFavorite } from "../../../../src/services/profileServices";
+import { getUserFavorites } from "../../../../services/profileServices";
+import useUser from "../../../../contexts/UserContext";
+import { removeFavorite } from "../../../../services/profileServices";
 
 const Favorites = () => {
   const { user, loading: userLoading } = useUser();

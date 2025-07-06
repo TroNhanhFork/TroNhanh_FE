@@ -17,8 +17,8 @@ import {
 } from '@ant-design/icons';
 import {
   updateUserInfo,
-} from '../../../../src/services/profileServices';
-import useUser from '../../../../src/contexts/UserContext';
+} from '../../../../services/profileServices';
+import useUser from '../../../../contexts/UserContext';
 import './PersonalInfo.css';
 
 const { Title, Text } = Typography;

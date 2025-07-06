@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { List } from 'antd';
-import { getUserMessages } from '../../../../src/services/profileServices';
+import { getUserMessages } from '../../../../services/profileServices';
 
 const Messages = () => {
   const [messages, setMessages] = useState([]);

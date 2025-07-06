@@ -1,14 +1,33 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Row, Col } from "antd";
 import Filters from "./components/Filters";
 import PropertyList from "./components/PropertyList";
 import MapView from "./components/MapView";
 import FAQ from "./components/FAQ";
-import { searchAccommodations } from "../../../services/accommodationAPI";
+import { searchAccommodations, getAllAccommodations } from "../../../services/accommodationAPI";
+import { map } from "leaflet";
 
 const ApartmentSearch = () => {
   const [filteredData, setFilteredData] = useState([]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const accomData = await getAllAccommodations()
+        const mapData = accomData.map((item) => ({
+          ...item,
+          position: [
+            parseFloat(item.location.latitude),
+            parseFloat(item.location.longitude)
+          ]
+        }))
+        setFilteredData(mapData)
+      } catch (error) {
+        console.error("Failed to fetch accommodations:", error);
+      }
+    }
+    fetchData();
+  }, [])
   const handleSearch = async (filters) => {
     try {
       const data = await searchAccommodations(filters);

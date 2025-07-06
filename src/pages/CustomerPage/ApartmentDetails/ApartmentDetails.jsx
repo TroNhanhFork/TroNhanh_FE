@@ -2,13 +2,31 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Row, Col, Button, DatePicker, Input, Divider } from "antd";
 import { UserOutlined, CalendarOutlined } from "@ant-design/icons";
 import { propertySampleData } from "../../../seeders/propertySampleData";
+import { getAccommodationById } from '../../../services/accommodationAPI'
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./ApartmentDetails.css";
+import { useEffect, useState } from "react";
+
 
 const PropertyDetails = () => {
   const { id } = useParams();
-  const property = propertySampleData.find((p) => p.id === parseInt(id));
+  const [property, setProperty] = useState()
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getAccommodationById(id)
+        const position = [
+          parseFloat(data.location.latitude),
+          parseFloat(data.location.longitude),
+        ];
+        setProperty({...data, position})
+      } catch (error) {
+        console.log("No Accommodation found!")
+      }
+    }
+    fetchData()
+  }, [id])
   const navigate = useNavigate();
 
   if (!property) {
@@ -52,12 +70,18 @@ const PropertyDetails = () => {
       <Row gutter={32} className="property-main-content">
         <Col xs={24} md={16}>
           <h1 className="property-title">{property.title}</h1>
-          <p className="property-location">{property.location}</p>
+          <p className="property-location">
+            {[property.location?.addressDetail, property.location?.street, property.location?.district]
+              .filter(Boolean)
+              .join(", ")}
+          </p>
 
           <div className="property-summary">
-            {property.summary.map((item, idx) => (
-              <span key={idx}>{item}</span>
-            ))}
+            {Array.isArray(property.summary) &&
+              property.summary.map((item, idx) => (
+                <span key={idx}>{item}</span>
+              ))}
+
           </div>
 
           <h2>Description</h2>
@@ -160,7 +184,7 @@ const PropertyDetails = () => {
       <h1 className="text-heading">Location</h1>
       <div className="map-container">
         <MapContainer
-          center={property.mapPosition || [51.5074, -0.1278]}
+          center={[property.location.latitude, property.location.longitude]}
           zoom={14}
           scrollWheelZoom={false}
           className="map-leaflet"
@@ -169,9 +193,11 @@ const PropertyDetails = () => {
             attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <Marker position={property.mapPosition || [51.5074, -0.1278]}>
-            <Popup>{property.title}</Popup>
-          </Marker>
+          {property.position ? (
+            <Marker key={property._id} position={property.position}>
+              <Popup>{property.title}</Popup>
+            </Marker>
+          ) : null};
         </MapContainer>
       </div>
       <Divider />

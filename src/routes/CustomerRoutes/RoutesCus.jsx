@@ -4,7 +4,7 @@ import CustomerLayout from "../../pages/CustomerPage/components/layout/CustomerL
 import ApartmentSearch from "../../pages/CustomerPage/ApartmentSearch/ApartmentSearch";
 import ApartmentDetails from "../../pages/CustomerPage/ApartmentDetails/ApartmentDetails";
 import OwnerInformation from "../../pages/CustomerPage/OwnerInfo/OwnerInfo";
-import ProfilePage from "../../pages/Profile/Profile";
+import ProfilePage from "../../pages/CommonPage/Cus_Profile/Profile";
 import CheckoutPage from "../../pages/CustomerPage/Checkout/CheckoutPage";
 
 const RoutesCus = () => {

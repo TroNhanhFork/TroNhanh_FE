@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const PropertyCard = ({ property }) => {
   return (
     <Link
-      to={`/customer/property/${property.id}`}
+      to={`/customer/property/${property._id}`}
       style={{ textDecoration: "none", color: "inherit" }}
     >
       <div
@@ -29,7 +29,7 @@ const PropertyCard = ({ property }) => {
       >
         <img
           alt="property"
-          src={property.image}
+          src={property.image || "/default-image.jpg"}
           style={{
             width: "200px",
             height: "150px",
@@ -39,27 +39,29 @@ const PropertyCard = ({ property }) => {
         <div style={{ padding: "16px", flex: 1 }}>
           <h3 style={{ margin: 0, marginBottom: "8px" }}>{property.title}</h3>
           <p style={{ margin: 0, marginBottom: "8px", color: "#555" }}>
-            {property.locationDetails}
-          </p>
-          <p style={{ margin: 0, marginBottom: "8px", color: "#555" }}>
-            {property.roomDetails}
+            {property.location?.street}, {property.location?.district}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Tag
               style={{
-                backgroundColor: "#49735A",
+                backgroundColor:
+                  property.status === "available"
+                    ? "#52c41a"
+                    : property.status === "booked"
+                    ? "#faad14"
+                    : "#f5222d",
                 color: "#fff",
                 borderRadius: "8px",
                 padding: "4px 12px",
                 fontWeight: "bold",
                 fontSize: "14px",
+                textTransform: "capitalize",
               }}
             >
-              Available {property.available}
+              {property.status}
             </Tag>
             <span style={{ fontSize: "16px" }}>
-              from <span style={{ fontWeight: "bold" }}>£{property.price}</span>{" "}
-              /month
+              £<span style={{ fontWeight: "bold" }}>{property.price}</span>/month
             </span>
           </div>
         </div>

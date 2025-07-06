@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Button, Card } from "antd";
 import { useNavigate } from "react-router-dom";
 import PropertyCard from "./PropertyCard";
-import { propertySampleData } from "../../../../seeders/propertySampleData";
 
 const PropertyList = ({ data }) => {
   const navigate = useNavigate();
@@ -16,10 +15,6 @@ const PropertyList = ({ data }) => {
     return (
       <div>
         <p>No results found</p>
-        {/* Optional: render mẫu khi chưa có search */}
-        {propertySampleData.slice(0, visibleCount).map((property) => (
-          <PropertyCard key={property.id} property={property} />
-        ))}
       </div>
     );
   }
@@ -28,10 +23,7 @@ const PropertyList = ({ data }) => {
   return (
     <div>
       {data.map((item) => (
-        <Card key={item._id} title={item.title}>
-          <p>{item.location?.street}, {item.location?.district}</p>
-          <p>Price: {item.price}</p>
-        </Card>
+        <PropertyCard key={item._id} property={item} />
       ))}
 
       <div style={{ marginTop: "35px", textAlign: "center" }}>
