@@ -69,7 +69,7 @@ const HeaderComponent = () => {
       );
     }
 
-    if (role === "Admin") {
+    if (role === "admin") {
       items.push({
         key: "dashboard",
         label: "Dashboard",
@@ -85,8 +85,8 @@ const HeaderComponent = () => {
         label: "Profile",
         icon: <UserOutlined />,
         onClick: () => {
-          if (role === "Customer") navigate("/customer/profile/personal-info");
-          else if (role === "Owner") navigate("/owner/profile");
+          if (role === "customer") navigate("/customer/profile/personal-info");
+          else if (role === "owner") navigate("/owner/profile");
           else navigate("/profile");
         },
       },
@@ -128,7 +128,7 @@ const HeaderComponent = () => {
             <Link to="/about-us">About Us</Link>
           </Menu.Item>
 
-          {user?.role === "Customer" && (
+          {user?.role === "customer" && (
             <>
               <Menu.Item key="room">
                 <Link to="/customer/search">Room</Link>
@@ -139,7 +139,7 @@ const HeaderComponent = () => {
             </>
           )}
 
-          {user?.role === "Owner" && (
+          {user?.role === "owner" && (
             <>
               <Menu.Item key="communication">
                 <Link to="/owner/communication">Communication</Link>
@@ -153,7 +153,7 @@ const HeaderComponent = () => {
             </>
           )}
 
-          {user?.role === "Admin" && (
+          {user?.role === "admin" && (
             <Menu.Item key="admin-page">
               <Link to="/admin/dashboard">Dashboard</Link>
             </Menu.Item>

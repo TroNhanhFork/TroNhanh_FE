@@ -24,20 +24,23 @@ const LoginPage = () => {
       await fetchUser();
       initAutoLogout();
 
-      const role = res.data.user.role?.toLowerCase();
+      const role = res.data.user.role;
 
       if (role === 'admin') {
+        await messageApi.success('Login successful!');
         navigate('/admin/dashboard');
       } else if (role === 'owner') {
+        await  messageApi.success('Login successful!');
         navigate('/homepage');
       } else if (role === 'customer') {
+        await  messageApi.success('Login successful!');
         navigate('/homepage');
       } else {
         messageApi.error('Role không hợp lệ hoặc chưa được phân quyền!');
         return;
       }
 
-      messageApi.success('Login successful!');
+     
     } catch (err) {
       const errors = err.response?.data?.errors;
       if (Array.isArray(errors)) {
@@ -85,9 +88,14 @@ const LoginPage = () => {
           >
             Login
           </Button>
+           
         </Form.Item>
-
-        <Form.Item>
+<Form.Item style={{ textAlign: 'center', marginTop: -10 }}>
+  <Button type="link" size="small" href="/forgot-password">
+    Forgot password?
+  </Button>
+</Form.Item>
+        <Form.Item style={{marginTop:-20}}>
           <p className={styles.login}>
             Don't have an account? <a href='/register'>Register</a>
           </p>
