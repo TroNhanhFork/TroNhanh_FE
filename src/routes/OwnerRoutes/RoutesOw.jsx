@@ -1,4 +1,4 @@
-// File: src/routes/OwnerRoutes/RoutesOw.jsx
+// File: TroNhanh_FE/src/routes/OwnerRoutes/RoutesOw.jsx
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import OwnerLayout from "../../pages/OwnerPage/Components/Layout/OwnerLayout";

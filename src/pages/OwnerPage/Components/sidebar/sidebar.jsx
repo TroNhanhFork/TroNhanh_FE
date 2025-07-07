@@ -1,4 +1,4 @@
-// Folder: OwnerPage/Components/sidebar.jsx
+// Folder: TroNhanh_FE/src/pages/OwnerPage/Components/sidebar/sidebar.jsx
 import React from "react";
 import { Menu, Avatar, Typography } from "antd";
 import {
@@ -20,12 +20,33 @@ const Sidebar = () => {
   const location = useLocation();
   const selectedKey = location.pathname.split("/")[2]; // e.g. 'profile'
 
+  // ✅ Lấy thông tin user từ localStorage
+  const user = JSON.parse(localStorage.getItem("user")) || {};
+  const name = user.name || "Tên Owner";
+  const email = user.email || "Owner@gmail.com";
+
+
   return (
     <div className="owner-sidebar">
       <div className="owner-info">
-        <Avatar size={64} icon={<UserOutlined />} />
-        <Title level={5} style={{ marginTop: 10 }}>Tên Owner</Title>
-        <Text>Ownergmail.com</Text>
+        <Avatar
+          size={64}
+          src={user.avatar || null}
+          style={{
+            fontSize: 28,
+            color: 'white',
+            background: user.avatar
+              ? 'transparent'
+              : 'linear-gradient(to right, #064749, #c4f7d8)',
+            border: '2px solid white',
+            boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          {!user.avatar && name?.charAt(0)}
+        </Avatar>
+
+        <Title level={5} style={{ marginTop: 10 }}>{name}</Title>
+        <Text>{email}</Text>
       </div>
 
       <Menu
@@ -45,9 +66,6 @@ const Sidebar = () => {
         <Menu.Item key="cancellation" icon={<WarningOutlined />}>
           <Link to="/owner/cancellation">Cancellation</Link>
         </Menu.Item>
-        {/* <Menu.Item key="communication" icon={<MessageOutlined />}>
-          <Link to="/owner/communication">Communication</Link>
-        </Menu.Item> */}
         <Menu.Item key="rating" icon={<StarOutlined />}>
           <Link to="/owner/rating">Rating</Link>
         </Menu.Item>
@@ -63,3 +81,4 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+

@@ -1,4 +1,4 @@
-// file: LoginPage.jsx
+// file: TroNhanh_FE/src/pages/CustomerPage/Auth/LoginPage.jsx
 import React, { useState } from 'react';
 import {
   Form,
@@ -31,6 +31,10 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const res = await login(values);
+
+     // ✅ Lưu user và token vào localStorage
+     localStorage.setItem("user", JSON.stringify(res.data.user)); // ⬅️ THÊM DÒNG NÀY
+
       saveAccessToken(res.data.accessToken, 30 * 60 * 1000, res.data.refreshToken);
       await fetchUser();
       initAutoLogout();

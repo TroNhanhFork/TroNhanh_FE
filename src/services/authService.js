@@ -1,4 +1,5 @@
-import api from './api'; 
+// file TroNhanh_FE/src/services/authService.js
+import api from './api';
 import { stopAutoLogout } from './autoLogout';
 export const login = (data) => api.post('/auth/login', data);
 export const register = (data) => api.post('/auth/register', data);
@@ -80,7 +81,7 @@ export const refreshAccessToken = async () => {
     return null;
   }
 };
-  
+
 export const resetLoggedOut = () => {
   loggedOut = false;
 };
