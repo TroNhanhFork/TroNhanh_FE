@@ -12,6 +12,8 @@ import RegisterPage from './pages/CustomerPage/Auth/RegisterPage';
 import { initAutoLogout, stopAutoLogout } from './services/autoLogout';
 import useUser, { UserProvider } from './contexts/UserContext';
 import { setupInterceptors } from './services/api';
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 function AppRoutes() {
   const location = useLocation();

@@ -1,8 +1,12 @@
 // file OwnerPage/Accommodation/accommodation.jsx
-import React, { useState } from "react";
-import { Table, Button, Tag, Modal } from "antd";
+import React, { useEffect, useState } from "react";
+import { Table, Button, Tag, Modal, message } from "antd";
 import "./accommodation.css";
-import roomImage0 from "../../../assets/images/Accommodation/room0.png"; // Đường dẫn chính xác
+import { getAllAccommodations, createAccommodation, getAccommodationById, updateAccommodation, deleteAccommodation } from "../../../services/accommodationAPI";
+import { geocodeWithOpenCage } from "../../../services/OpenCage";
+import useUser from "../../../contexts/UserContext"
+
+import roomImage0 from "../../../assets/images/Accommodation/room0.png";
 import roomImage1 from "../../../assets/images/Accommodation/room1.png";
 import roomImage2 from "../../../assets/images/Accommodation/room2.png";
 import roomImage3 from "../../../assets/images/Accommodation/room3.png";
@@ -13,118 +17,68 @@ const photoOptions = [
   { label: "Ảnh 3", value: roomImage3 },
 ];
 
-const dummyData = [
-  {
-    key: "1",
-    title: "Phòng trọ Quận 1",
-    location: "123 Lê Lợi, Quận 1",
-    price: 3000000,
-    description: "Phòng rộng rãi, có máy lạnh",
-    photos: roomImage0,
-    status: "Available",
-  },
-  {
-    key: "2",
-    title: "Phòng trọ Thủ Đức",
-    location: "456 Võ Văn Ngân, Thủ Đức",
-    price: 2500000,
-    description: "Gần đại học, tiện đi lại",
-    photos: roomImage0,
-    status: "Unavailable",
-  },
-  {
-    key: "3",
-    title: "Phòng trọ Gò Vấp",
-    location: "789 Nguyễn Văn Lượng, Gò Vấp",
-    price: 2000000,
-    description: "Phòng mới, yên tĩnh, gần chợ",
-    photos: roomImage0,
-    status: "Available",
-  },
-  {
-    key: "4",
-    title: "Phòng trọ Bình Thạnh",
-    location: "321 Ung Văn Khiêm, Bình Thạnh",
-    price: 2800000,
-    description: "Phòng đẹp, có bếp riêng",
-    photos: roomImage0,
-    status: "Unavailable",
-  },
-  {
-    key: "5",
-    title: "Phòng trọ Quận 3",
-    location: "456 Trường Sa, Quận 3",
-    price: 3500000,
-    description: "Phòng đầy đủ tiện nghi, gần trung tâm",
-    photos: roomImage0,
-    status: "Available",
-  },
-  {
-    key: "6",
-    title: "Phòng trọ Tân Bình",
-    location: "789 Hoàng Văn Thụ, Tân Bình",
-    price: 2400000,
-    description: "Phòng sạch sẽ, thoáng mát",
-    photos: roomImage0,
-    status: "Available",
-  },
-  {
-    key: "7",
-    title: "Phòng trọ Nhà Bè",
-    location: "123 Nguyễn Hữu Thọ, Nhà Bè",
-    price: 2200000,
-    description: "Phòng giá rẻ, gần khu công nghiệp",
-    photos: roomImage0,
-    status: "Unavailable",
-  },
-  {
-    key: "8",
-    title: "Phòng trọ Củ Chi",
-    location: "456 Quốc Lộ 22, Củ Chi",
-    price: 1800000,
-    description: "Phòng rộng, có sân vườn",
-    photos: roomImage0,
-    status: "Available",
-  },
-  {
-    key: "9",
-    title: "Phòng trọ Phú Nhuận",
-    location: "789 Phan Đăng Lưu, Phú Nhuận",
-    price: 2600000,
-    description: "Phòng hiện đại, gần trường học",
-    photos: roomImage0,
-    status: "Available",
-  },
-];
-
 const Accommodation = () => {
-  const [data, setData] = useState(dummyData);
+  const [data, setData] = useState([]);
+  const { user } = useUser()
+
+  const fetchData = async () => {
+    try {
+      const accomData = await getAllAccommodations()
+      setData(accomData)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
   const [selectedRow, setSelectedRow] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [accommodationToDelete, setAccommodationToDelete] = useState(null);
+
   const [newAccommodation, setNewAccommodation] = useState({
     title: "",
-    location: "",
+    location: {
+      district: "",
+      street: "",
+      addressDetail: "",
+      latitude: null,
+      longitude: null,
+    },
     price: "",
     description: "",
     photos: roomImage1,
     status: "Available",
   });
 
+
   const handleView = (record) => {
     setSelectedRow(record);
     setIsModalVisible(true);
   };
 
-  const handleRemove = (key) => {
-    const newData = data.filter((item) => item.key !== key);
-    setData(newData);
+  const handleRemove = (record) => {
+    setAccommodationToDelete(record);
+    setIsDeleteModalVisible(true);
   };
 
   const handleUpdate = (record) => {
-    setEditingRow({ ...record }); // clone record để sửa
+    setEditingRow({
+      ...record,
+      location: {
+        district: record.location?.district || "",
+        street: record.location?.street || "",
+        addressDetail: record.location?.addressDetail || "",
+        latitude: record.location?.latitude || null,
+        longitude: record.location?.longitude || null,
+      },
+    });
     setIsUpdateModalVisible(true);
   };
 
@@ -137,11 +91,17 @@ const Accommodation = () => {
     {
       title: "Location",
       dataIndex: "location",
+      render: (location) => {
+        if (!location) return "N/A";
+        const { street, district, addressDetail } = location;
+        return [street, district, addressDetail].filter(Boolean).join(", ");
+      },
     },
+
     {
       title: "Price (VND)",
       dataIndex: "price",
-      render: (text) => text.toLocaleString(),
+      render: (text) => (text ? Number(text).toLocaleString() : "0"),
     },
     {
       title: "Status",
@@ -156,7 +116,7 @@ const Accommodation = () => {
         <div className="action-buttons">
           <Button onClick={() => handleView(record)} className="view-btn">View</Button>
           <Button className="update-btn" onClick={() => handleUpdate(record)}>Update</Button>
-          <Button className="remove-btn" onClick={() => handleRemove(record.key)}>Remove</Button>
+          <Button className="remove-btn" onClick={() => handleRemove(record)}>Remove</Button>
         </div>
       ),
     },
@@ -170,32 +130,67 @@ const Accommodation = () => {
 
       </div>
 
-      <Table className="accommodation-table" columns={columns} dataSource={data} pagination={false} />
+      <Table className="accommodation-table" columns={columns} dataSource={data} pagination={false} rowKey="_id" />
 
       <Modal
-        
+
         title="Add New Accommodation"
         open={isAddModalVisible}
         onCancel={() => setIsAddModalVisible(false)}
-        onOk={() => {
-          const newEntry = {
-            ...newAccommodation,
-            key: (data.length + 1).toString(),
-            price: Number(newAccommodation.price),
-          };
-          setData([...data, newEntry]);
-          setIsAddModalVisible(false);
-          setNewAccommodation({
-            title: "",
-            location: "",
-            price: "",
-            description: "",
-            photos: roomImage1,
-            status: "Available",
-          });
+        onOk={async () => {
+          try {
+            const fullAddress = `${newAccommodation.location?.street}, ${newAccommodation.location?.district}, Đà Nẵng, Việt Nam`;
+            const coords = await geocodeWithOpenCage(fullAddress);
+            console.log("Coords:", coords);
+
+            const payload = {
+              ...newAccommodation,
+              price: Number(newAccommodation.price),
+              location: {
+                district: newAccommodation.location?.district || "",  // nếu bạn có select quận
+                street: newAccommodation.location?.street || "",       // nếu bạn tách ra
+                addressDetail: newAccommodation.location.addressDetail || "",
+                latitude: coords?.latitude || null,
+                longitude: coords?.longitude || null,
+              },
+              photos: [newAccommodation.photos],
+              ownerId: user._id,
+            };
+
+            const savedAccommodation = await createAccommodation(payload);
+            console.log("Payload gửi lên:", payload);
+
+            setData([...data, savedAccommodation]); // gán từ BE trả về
+            setIsAddModalVisible(false);
+
+            // Reset
+            setNewAccommodation({
+              title: "",
+              location: "",
+              price: "",
+              description: "",
+              photos: roomImage1,
+              status: "Available",
+            });
+            Modal.error({
+              title: "Thành công",
+              content: "Thêm trọ mới thành công!",
+            });
+
+            fetchData()
+          } catch (err) {
+            console.error("Failed to add accommodation:", err);
+            Modal.error({
+              title: "Thất bại",
+              content: "Thêm trọ mới thất bại. Vui lòng thử lại.",
+            });
+
+          }
         }}
+
         okText="Add"
         cancelText="Cancel"
+        okButtonProps={{ success: true }}
       >
         <div className="modal-form">
           <label>Choose photos option:</label>
@@ -218,12 +213,42 @@ const Accommodation = () => {
             onChange={(e) => setNewAccommodation({ ...newAccommodation, title: e.target.value })}
           />
 
-          <label>Location:</label>
+          <label>District:</label>
           <input
             type="text"
-            value={newAccommodation.location}
-            onChange={(e) => setNewAccommodation({ ...newAccommodation, location: e.target.value })}
+            value={newAccommodation.location.district}
+            onChange={(e) =>
+              setNewAccommodation((prev) => ({
+                ...prev,
+                location: { ...prev.location, district: e.target.value },
+              }))
+            }
           />
+
+          <label>Street:</label>
+          <input
+            type="text"
+            value={newAccommodation.location.street}
+            onChange={(e) =>
+              setNewAccommodation((prev) => ({
+                ...prev,
+                location: { ...prev.location, street: e.target.value },
+              }))
+            }
+          />
+
+          <label>Address Detail:</label>
+          <input
+            type="text"
+            value={newAccommodation.location.addressDetail}
+            onChange={(e) =>
+              setNewAccommodation((prev) => ({
+                ...prev,
+                location: { ...prev.location, addressDetail: e.target.value },
+              }))
+            }
+          />
+
 
           <label>Price (VND):</label>
           <input
@@ -261,7 +286,9 @@ const Accommodation = () => {
           <div>
             <img src={selectedRow.photos} alt="room" style={{ width: "100%", borderRadius: 8 }} />
             <p><strong>Title:</strong> {selectedRow.title}</p>
-            <p><strong>Location:</strong> {selectedRow.location}</p>
+            <p><strong>District:</strong> {selectedRow.location?.district}</p>
+            <p><strong>Street:</strong> {selectedRow.location?.street}</p>
+            <p><strong>Address:</strong> {selectedRow.location?.addressDetail}</p>
             <p><strong>Price:</strong> {selectedRow.price.toLocaleString()} VND</p>
             <p><strong>Status:</strong> {selectedRow.status}</p>
             <p><strong>Description:</strong> {selectedRow.description}</p>
@@ -269,19 +296,59 @@ const Accommodation = () => {
         )}
       </Modal>
 
+
       <Modal
         title="Update Accommodation"
         open={isUpdateModalVisible}
         onCancel={() => setIsUpdateModalVisible(false)}
-        onOk={() => {
-          const updatedData = data.map((item) =>
-            item.key === editingRow.key ? editingRow : item
-          );
-          setData(updatedData);
-          setIsUpdateModalVisible(false);
+        onOk={async () => {
+          const { district, street, addressDetail } = editingRow.location;
+          const fullAddress = `${street}, ${district}, Đà Nẵng, Việt Nam`;
+
+          const coords = await geocodeWithOpenCage(fullAddress);
+
+          if (!coords) {
+            Modal.error({
+              title: "Không thể lấy tọa độ",
+              content: "Vui lòng kiểm tra lại địa chỉ bạn nhập.",
+            });
+            return;
+          }
+
+          const payload = {
+            ...editingRow,
+            price: Number(editingRow.price),
+            location: {
+              ...editingRow.location,
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+            },
+          };
+
+          try {
+            const updatedAccommodation = await updateAccommodation(editingRow._id, payload);
+            const updatedData = data.map((item) =>
+              item._id === updatedAccommodation._id ? updatedAccommodation : item
+            );
+            setData(updatedData);
+            Modal.success({
+              title: "Thành công",
+              content: "Cập nhật thành công!",
+            });
+            setIsUpdateModalVisible(false);
+            fetchData()
+          } catch (err) {
+            console.error("Update failed:", err);
+            Modal.error({
+              title: "Thất bại",
+              content: "Cập nhật thất bại. Vui lòng thử lại.",
+            });
+          }
         }}
+
         okText="Save"
         cancelText="Cancel"
+        okButtonProps={{ primary: true }}
       >
         {editingRow && (
           <div className="modal-form">
@@ -309,15 +376,42 @@ const Accommodation = () => {
                 setEditingRow({ ...editingRow, title: e.target.value })
               }
             />
-
-            <label>Location:</label>
+            <label>District:</label>
             <input
               type="text"
-              value={editingRow.location}
+              value={editingRow.location.district}
               onChange={(e) =>
-                setEditingRow({ ...editingRow, location: e.target.value })
+                setEditingRow((prev) => ({
+                  ...prev,
+                  location: { ...prev.location, district: e.target.value },
+                }))
               }
             />
+
+            <label>Street:</label>
+            <input
+              type="text"
+              value={editingRow.location.street}
+              onChange={(e) =>
+                setEditingRow((prev) => ({
+                  ...prev,
+                  location: { ...prev.location, street: e.target.value },
+                }))
+              }
+            />
+
+            <label>Address Detail:</label>
+            <input
+              type="text"
+              value={editingRow.location.addressDetail}
+              onChange={(e) =>
+                setEditingRow((prev) => ({
+                  ...prev,
+                  location: { ...prev.location, addressDetail: e.target.value },
+                }))
+              }
+            />
+
 
             <label>Price (VND):</label>
             <input
@@ -349,6 +443,42 @@ const Accommodation = () => {
           </div>
         )}
 
+      </Modal>
+
+      <Modal
+        title="Xác nhận xóa"
+        open={isDeleteModalVisible}
+        onCancel={() => {
+          setIsDeleteModalVisible(false);
+          setAccommodationToDelete(null);
+        }}
+        onOk={async () => {
+          if (!accommodationToDelete) return;
+
+          try {
+            await deleteAccommodation(accommodationToDelete._id);
+            setData((prevData) =>
+              prevData.filter((item) => item._id !== accommodationToDelete._id)
+            );
+            Modal.success({
+              title: "Thành công",
+              content: "Xóa thành công!",
+            });
+          } catch (err) {
+            console.error("Xóa thất bại:", err);
+            Modal.error({
+              title: "Thất bại",
+              content: "Xóa chỗ ở thất bại. Vui lòng thử lại.",
+            });
+          } finally {
+            setIsDeleteModalVisible(false);
+            setAccommodationToDelete(null);
+          }
+        }}
+        okText="Xóa"
+        cancelText="Hủy"
+        okButtonProps={{ danger: true }}      >
+        <p>Bạn có chắc chắn muốn xóa chỗ ở <strong>{accommodationToDelete?.title}</strong> không?</p>
       </Modal>
 
 

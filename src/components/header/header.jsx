@@ -147,6 +147,9 @@ const HeaderComponent = () => {
               <Menu.Item key="profile">
                 <Link to="/owner/profile">Profile</Link>
               </Menu.Item>
+              <Menu.Item key="membership">
+                <Link to="/owner/membership">Membership</Link>
+              </Menu.Item>
             </>
           )}
 

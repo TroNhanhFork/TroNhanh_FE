@@ -29,7 +29,7 @@ const PropertyCard = ({ property }) => {
       >
         <img
           alt="property"
-          src={property.image || "/default-image.jpg"}
+          src={property.photos || "/default-image.jpg"}
           style={{
             width: "200px",
             height: "150px",
@@ -45,7 +45,7 @@ const PropertyCard = ({ property }) => {
             <Tag
               style={{
                 backgroundColor:
-                  property.status === "available"
+                  property.status === "Available"
                     ? "#52c41a"
                     : property.status === "booked"
                     ? "#faad14"

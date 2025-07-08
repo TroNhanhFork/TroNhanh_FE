@@ -6,6 +6,8 @@ const API_FAV_URL = 'http://localhost:5000/api/favorites';
 
 //  Tạo mới accommodation
 export const createAccommodation = async (data) => {
+    console.log("📦 Payload gửi BE:", JSON.stringify(data, null, 2));
+
     const response = await axiosInstance.post(`${API_BASE_URL}/`, data);
     return response.data;
 };
