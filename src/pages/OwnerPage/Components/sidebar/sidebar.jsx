@@ -19,7 +19,6 @@ const { Title, Text } = Typography;
 const Sidebar = () => {
   const location = useLocation();
   const selectedKey = location.pathname.split("/")[2]; // e.g. 'profile'
-
   // ✅ Lấy thông tin user từ localStorage
   const user = JSON.parse(localStorage.getItem("user")) || {};
   const name = user.name || "Tên Owner";

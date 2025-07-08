@@ -17,8 +17,8 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 
-const Filters = () => {
-  const [selectedCity, setSelectedCity] = useState(null);
+const Filters = ({onSearch}) => {
+  const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [selectedBedrooms, setSelectedBedrooms] = useState(null);
   const [selectedBathrooms, setSelectedBathrooms] = useState(null);
   const [features, setFeatures] = useState({
@@ -27,51 +27,31 @@ const Filters = () => {
     elevator: false,
     washingMachine: false,
   });
-  const [moveInDate, setMoveInDate] = useState(null);
-  const [moveOutDate, setMoveOutDate] = useState(null);
+  const [street, setStreet] = useState("");
+  const [addressDetail, setAddressDetail] = useState("");
+
   const [guestCount, setGuestCount] = useState("");
   const [errors, setErrors] = useState({});
 
-  const cityOptions = [
-    { label: "Thua Thien - Hue", value: "Thua Thien - Hue" },
-    { label: "Danang", value: "Danang" },
-    { label: "Quang Nam", value: "Quang Nam" },
+  const districtOptions = [
+    { label: "Liên Chiểu", value: "Liên Chiểu" },
+    { label: "Hải Châu", value: "Hải Châu" },
+    { label: "Thanh Khê", value: "Thanh Khê" },
+    { label: "Cẩm Lệ", value: "Cẩm Lệ" },
+    { label: "Sơn Trà", value: "Sơn Trà" },
+    { label: "Ngũ Hành Sơn", value: "Ngũ Hành Sơn" },
   ];
 
   const handleSearch = () => {
-    const newErrors = {};
+    const filters = {
+      district: selectedDistrict,
+      street,
+      addressDetail,
+    };
 
-    if (!selectedCity) newErrors.city = "City is required";
-    if (!moveInDate) newErrors.moveIn = "Move-in date is required";
-    if (!moveOutDate) newErrors.moveOut = "Move-out date is required";
-    if (!guestCount || isNaN(guestCount) || parseInt(guestCount) < 1)
-      newErrors.guests = "Please enter a valid number of guests";
-
-    if (moveInDate && moveOutDate && moveInDate.isAfter(moveOutDate)) {
-      newErrors.dateRange = "Move-in must be before move-out";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      // Show all errors in one notification
-      notification.error({
-        message: "Search Validation Failed",
-        description: Object.values(newErrors).join(". "),
-        duration: 4,
-      });
-      return;
-    }
-
-    // If no errors, continue with search
-    console.log("Valid filters:", {
-      selectedCity,
-      moveInDate,
-      moveOutDate,
-      guestCount,
-      selectedBedrooms,
-      selectedBathrooms,
-      features,
-    });
+    onSearch(filters); 
   };
+
 
   const handleFeatureChange = (featureName, checked) => {
     setFeatures((prev) => ({
@@ -171,7 +151,7 @@ const Filters = () => {
           flexWrap: "wrap",
         }}
       >
-        {/* City */}
+        {/* Districts */}
         <div
           style={{
             display: "flex",
@@ -184,16 +164,16 @@ const Filters = () => {
         >
           <SearchOutlined style={{ marginRight: 8 }} />
           <Select
-            placeholder="Select a city"
+            placeholder="Select a district"
             style={{ flex: 1 }}
             bordered={false}
-            options={cityOptions}
-            value={selectedCity}
-            onChange={setSelectedCity}
+            options={districtOptions}
+            value={selectedDistrict}
+            onChange={setSelectedDistrict}
           />
         </div>
 
-        {/* Move-in */}
+        {/* Street */}
         <div
           style={{
             display: "flex",
@@ -204,17 +184,22 @@ const Filters = () => {
             borderRight: "1px solid #004d47",
           }}
         >
-          <CalendarOutlined style={{ marginRight: 8 }} />
-          <DatePicker
-            placeholder="Move-in"
-            style={{ flex: 1 }}
-            bordered={false}
-            value={moveInDate}
-            onChange={setMoveInDate}
+          <input
+            placeholder="Enter street"
+            value={street}
+            onChange={(e) => setStreet(e.target.value)}
+            style={{
+              flex: 1,
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              fontSize: "14px",
+              color: "#004d47",
+            }}
           />
         </div>
 
-        {/* Move-out */}
+        {/* Address Detail */}
         <div
           style={{
             display: "flex",
@@ -225,13 +210,21 @@ const Filters = () => {
             borderRight: "1px solid #004d47",
           }}
         >
-          <CalendarOutlined style={{ marginRight: 8 }} />
-          <DatePicker
-            placeholder="Move-out"
-            style={{ flex: 1 }}
-            bordered={false}
+          <input
+            placeholder="Enter address detail"
+            value={addressDetail}
+            onChange={(e) => setAddressDetail(e.target.value)}
+            style={{
+              flex: 1,
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              fontSize: "14px",
+              color: "#004d47",
+            }}
           />
         </div>
+
 
         {/* Guests */}
         <div

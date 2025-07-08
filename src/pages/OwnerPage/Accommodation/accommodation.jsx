@@ -4,11 +4,23 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Table, Button, Tag, Modal, Carousel } from "antd";
 import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
-
+import { geocodeWithOpenCage } from "../../../services/OpenCage";
 import "./accommodation.css";
 import { getValidAccessToken } from "../../../services/authService";
 
 const Accommodation = () => {
+
+  const districtOptions = [
+    "Hải Châu",
+    "Thanh Khê",
+    "Sơn Trà",
+    "Ngũ Hành Sơn",
+    "Liên Chiểu",
+    "Cẩm Lệ",
+    "Hoà Vang",
+  ];
+
+
   const [data, setData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -17,13 +29,20 @@ const Accommodation = () => {
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [newAccommodation, setNewAccommodation] = useState({
     title: "",
-    location: { street: "", district: "" },
+    location: {
+      street: "",
+      district: "",
+      addressDetail: "",
+      latitude: null,
+      longitude: null
+    },
     price: "",
     description: "",
     photos: [],
     status: "available",
     files: [],
   });
+
 
   useEffect(() => {
     fetchAccommodations();
@@ -33,7 +52,7 @@ const Accommodation = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
       if (!user || !user.id) return;
-  
+
       const res = await axios.get(`http://localhost:5000/api/accommodation?ownerId=${user.id}`);
       const fetchedData = res.data.map((item) => ({
         ...item,
@@ -44,7 +63,7 @@ const Accommodation = () => {
       console.error("Error fetching accommodations:", error);
     }
   };
-  
+
 
   const handleView = (record) => {
     setSelectedRow(record);
@@ -53,8 +72,10 @@ const Accommodation = () => {
 
   const handleRemove = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/accommodation/${id}`);
-      setData(data.filter((item) => item._id !== id));
+      if (window.confirm("Bạn có chắc chắn muốn xóa chỗ ở này?")) {
+        await axios.delete(`http://localhost:5000/api/accommodation/${id}`);
+        setData(data.filter((item) => item._id !== id));
+      }
     } catch (error) {
       console.error("Error deleting accommodation:", error);
     }
@@ -139,36 +160,52 @@ const Accommodation = () => {
               return alert("Bạn chưa đăng nhập. Hãy đăng nhập lại!");
             }
 
+            const coords = await geocodeWithOpenCage(
+              `${newAccommodation.location.street}, ${newAccommodation.location.district}, Đà Nẵng, Việt Nam`
+            );
+
+            if (!coords) {
+              return alert("Không thể lấy tọa độ từ địa chỉ đã nhập.");
+            }
+
+            const locationFull = {
+              ...newAccommodation.location,
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+            };
+
             const formData = new FormData();
             formData.append("title", newAccommodation.title);
             formData.append("description", newAccommodation.description);
             formData.append("price", newAccommodation.price);
             formData.append("status", newAccommodation.status);
             formData.append("ownerId", user.id);
-            formData.append(
-              "location",
-              JSON.stringify(newAccommodation.location)
-            );
-            for (let i = 0; i < newAccommodation.files.length; i++) {
-              formData.append("photos", newAccommodation.files[i]);
-            }
+            formData.append("location", JSON.stringify(locationFull));
 
-            const res = await axios.post(
-              "http://localhost:5000/api/accommodation",
-              formData,
-              {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "multipart/form-data",
-                },
-              }
-            );
+            newAccommodation.files.forEach((file) => {
+              formData.append("photos", file);
+            });
+
+            const res = await axios.post("http://localhost:5000/api/accommodation", formData, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "multipart/form-data",
+              },
+            });
 
             setData([...data, { ...res.data.data, key: res.data.data._id }]);
             setIsAddModalVisible(false);
+
+            // 👇 Đừng quên reset lại full location có latitude + longitude
             setNewAccommodation({
               title: "",
-              location: { street: "", district: "" },
+              location: {
+                street: "",
+                district: "",
+                addressDetail: "",
+                latitude: null,
+                longitude: null,
+              },
               price: "",
               description: "",
               photos: [],
@@ -181,6 +218,7 @@ const Accommodation = () => {
             console.error("Error adding accommodation:", error);
           }
         }}
+
         okText="Add"
         cancelText="Cancel"
       >
@@ -190,7 +228,6 @@ const Accommodation = () => {
             type="file"
             accept="image/*"
             multiple
-
             onChange={(e) =>
               setNewAccommodation({
                 ...newAccommodation,
@@ -208,6 +245,29 @@ const Accommodation = () => {
             }
           />
 
+          <label>District:</label>
+          <select
+            value={newAccommodation.location.district}
+            onChange={(e) =>
+              setNewAccommodation({
+                ...newAccommodation,
+                location: {
+                  ...newAccommodation.location,
+                  district: e.target.value,
+                },
+              })
+            }
+          >
+            <option value="">-- Select District --</option>
+            <option value="Hải Châu">Hải Châu</option>
+            <option value="Thanh Khê">Thanh Khê</option>
+            <option value="Ngũ Hành Sơn">Ngũ Hành Sơn</option>
+            <option value="Sơn Trà">Sơn Trà</option>
+            <option value="Liên Chiểu">Liên Chiểu</option>
+            <option value="Cẩm Lệ">Cẩm Lệ</option>
+            <option value="Hòa Vang">Hòa Vang</option>
+          </select>
+
           <label>Street:</label>
           <input
             type="text"
@@ -223,16 +283,16 @@ const Accommodation = () => {
             }
           />
 
-          <label>District:</label>
+          <label>Address Detail:</label>
           <input
             type="text"
-            value={newAccommodation.location.district}
+            value={newAccommodation.location.addressDetail}
             onChange={(e) =>
               setNewAccommodation({
                 ...newAccommodation,
                 location: {
                   ...newAccommodation.location,
-                  district: e.target.value,
+                  addressDetail: e.target.value,
                 },
               })
             }
@@ -274,6 +334,8 @@ const Accommodation = () => {
         </div>
       </Modal>
 
+
+
       {/* VIEW MODAL */}
       <Modal
         title="Accommodation Details"
@@ -285,37 +347,40 @@ const Accommodation = () => {
           <div>
             {selectedRow.photos && selectedRow.photos.length > 0 && (
               <Carousel
-              autoplay
-              arrows
-              prevArrow={<AiOutlineLeft className="custom-arrow arrow-left" />}
-              nextArrow={<AiOutlineRight className="custom-arrow arrow-right" />}
-            >
-              {selectedRow.photos.map((photo, index) => (
-                <div key={index}>
-                  <img
-                    src={`http://localhost:5000${photo}`}
-                    alt={`photo-${index}`}
-                    style={{
-                      width: "100%",
-                      maxHeight: "300px",
-                      objectFit: "cover",
-                      borderRadius: "8px"
-                    }}
-                  />
-                </div>
-              ))}
-            </Carousel>
-            
+                autoplay
+                arrows
+                prevArrow={<AiOutlineLeft className="custom-arrow arrow-left" />}
+                nextArrow={<AiOutlineRight className="custom-arrow arrow-right" />}
+              >
+                {selectedRow.photos.map((photo, index) => (
+                  <div key={index}>
+                    <img
+                      src={`http://localhost:5000${photo}`}
+                      alt={`photo-${index}`}
+                      style={{
+                        width: "100%",
+                        maxHeight: "300px",
+                        objectFit: "cover",
+                        borderRadius: "8px"
+                      }}
+                    />
+                  </div>
+                ))}
+              </Carousel>
             )}
             <p><strong>Title:</strong> {selectedRow.title}</p>
             <p><strong>Street:</strong> {selectedRow.location?.street}</p>
             <p><strong>District:</strong> {selectedRow.location?.district}</p>
+            <p><strong>Address Detail:</strong> {selectedRow.location?.addressDetail}</p>
+            <p><strong>Latitude:</strong> {selectedRow.location?.latitude}</p>
+            <p><strong>Longitude:</strong> {selectedRow.location?.longitude}</p>
             <p><strong>Price:</strong> {selectedRow.price.toLocaleString()} VND</p>
             <p><strong>Status:</strong> {selectedRow.status}</p>
             <p><strong>Description:</strong> {selectedRow.description}</p>
           </div>
         )}
       </Modal>
+
 
 
       {/* UPDATE MODAL */}
@@ -326,16 +391,31 @@ const Accommodation = () => {
         onOk={async () => {
           try {
             const token = await getValidAccessToken();
-            const formData = new FormData();
 
+            // 📍 Gọi OpenCage để cập nhật lại tọa độ nếu user sửa địa chỉ
+            const fullAddress = `${editingRow.location.street}, ${editingRow.location.district}, Đà Nẵng, Việt Nam`;
+            const coords = await geocodeWithOpenCage(fullAddress);
+
+            if (!coords) {
+              return alert("Không thể lấy tọa độ từ địa chỉ đã nhập.");
+            }
+
+            const updatedLocation = {
+              ...editingRow.location,
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+            };
+
+            const formData = new FormData();
             formData.append("title", editingRow.title);
             formData.append("description", editingRow.description);
             formData.append("price", editingRow.price);
             formData.append("status", editingRow.status);
-            formData.append("location", JSON.stringify(editingRow.location));
-            for (let i = 0; i < editingRow.files.length; i++) {
-              formData.append("photos", editingRow.files[i]);
-            }
+            formData.append("location", JSON.stringify(updatedLocation));
+
+            editingRow.files.forEach((file) => {
+              formData.append("photos", file);
+            });
 
             const res = await axios.put(
               `http://localhost:5000/api/accommodation/${editingRow._id}`,
@@ -354,6 +434,8 @@ const Accommodation = () => {
             );
             setData(updatedList);
             setIsUpdateModalVisible(false);
+            // thông báo thành công bằng alert
+            alert("Accommodation updated successfully!");
           } catch (error) {
             console.error("Error updating accommodation:", error);
           }
@@ -368,7 +450,6 @@ const Accommodation = () => {
               type="file"
               accept="image/*"
               multiple
-
               onChange={(e) =>
                 setEditingRow({
                   ...editingRow,
@@ -386,33 +467,52 @@ const Accommodation = () => {
               }
             />
 
+            <label>District:</label>
+            <select
+              value={editingRow.location?.district}
+              onChange={(e) =>
+                setEditingRow((prev) => ({
+                  ...prev,
+                  location: {
+                    ...prev.location,
+                    district: e.target.value,
+                  },
+                }))
+              }
+            >
+              <option value="">-- Select District --</option>
+              {districtOptions.map((district) => (
+                <option key={district} value={district}>{district}</option>
+              ))}
+            </select>
+
             <label>Street:</label>
             <input
               type="text"
               value={editingRow.location?.street}
               onChange={(e) =>
-                setEditingRow({
-                  ...editingRow,
+                setEditingRow((prev) => ({
+                  ...prev,
                   location: {
-                    ...editingRow.location,
+                    ...prev.location,
                     street: e.target.value,
                   },
-                })
+                }))
               }
             />
 
-            <label>District:</label>
+            <label>Address Detail:</label>
             <input
               type="text"
-              value={editingRow.location?.district}
+              value={editingRow.location?.addressDetail}
               onChange={(e) =>
-                setEditingRow({
-                  ...editingRow,
+                setEditingRow((prev) => ({
+                  ...prev,
                   location: {
-                    ...editingRow.location,
-                    district: e.target.value,
+                    ...prev.location,
+                    addressDetail: e.target.value,
                   },
-                })
+                }))
               }
             />
 
@@ -446,6 +546,8 @@ const Accommodation = () => {
           </div>
         )}
       </Modal>
+
+
     </div>
   );
 };

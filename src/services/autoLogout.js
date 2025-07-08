@@ -7,9 +7,15 @@ const resetTimer = () => {
   console.log('🕐 Reset timer do user activity');
   clearTimeout(logoutTimer);
   logoutTimer = setTimeout(() => {
-    console.log('😴 Không hoạt động → auto logout');
-    if (externalLogout) externalLogout('idle timeout');
+    console.log("😴 Không hoạt động → auto logout");
+    alert("Phiên đăng nhập đã hết hạn vì không hoạt động.");
+    if (externalLogout) {
+      externalLogout("idle timeout");
+      window.location.href = "/login";
+    }
   }, TIMEOUT);
+
+
 };
 
 export const initAutoLogout = (onLogout) => {

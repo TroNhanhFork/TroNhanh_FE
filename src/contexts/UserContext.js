@@ -5,16 +5,16 @@ const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
     try {
       const res = await getUserInfo();
       setUser(res.data);
     } catch (err) {
-      setUser(null); 
+      setUser(null);
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -28,7 +28,7 @@ export const UserProvider = ({ children }) => {
     if (token) {
       fetchUser();
     } else {
-      setLoading(false); 
+      setLoading(false);
     }
   }, []);
 

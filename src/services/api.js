@@ -21,10 +21,13 @@ export const setupInterceptors = (contextLogout) => {
 
       const token = await getValidAccessToken();
       if (!token) {
-        contextLogout('token expired');
-        return Promise.reject(new Error('Token expired'));
+        alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        contextLogout();
+        window.location.href = "/login";
+        return Promise.reject(new Error("Token expired"));
       }
-        
+
+
       config.headers.Authorization = `Bearer ${token}`;
       return config;
     },
