@@ -377,6 +377,13 @@ button.ant-btn-dangerous:hover {
   z-index: 10;
 }
 
+/* accommodation.css */
+.ant-notification {
+  z-index: 9999 !important;
+  pointer-events: all !important;
+}
+
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .header-row {

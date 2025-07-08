@@ -10,7 +10,8 @@ import useUser from "../../../contexts/UserContext"
 import RoommatePostModal from './RoommatePostModal';
 import { getRoommatePosts } from '../../../services/roommateAPI';
 import Slider from "react-slick";
-
+import "slick-carousel/slick/slick.css"; 
+import "slick-carousel/slick/slick-theme.css";
 
 const PropertyDetails = () => {
   const { id } = useParams();

@@ -1,3 +1,4 @@
+// file TroNhanh_FE/src/services/OpenCage.js
 import axios from "axios";
 
 const OPENCAGE_API_KEY = "51e840c1acc24e539a17b51d1e2fff99";
@@ -8,8 +9,8 @@ export const geocodeWithOpenCage = async (address) => {
       params: {
         q: address,
         key: OPENCAGE_API_KEY,
-        language: "vi",       
-        countrycode: "vn",     
+        language: "vi",
+        countrycode: "vn",
       },
     });
 

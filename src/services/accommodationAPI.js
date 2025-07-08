@@ -3,6 +3,8 @@ import axiosInstance from './axiosInstance'
 const API_BASE_URL = 'http://localhost:5000/api/accommodation';
 const API_FAV_URL = 'http://localhost:5000/api/favorites';
 
+// CẢNH CÁO LÀ ĐÉO DÙNG CÁI FILE NÀY NỮA ANHBUI, VÌ BACK END T CODE Ở TRONG FOLDER accommodationController.js Ở PHÍA PROJECT BE KIA RỒI,
+// M MÚN THÊM Tìm kiếm accommodation theo location THÌ BỎ CÁI CODE ĐÓ QUA BÊN FOLDER KIA RỒI LÀM GÌ THÌ LÀM CHỨ ĐÉO DÙNG CÁI FILE NÀY NỮA ĐÓ
 
 //  Tạo mới accommodation
 export const createAccommodation = async (data) => {

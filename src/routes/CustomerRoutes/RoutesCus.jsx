@@ -6,7 +6,7 @@ import ApartmentDetails from "../../pages/CustomerPage/ApartmentDetails/Apartmen
 import OwnerInformation from "../../pages/CustomerPage/OwnerInfo/OwnerInfo";
 import ProfilePage from "../../pages/CommonPage/Cus_Profile/Profile";
 import CheckoutPage from "../../pages/CustomerPage/Checkout/CheckoutPage";
-import ProfilePage from "../../pages/CustomerPage/Profile/Profile";
+// import ProfilePage from "../../pages/CustomerPage/Profile/Profile";
 const RoutesCus = () => {
   return (
     <Routes>
