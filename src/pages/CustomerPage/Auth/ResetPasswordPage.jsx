@@ -11,19 +11,28 @@ const ResetPasswordPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 const [messageApi, contextHolder] = antMessage.useMessage();
-  const onFinish = async (values) => {
-    try {
-      setLoading(true);
-      const res = await resetPassword(token, { password: values.password });
-   await messageApi.success(res.data.message);
-      navigate('/login');
-    } catch (err) {
-      console.error(err);
+const onFinish = async (values) => {
+  try {
+    setLoading(true);
+    const res = await resetPassword(token, { password: values.password });
+    await messageApi.success(res.data.message);
+    navigate('/login');
+  } catch (err) {
+    console.error(err);
+    const errors = err.response?.data?.errors;
+
+    if (errors && Array.isArray(errors)) {
+      errors.forEach(error => {
+        messageApi.error(error.msg);
+      });
+    } else {
       messageApi.error(err.response?.data?.message || "Failed to reset password");
-    } finally {
-      setLoading(false);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div style={{ maxWidth: 400, margin: "50px auto" }}>
