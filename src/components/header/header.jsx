@@ -1,4 +1,3 @@
-
 import { Layout, Menu, Dropdown, Avatar, message } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -21,7 +20,7 @@ const { Header } = Layout;
 const HeaderComponent = () => {
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
-  const { user, logout, loading } = useUser();
+  const { user, logout, loading } = useUser(); 
 
 
   if (loading) return null;
@@ -69,7 +68,7 @@ const HeaderComponent = () => {
       );
     }
 
-    if (role === "Admin") {
+    if (role === "admin") {
       items.push({
         key: "dashboard",
         label: "Dashboard",
@@ -85,8 +84,8 @@ const HeaderComponent = () => {
         label: "Profile",
         icon: <UserOutlined />,
         onClick: () => {
-          if (role === "Customer") navigate("/customer/profile/personal-info");
-          else if (role === "Owner") navigate("/owner/profile");
+          if (role === "customer") navigate("/customer/profile/personal-info");
+          else if (role === "owner") navigate("/owner/profile");
           else navigate("/profile");
         },
       },
@@ -128,15 +127,18 @@ const HeaderComponent = () => {
             <Link to="/about-us">About Us</Link>
           </Menu.Item>
 
-          {user?.role === "Customer" && (
+          {user?.role === "customer" && (
             <>
+              <Menu.Item key="room">
+                <Link to="/customer/search">Room</Link>
+              </Menu.Item>
               <Menu.Item key="profile">
                 <Link to="/customer/profile/personal-info">Profile</Link>
               </Menu.Item>
             </>
           )}
 
-          {user?.role === "Owner" && (
+          {user?.role === "owner" && (
             <>
               <Menu.Item key="communication">
                 <Link to="/owner/communication">Communication</Link>
@@ -147,56 +149,53 @@ const HeaderComponent = () => {
               <Menu.Item key="profile">
                 <Link to="/owner/profile">Profile</Link>
               </Menu.Item>
-              <Menu.Item key="membership">
-                <Link to="/owner/membership">Membership</Link>
-              </Menu.Item>
             </>
           )}
 
-          {user?.role === "Admin" && (
+          {user?.role === "admin" && (
             <Menu.Item key="admin-page">
               <Link to="/admin/dashboard">Dashboard</Link>
             </Menu.Item>
           )}
 
           <Menu.Item key="contact">
-            <Link to="/contact">Contact & Reports</Link>
+            <Link to="/customer/reports">Contact & Reports</Link>
           </Menu.Item>
-          <Menu.Item key="room">
-            <Link to="/customer/search">Room</Link>
+          <Menu.Item key="chat">
+            <Link to="/chat">Chat</Link>
           </Menu.Item>
         </Menu>
 
         <div className="user-menu">
-          {user ? (
-            <Dropdown
-              menu={{ items: getUserMenuItems(user.role) }}
-              placement="bottomRight"
-              trigger={["click"]}
-              overlayClassName="user-dropdown"
-            >
-              <div className="user-info">
-                <Avatar
-                  src={user.avatar || null}
-                  className="user-avatar"
-                  size={40}
-                >
-                  {!user.avatar && user.name?.charAt(0)}
-                </Avatar>
-                <span className="user-name">{user.name || user.email}</span>
-                <DownOutlined className="dropdown-icon" />
-              </div>
-            </Dropdown>
-          ) : (
-            <div className="auth-buttons">
-              <Link to="/login">
-                <button className="login-button">Login</button>
-              </Link>
-              <Link to="/register">
-                <button className="register-button">Register</button>
-              </Link>
-            </div>
-          )}
+      {user ? (
+  <Dropdown
+    menu={{ items: getUserMenuItems(user.role) }}
+    placement="bottomRight"
+    trigger={["click"]}
+    overlayClassName="user-dropdown"
+  >
+    <div className="user-info">
+      <Avatar
+        src={user.avatar || null}
+        className="user-avatar"
+        size={40}
+      >
+        {!user.avatar && user.name?.charAt(0)}
+      </Avatar>
+      <span className="user-name">{user.name || user.email}</span>
+      <DownOutlined className="dropdown-icon" />
+    </div>
+  </Dropdown>
+) : (
+  <div className="auth-buttons">
+    <Link to="/login">
+      <button className="login-button">Login</button>
+    </Link>
+    <Link to="/register">
+      <button className="register-button">Register</button>
+    </Link>
+  </div>
+)}
 
         </div>
       </Header>

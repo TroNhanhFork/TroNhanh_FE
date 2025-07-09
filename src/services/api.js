@@ -14,7 +14,9 @@ export const setupInterceptors = (contextLogout) => {
       if (
         config.url.includes('/auth/login') ||
         config.url.includes('/auth/register') ||
-        config.url.includes('/auth/refresh')
+        config.url.includes('/auth/refresh') || 
+        config.url.includes('/forgot-password') ||
+        config.url.includes('/reset-password')
       ) {
         return config;
       }

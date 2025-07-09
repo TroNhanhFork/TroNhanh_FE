@@ -12,6 +12,9 @@ import RegisterPage from './pages/CustomerPage/Auth/RegisterPage';
 import { initAutoLogout, stopAutoLogout } from './services/autoLogout';
 import useUser, { UserProvider } from './contexts/UserContext';
 import { setupInterceptors } from './services/api';
+import VerifyOtpPage from './pages/CustomerPage/Auth/VerifyOTP';
+import ForgotPasswordPage from './pages/CustomerPage/Auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/CustomerPage/Auth/ResetPasswordPage';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -39,7 +42,7 @@ function AppRoutes() {
 
   if (loading) return <p>Loading...</p>;
 
-const hideLayout = ["/login", "/register"].some(path => location.pathname.startsWith(path));
+const hideLayout = ["/login", "/register","/verify-otp","/forgot-password","/reset-password"].some(path => location.pathname.startsWith(path));
 
   return (
     <>
@@ -52,7 +55,9 @@ const hideLayout = ["/login", "/register"].some(path => location.pathname.starts
 
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-
+          <Route path="/verify-otp" element={<VerifyOtpPage/>}/>
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           {/* App routes */}
           <Route path="/homepage" element={<RoutesApp />} />
           <Route path="/owner/*" element={<RoutesOw />} />
