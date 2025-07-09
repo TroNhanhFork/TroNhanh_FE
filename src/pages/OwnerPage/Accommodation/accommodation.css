@@ -136,7 +136,7 @@ h2 {
 }
 
 
-button.ant-btn-dangerous {
+/* button.ant-btn-dangerous {
   background-color: #ff4d4f;
   color: white;
   border: none;
@@ -144,7 +144,7 @@ button.ant-btn-dangerous {
 
 button.ant-btn-dangerous:hover {
   background-color: #d9363e;
-}
+} */
 
 .remove-btn {
   background-color: #ffffff !important;
