@@ -29,13 +29,16 @@ const PropertyCard = ({ property }) => {
       >
         <img
           alt="property"
-          src={property.photos || "/default-image.jpg"}
+          src={property.photos && property.photos.length > 0
+            ? `http://localhost:5000${property.photos[0]}`
+            : "/default-image.jpg"}
           style={{
             width: "200px",
             height: "150px",
             objectFit: "cover",
           }}
         />
+
         <div style={{ padding: "16px", flex: 1 }}>
           <h3 style={{ margin: 0, marginBottom: "8px" }}>{property.title}</h3>
           <p style={{ margin: 0, marginBottom: "8px", color: "#555" }}>
@@ -47,9 +50,9 @@ const PropertyCard = ({ property }) => {
                 backgroundColor:
                   property.status === "Available"
                     ? "#52c41a"
-                    : property.status === "booked"
-                    ? "#faad14"
-                    : "#f5222d",
+                    : property.status === "Unavailable"
+                      ? "#faad14"
+                      : "#f5222d",
                 color: "#fff",
                 borderRadius: "8px",
                 padding: "4px 12px",
@@ -61,8 +64,12 @@ const PropertyCard = ({ property }) => {
               {property.status}
             </Tag>
             <span style={{ fontSize: "16px" }}>
-              £<span style={{ fontWeight: "bold" }}>{property.price}</span>/month
+              <span style={{ fontWeight: "bold" }}>
+                {property.price?.toLocaleString("vi-VN")}
+              </span>{" "}
+              VNĐ/month
             </span>
+
           </div>
         </div>
       </div>
