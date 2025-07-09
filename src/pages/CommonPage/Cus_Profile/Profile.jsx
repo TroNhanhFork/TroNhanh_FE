@@ -6,6 +6,7 @@ import PersonalInfo from './sections/PersonalInfo';
 import Favorites from './sections/Favorites';
 import Messages from './sections/Messages';
 import { getUserInfo, getUserMessages, getUserFavorites } from '../../../services/profileServices';
+import MyReportsPage from './sections/MyReportPage';
 
 const { Sider, Content } = Layout;
 
@@ -50,6 +51,7 @@ return error ? (
         <Route path="personal-info" element={<PersonalInfo />} />
         <Route path="messages" element={<Messages />} />
         <Route path="favorites" element={<Favorites favorites={favorites} />} />
+        <Route path='my-reports' element={<MyReportsPage></MyReportsPage>}/>
       </Routes>
     </Content>
   </Layout>

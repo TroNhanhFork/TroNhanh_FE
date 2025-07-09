@@ -26,7 +26,7 @@ const ReportPage = () => {
       await createReport(payload);
       messageApi.open({
         type: "success",
-        content: "🎉 Report submitted successfully!",
+        content: " Report submitted successfully!",
         icon: <CheckCircleOutlined style={{ color: "#52c41a" }} />,
       });
       form.resetFields();
@@ -69,7 +69,6 @@ const ReportPage = () => {
         padding: 24,
         background: "#f9f9f9",
         minHeight: "100vh",
-        marginBottom:"-40px"
       }}
     >
       {contextHolder}
