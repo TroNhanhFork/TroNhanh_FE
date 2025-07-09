@@ -108,7 +108,9 @@ const PropertyDetails = () => {
           <Col xs={24}>
             <div className="property-main-image-wrapper">
               <img
-                src={property.photos}
+                src={property.photos && property.photos.length > 0
+                  ? `http://localhost:5000${property.photos[0]}`
+                  : "/image/default-image.jpg"}
                 alt="property main"
                 className="property-main-image"
               />
@@ -274,12 +276,19 @@ const PropertyDetails = () => {
                 <Card className="roommate-card" hoverable>
                   <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
                     <Avatar
-                      src={post.user?.avatar || "/default-avatar.png"}
+                      src={
+                        post.userId?.avatar
+                          ? `http://localhost:5000${post.userId?.avatar}`
+                          : "/default-avatar.png"
+                      }
                       size={48}
                       style={{ marginRight: 12 }}
                     />
+
+
+
                     <div>
-                      <h3 style={{ margin: 0 }}>{post.user?.name || post.userId?.name || "Unknown"}</h3>
+                      <h3 style={{ margin: 0 }}>{ post.userId?.name || "Unknown"}</h3>
                       <small>{post.createdAt?.slice(0, 10)}</small>
                     </div>
                   </div>

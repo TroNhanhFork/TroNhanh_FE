@@ -39,7 +39,7 @@ const Accommodation = () => {
     price: "",
     description: "",
     photos: [],
-    status: "available",
+    status: "Available",
     files: [],
   });
 
@@ -209,7 +209,7 @@ const Accommodation = () => {
               price: "",
               description: "",
               photos: [],
-              status: "available",
+              status: "Available",
               files: [],
             });
 
