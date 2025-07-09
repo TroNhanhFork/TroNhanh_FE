@@ -31,7 +31,7 @@ const Users = () => {
   const fetchUsers = async (page = 1, pageSize = 10, searchFilters = {}) => {
     try {
       setLoading(true);
-      
+
       // Filter out empty values from search filters
       const cleanFilters = {};
       Object.keys(searchFilters).forEach(key => {
@@ -39,7 +39,7 @@ const Users = () => {
           cleanFilters[key] = searchFilters[key];
         }
       });
-      
+
       const params = {
         page: page - 1, // API uses 0-based pagination
         size: pageSize,
@@ -60,7 +60,7 @@ const Users = () => {
         // Fallback: Direct array response
         users = response;
         total = response.length;
-        
+
       } else if (response.data && Array.isArray(response.data)) {
         // Fallback: Response wrapped in data property
         users = response.data;
@@ -88,7 +88,7 @@ const Users = () => {
           phoneNumber: user.phone || user.phoneNumber,
           gender: user.gender?.toLowerCase() || 'unknown',
           avatarUrl: user.avatar || user.avatarUrl || '',
-          isLocked: user.status === 'banned' || user.status === 'inactive' || user.isLocked || false,
+          isLocked: user.status === 'inactive' || user.isLocked || false,
           roles: user.role ? [{ id: 1, name: user.role.charAt(0).toUpperCase() + user.role.slice(1) }] : (user.roles || []),
           membership: user.status === 'active' ? 'active' : 'none',
           isMembership: isMembership, // Use processed boolean value
@@ -338,53 +338,71 @@ const Users = () => {
     {
       title: 'Status',
       key: 'status',
-      render: (_, record) => (
-        <Space direction="vertical" size="small">
-          <Tag color={record.isLocked ? 'red' : 'green'}>
-            {record.isLocked ? 'Locked' : 'Active'}
-          </Tag>
-          {/* Show membership status only for User and Owner roles */}
-          {record.roles?.some(role => role.name === 'Owner' || role.name === 'User') && (
-            <Tag color={record.isMembership ? 'green' : 'orange'}>
-              Membership: {record.isMembership ? 'Active' : 'None'}
-            </Tag>
-          )}
-        </Space>
-      ),
+      render: (_, record) => {
+        const isDeleted = record.isDeleted;
+
+        return (
+          <Space direction="vertical" size="small">
+            {isDeleted ? (
+              <Tag color="volcano">
+                Deleted
+              </Tag>
+            ) : (
+              <Tag color={record.isLocked ? 'red' : 'green'}>
+                {record.isLocked ? 'Inactive' : 'Active'}
+              </Tag>
+            )}
+            {/* Show membership status only for User and Owner roles and not deleted users */}
+            {!isDeleted && record.roles?.some(role => role.name === 'Owner' || role.name === 'User') && (
+              <Tag color={record.isMembership ? 'green' : 'orange'}>
+                Membership: {record.isMembership ? 'Active' : 'None'}
+              </Tag>
+            )}
+          </Space>
+        );
+      },
     },
     {
       title: 'Actions',
       key: 'actions',
-      render: (_, record) => (
-        <Space>
-          <Button
-            style={{ border: 'none', display: 'inline-block' }}
-            icon={<EyeOutlined />}
-            onClick={() => handleViewDetails(record)}
-            title="View Details"
-          />
-          <Button
-            style={{ border: 'none', display: 'inline-block' }}
-            icon={<EditOutlined />}
-            onClick={() => handleEditUser(record)}
-            title="Edit User"
-          />
-          <Button
-            style={{ border: 'none', display: 'inline-block' }}
-            icon={!record.isLocked ? <UnlockOutlined /> : <LockOutlined style={{ color: "blue" }} />}
-            title={!record.isLocked ? "Lock Account" : "Unlock Account"}
-            danger={!record.isLocked}
-            onClick={() => handleToggleLock(record)}
-          />
-          <Button
-            style={{ border: 'none', display: 'inline-block' }}
-            icon={<DeleteOutlined />}
-            danger
-            onClick={() => handleDeleteUser(record)}
-            title="Delete User"
-          />
-        </Space>
-      ),
+      render: (_, record) => {
+        const isDeleted = record.isDeleted;
+
+        return (
+          <Space>
+            <Button
+              style={{ border: 'none', display: 'inline-block' }}
+              icon={<EyeOutlined />}
+              onClick={() => handleViewDetails(record)}
+              title="View Details"
+              disabled={isDeleted}
+            />
+            <Button
+              style={{ border: 'none', display: 'inline-block' }}
+              icon={<EditOutlined />}
+              onClick={() => handleEditUser(record)}
+              title="Edit User"
+              disabled={isDeleted}
+            />
+            <Button
+              style={{ border: 'none', display: 'inline-block' }}
+              icon={!record.isLocked ? <UnlockOutlined /> : <LockOutlined style={{ color: isDeleted ? '#8c8c8c' : "blue" }} />}
+              title={!record.isLocked ? "Lock Account" : "Unlock Account"}
+              danger={!record.isLocked && !isDeleted}
+              onClick={() => handleToggleLock(record)}
+              disabled={isDeleted}
+            />
+            <Button
+              style={{ border: 'none', display: 'inline-block' }}
+              icon={<DeleteOutlined />}
+              danger={!isDeleted}
+              onClick={() => handleDeleteUser(record)}
+              title="Delete User"
+              disabled={isDeleted}
+            />
+          </Space>
+        );
+      },
     }
   ];
 
@@ -392,6 +410,19 @@ const Users = () => {
 
   return (
     <div >
+      <style>{`
+        .deleted-user-row {
+          background-color: #fff2f0 !important;
+          border: 1px solid #ffccc7 !important;
+        }
+        .deleted-user-row:hover {
+          background-color: #ffe7e0 !important;
+        }
+        .deleted-user-row td {
+          color: #8c8c8c !important;
+          opacity: 0.7;
+        }
+      `}</style>
       <h1 style={{ marginBottom: 24 }}>Users Management</h1>
 
       <UserStatsDashboard />
@@ -434,6 +465,9 @@ const Users = () => {
             emptyText: loading ? 'Loading...' : 'No users found'
           }}
           style={{ borderRadius: '8px' }}
+          rowClassName={(record) => {
+            return record.isDeleted ? 'deleted-user-row' : '';
+          }}
         />
       </div>
 
