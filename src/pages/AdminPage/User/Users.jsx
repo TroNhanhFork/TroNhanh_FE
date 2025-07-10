@@ -8,6 +8,7 @@ import UserSearch from "./UserSearch";
 import { getAllUsers, lockUnlockUser, editUserInfo, deleteUser, isAuthenticated } from './services/userService';
 
 const Users = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -129,38 +130,24 @@ const Users = () => {
   // Initial data fetch
   useEffect(() => {
     const initializeComponent = async () => {
-      console.log('Initializing Users component...');
-
-      // Check if token exists
       if (!isAuthenticated()) {
-        Object.keys(localStorage).forEach(key => {
+        messageApi.open({
+          type: 'error',
+          content: 'No authentication token found',
+          duration: 4,
         });
-
-        // Check for common token key names
-        const commonTokenKeys = ['accessToken', 'access_token', 'token', 'authToken', 'jwt', 'bearerToken'];
-        commonTokenKeys.forEach(key => {
-          const value = localStorage.getItem(key);
-          if (value) {
-            console.log(`Found token with key "${key}":`, value.substring(0, 50) + '...');
-          }
-        });
-
-        message.error('No authentication token found');
-        // Commented out redirect for debugging
-        // window.location.href = '/login';
         return;
       }
 
-      // Try to fetch data - if token is invalid, the interceptor will handle it
       try {
         await fetchUsers();
       } catch (error) {
-        // Error is already handled by the interceptor and fetchUsers function
+        // Error is already handled by fetchUsers function
       }
     };
 
     initializeComponent();
-  }, []);
+  }, [messageApi]);
 
   // Handle pagination change
   const handleTableChange = (pagination) => {
@@ -187,41 +174,79 @@ const Users = () => {
 
   // Handle lock/unlock user
   const handleToggleLock = async (user) => {
+    const action = user.isLocked ? 'unlock' : 'lock';
+
+    // Show loading message
+    const loadingKey = 'lock-loading';
+    messageApi.open({
+      key: loadingKey,
+      type: 'loading',
+      content: `${action === 'lock' ? 'Locking' : 'Unlocking'} user account...`,
+      duration: 0,
+    });
+
     try {
       await lockUnlockUser(user.id, {
         isLocked: !user.isLocked,
         reason: `${!user.isLocked ? 'Lock' : 'Unlock'} user account`
       });
 
-      message.success(`User ${!user.isLocked ? 'locked' : 'unlocked'} successfully`);
+      // Show success message
+      messageApi.open({
+        key: loadingKey,
+        type: 'success',
+        content: `User ${action}ed successfully!`,
+        duration: 3,
+      });
+
       // Refresh the current page data
       fetchUsers(pagination.current, pagination.pageSize, filters);
     } catch (error) {
       console.error('Error toggling user lock:', error);
-      if (error.message === 'Authentication failed. Please login again.') {
-        message.error('Your session has expired. Please login again.');
-      } else {
-        message.error(error.message || 'Failed to update user status. Please try again.');
-      }
+
+      // Show error message
+      messageApi.open({
+        key: loadingKey,
+        type: 'error',
+        content: `Failed to ${action} user. Please try again.`,
+        duration: 4,
+      });
     }
   };
 
   // Handle save user (edit)
   const handleSaveUser = async (updatedUser) => {
+    const loadingKey = 'save-loading';
+    messageApi.open({
+      key: loadingKey,
+      type: 'loading',
+      content: 'Updating user information...',
+      duration: 0,
+    });
+
     try {
       await editUserInfo(updatedUser.id, updatedUser);
-      message.success('User updated successfully');
+
+      messageApi.open({
+        key: loadingKey,
+        type: 'success',
+        content: 'User updated successfully!',
+        duration: 3,
+      });
+
       // Refresh the current page data
       fetchUsers(pagination.current, pagination.pageSize, filters);
       setModalType(null);
       setSelectedUser(null);
     } catch (error) {
       console.error('Error updating user:', error);
-      if (error.message === 'Authentication failed. Please login again.') {
-        message.error('Your session has expired. Please login again.');
-      } else {
-        message.error(error.message || 'Failed to update user. Please try again.');
-      }
+
+      messageApi.open({
+        key: loadingKey,
+        type: 'error',
+        content: 'Failed to update user. Please try again.',
+        duration: 4,
+      });
     }
   };
 
@@ -232,10 +257,37 @@ const Users = () => {
   };
 
   // Handle delete user - show confirmation modal
-  const handleDeleteUser = (user) => {
-    setUserToDelete(user);
-    setDeleteModalVisible(true);
-    setDeleteConfirmText('');
+  const handleDeleteUser = async (user) => {
+    const loadingKey = 'delete-loading';
+    messageApi.open({
+      key: loadingKey,
+      type: 'loading',
+      content: '🔄 Deleting user account...',
+      duration: 0,
+    });
+
+    try {
+      await deleteUser(user.id);
+
+      messageApi.open({
+        key: loadingKey,
+        type: 'error', // Using error type to emphasize destructive action
+        content: 'User deleted successfully!',
+        duration: 3,
+      });
+
+      // Refresh the current page data
+      fetchUsers(pagination.current, pagination.pageSize, filters);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+
+      messageApi.open({
+        key: loadingKey,
+        type: 'error',
+        content: 'Failed to delete user. Please try again.',
+        duration: 4,
+      });
+    }
   };
 
   // Handle confirm delete
@@ -409,8 +461,11 @@ const Users = () => {
   const roleOptions = ["Admin", "Owner", "Customer"];
 
   return (
-    <div >
-      <style>{`
+    <>
+      {contextHolder}
+
+      <div >
+        <style>{`
         .deleted-user-row {
           background-color: #fff2f0 !important;
           border: 1px solid #ffccc7 !important;
@@ -423,125 +478,126 @@ const Users = () => {
           opacity: 0.7;
         }
       `}</style>
-      <h1 style={{ marginBottom: 24 }}>Users Management</h1>
+        <h1 style={{ marginBottom: 24 }}>Users Management</h1>
 
-      <UserStatsDashboard />
+        <UserStatsDashboard />
 
-      <div style={{
-        marginBottom: '16px',
-        padding: '16px 24px',
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        <UserSearch
-          filters={filters}
-          setFilters={handleSearch}
-          roleOptions={roleOptions}
-        />
-      </div>
-
-      <div style={{
-        backgroundColor: '#fff',
-        borderRadius: '8px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        overflow: 'hidden'
-      }}>
-        <Table
-          dataSource={users}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            ...pagination,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} users`,
-            style: { padding: '16px 24px' }
-          }}
-          onChange={handleTableChange}
-          scroll={{ x: 'max-content' }}
-          locale={{
-            emptyText: loading ? 'Loading...' : 'No users found'
-          }}
-          style={{ borderRadius: '8px' }}
-          rowClassName={(record) => {
-            return record.isDeleted ? 'deleted-user-row' : '';
-          }}
-        />
-      </div>
-
-      <Modal
-        open={modalType === 'view'}
-        onCancel={handleCloseModal}
-        footer={null}
-        title="User Profile Details"
-        width={600}
-        style={{ borderRadius: '8px' }}
-      >
-        <UserDetailsModal user={selectedUser} />
-      </Modal>
-
-      <Modal
-        open={modalType === 'edit'}
-        onCancel={handleCloseModal}
-        footer={null}
-        title="Edit User"
-        width={600}
-      >
-        <UserEditModal
-          user={selectedUser}
-          onClose={handleCloseModal}
-          onSave={handleSaveUser}
-        />
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      <Modal
-        title={
-          <div style={{ display: 'flex', alignItems: 'center', color: '#ff4d4f' }}>
-            <ExclamationCircleOutlined style={{ marginRight: 8 }} />
-            Delete User Account
-          </div>
-        }
-        open={deleteModalVisible}
-        onCancel={handleCancelDelete}
-        footer={[
-          <Button key="cancel" onClick={handleCancelDelete}>
-            Cancel
-          </Button>,
-          <Button
-            key="delete"
-            type="primary"
-            danger
-            onClick={handleConfirmDelete}
-            disabled={deleteConfirmText !== 'DELETE'}
-          >
-            Delete User
-          </Button>,
-        ]}
-        width={500}
-      >
-        <div style={{ marginBottom: 16 }}>
-          <p style={{ marginBottom: 16, color: '#262626' }}>
-            <strong>Warning:</strong> This action cannot be undone. This will permanently delete the user account and all associated data.
-          </p>
-          <p style={{ marginBottom: 16, color: '#262626' }}>
-            <strong>User to delete:</strong> {userToDelete?.fullName} ({userToDelete?.email})
-          </p>
-          <p style={{ marginBottom: 8, color: '#262626' }}>
-            Please type <strong style={{ color: '#ff4d4f' }}>DELETE</strong> to confirm:
-          </p>
-          <Input
-            placeholder="Type DELETE to confirm"
-            value={deleteConfirmText}
-            onChange={(e) => setDeleteConfirmText(e.target.value)}
-            onPressEnter={handleConfirmDelete}
-            style={{ marginBottom: 16 }}
+        <div style={{
+          marginBottom: '16px',
+          padding: '16px 24px',
+          backgroundColor: '#fff',
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+        }}>
+          <UserSearch
+            filters={filters}
+            setFilters={handleSearch}
+            roleOptions={roleOptions}
           />
         </div>
-      </Modal>
-    </div>
+
+        <div style={{
+          backgroundColor: '#fff',
+          borderRadius: '8px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          overflow: 'hidden'
+        }}>
+          <Table
+            dataSource={users}
+            columns={columns}
+            rowKey="id"
+            loading={loading}
+            pagination={{
+              ...pagination,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} users`,
+              style: { padding: '16px 24px' }
+            }}
+            onChange={handleTableChange}
+            scroll={{ x: 'max-content' }}
+            locale={{
+              emptyText: loading ? 'Loading...' : 'No users found'
+            }}
+            style={{ borderRadius: '8px' }}
+            rowClassName={(record) => {
+              return record.isDeleted ? 'deleted-user-row' : '';
+            }}
+          />
+        </div>
+
+        <Modal
+          open={modalType === 'view'}
+          onCancel={handleCloseModal}
+          footer={null}
+          title="User Profile Details"
+          width={600}
+          style={{ borderRadius: '8px' }}
+        >
+          <UserDetailsModal user={selectedUser} />
+        </Modal>
+
+        <Modal
+          open={modalType === 'edit'}
+          onCancel={handleCloseModal}
+          footer={null}
+          title="Edit User"
+          width={600}
+        >
+          <UserEditModal
+            user={selectedUser}
+            onClose={handleCloseModal}
+            onSave={handleSaveUser}
+          />
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          title={
+            <div style={{ display: 'flex', alignItems: 'center', color: '#ff4d4f' }}>
+              <ExclamationCircleOutlined style={{ marginRight: 8 }} />
+              Delete User Account
+            </div>
+          }
+          open={deleteModalVisible}
+          onCancel={handleCancelDelete}
+          footer={[
+            <Button key="cancel" onClick={handleCancelDelete}>
+              Cancel
+            </Button>,
+            <Button
+              key="delete"
+              type="primary"
+              danger
+              onClick={handleConfirmDelete}
+              disabled={deleteConfirmText !== 'DELETE'}
+            >
+              Delete User
+            </Button>,
+          ]}
+          width={500}
+        >
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ marginBottom: 16, color: '#262626' }}>
+              <strong>Warning:</strong> This action cannot be undone. This will permanently delete the user account and all associated data.
+            </p>
+            <p style={{ marginBottom: 16, color: '#262626' }}>
+              <strong>User to delete:</strong> {userToDelete?.fullName} ({userToDelete?.email})
+            </p>
+            <p style={{ marginBottom: 8, color: '#262626' }}>
+              Please type <strong style={{ color: '#ff4d4f' }}>DELETE</strong> to confirm:
+            </p>
+            <Input
+              placeholder="Type DELETE to confirm"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              onPressEnter={handleConfirmDelete}
+              style={{ marginBottom: 16 }}
+            />
+          </div>
+        </Modal>
+      </div>
+    </>
   );
 };
 
