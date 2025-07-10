@@ -35,7 +35,7 @@ const HeaderComponent = () => {
   const getUserMenuItems = (role) => {
     const items = [];
 
-    if (role === "Customer") {
+    if (role === "customer") {
       items.push(
         {
           key: "my-room",
@@ -52,7 +52,7 @@ const HeaderComponent = () => {
       );
     }
 
-    if (role === "Owner") {
+    if (role === "owner") {
       items.push(
         {
           key: "manage-room",
@@ -69,7 +69,7 @@ const HeaderComponent = () => {
       );
     }
 
-    if (role === "Admin") {
+    if (role === "admin") {
       items.push({
         key: "dashboard",
         label: "Dashboard",
@@ -85,8 +85,8 @@ const HeaderComponent = () => {
         label: "Profile",
         icon: <UserOutlined />,
         onClick: () => {
-          if (role === "Customer") navigate("/customer/profile/personal-info");
-          else if (role === "Owner") navigate("/owner/profile");
+          if (role === "customer") navigate("/customer/profile/personal-info");
+          else if (role === "owner") navigate("/owner/profile");
           else navigate("/profile");
         },
       },
@@ -94,7 +94,7 @@ const HeaderComponent = () => {
         key: "contact",
         label: "Contact & Reports",
         icon: <MailOutlined />,
-        onClick: () => navigate("/contact"),
+        onClick: () => navigate("/customer/reports"),
       },
       {
         key: "chat",
@@ -128,7 +128,7 @@ const HeaderComponent = () => {
             <Link to="/about-us">About Us</Link>
           </Menu.Item>
 
-          {user?.role === "Customer" && (
+          {user?.role === "customer" && (
             <>
               <Menu.Item key="profile">
                 <Link to="/customer/profile/personal-info">Profile</Link>
@@ -136,7 +136,7 @@ const HeaderComponent = () => {
             </>
           )}
 
-          {user?.role === "Owner" && (
+          {user?.role === "owner" && (
             <>
               <Menu.Item key="communication">
                 <Link to="/owner/communication">Communication</Link>
@@ -153,14 +153,14 @@ const HeaderComponent = () => {
             </>
           )}
 
-          {user?.role === "Admin" && (
+          {user?.role === "admin" && (
             <Menu.Item key="admin-page">
               <Link to="/admin/dashboard">Dashboard</Link>
             </Menu.Item>
           )}
 
           <Menu.Item key="contact">
-            <Link to="/contact">Contact & Reports</Link>
+            <Link to="/customer/reports">Contact & Reports</Link>
           </Menu.Item>
           <Menu.Item key="room">
             <Link to="/customer/search">Room</Link>

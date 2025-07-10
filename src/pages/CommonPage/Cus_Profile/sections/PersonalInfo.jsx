@@ -20,7 +20,9 @@ import {
 } from '../../../../services/profileServices';
 import useUser from '../../../../contexts/UserContext';
 import './PersonalInfo.css';
-
+const capitalize = (str) => str && typeof str === 'string'
+  ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
+  : '';
 const { Title, Text } = Typography;
 
 const PersonalInfo = () => {
@@ -204,7 +206,7 @@ const { user, setUser, fetchUser } = useUser();
         <div className="flex-row">
           <Text className="label-style">Gender:</Text>
           <div className="flex-content">
-            <Text>{user.gender}</Text>
+            <Text>{capitalize(user.gender)}</Text>
           </div>
         </div>
         <Divider style={{ margin: '12px 0' }} />
@@ -213,7 +215,7 @@ const { user, setUser, fetchUser } = useUser();
         <div className="flex-row">
           <Text className="label-style">Quyền:</Text>
           <div className="flex-content">
-            <Text>{user.role}</Text>
+            <Text>{capitalize(user.role)}</Text>
           </div>
         </div>
       </Card>

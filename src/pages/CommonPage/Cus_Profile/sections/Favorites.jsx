@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, Spin, Row, Col, Pagination,Modal,Button,message as antMessage  } from "antd";
+import { Card, Spin, Row, Col, Pagination, Modal, Button, message as antMessage, Tag } from "antd";
 import { getUserFavorites } from "../../../../services/profileServices";
 import useUser from "../../../../contexts/UserContext";
 import { removeFavorite } from "../../../../services/profileServices";
@@ -21,22 +21,22 @@ const Favorites = () => {
   const handleCancel = () => setPreviewVisible(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
-const handleRemoveFavorite = async (accommodationId) => {
-  try {
-    await removeFavorite({
-      accommodationId,
-    });
+  const handleRemoveFavorite = async (accommodationId) => {
+    try {
+      await removeFavorite({
+        accommodationId,
+      });
 
-    messageApi.success("Removed from favorites");
+      messageApi.success("Removed from favorites");
 
-    setFavorites((prev) =>
-      prev.filter((fav) => fav.accommodationId._id !== accommodationId)
-    );
-  } catch (err) {
-    console.error(err);
-    messageApi.error("Failed to remove favorite");
-  }
-};
+      setFavorites((prev) =>
+        prev.filter((fav) => fav.accommodationId._id !== accommodationId)
+      );
+    } catch (err) {
+      console.error(err);
+      messageApi.error("Failed to remove favorite");
+    }
+  };
 
   useEffect(() => {
     if (userLoading) return;
@@ -83,56 +83,78 @@ const handleRemoveFavorite = async (accommodationId) => {
           const acc = fav.accommodationId;
 
           return (
-            
+
             <Col xs={24} sm={10} md={8} key={fav._id}>
               <Card
                 title={acc?.title || "No title"}
-                style={{ marginBottom: "16px" }}
+                style={{
+                  marginBottom: "16px",
+                  height: "600px",
+                  borderRadius: "12px", // Bo góc đẹp hơn
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+                bodyStyle={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  flexGrow: 1,
+                }}
                 cover={
-                  acc?.image ? (
+                  acc?.photos ? (
                     <img
                       alt={acc.title}
-                      src={acc.image}
+                      src={
+                        acc.photos && acc.photos.length > 0
+                          ? `http://localhost:5000${acc.photos[0]}`
+                          : "/default-image.jpg"
+                      }
                       style={{
                         width: "100%",
                         height: "200px",
-                        objectFit: "contain",
-                        backgroundColor: "#f5f5f5",
-                        display: "block",
-                        margin: "auto",
+                        objectFit: "cover",
+                        borderTopLeftRadius: "12px",
+                        borderTopRightRadius: "12px",
                       }}
-                      onClick={() => handleImageClick(acc.image)}
+                      onClick={() => handleImageClick(acc.photos)}
                     />
                   ) : null
                 }
               >
-                <p>{acc?.description || "No description"}</p>
-                <p>
-                  <strong>Price:</strong> {acc?.price?.toLocaleString()} VNĐ
-                </p>
-                <p>
-                  <strong>Status:</strong> {acc?.status}
-                </p>
+                <div style={{ flexGrow: 1 }}>
+                  <p>{acc?.description || "No description"}</p>
+                  <p>
+                    <strong>Giá:</strong> {acc?.price?.toLocaleString()} VNĐ
+                  </p>
+                  <p>
+                    <strong>Trạng thái:</strong>{" "}
+                    <Tag color={acc?.status === "Available" ? "green" : "volcano"}>
+                      {acc?.status?.toUpperCase()}
+                    </Tag>
+                  </p>
 
-                {acc?.location && (
-                  <>
-                    <p>
-                      <strong>Địa chỉ:</strong>{" "}
-                      {acc.location.addressDetail
-                        ? `${acc.location.addressDetail}, `
-                        : ""}
-                      {acc.location.street ? `${acc.location.street}, ` : ""}
-                      {acc.location.district || ""}
-                    </p>
-                    {(acc.location.latitude || acc.location.longitude) && (
+                  {acc?.location && (
+                    <>
                       <p>
-                        <strong>Tọa độ:</strong> {acc.location.latitude},{" "}
-                        {acc.location.longitude}
+                        <strong>Địa chỉ:</strong>{" "}
+                        {acc.location.addressDetail
+                          ? `${acc.location.addressDetail}, `
+                          : ""}
+                        {acc.location.street ? `${acc.location.street}, ` : ""}
+                        {acc.location.district || ""}
                       </p>
-                    )}
-                  </>
-                )}
-                     <Button
+                      {(acc.location.latitude || acc.location.longitude) && (
+                        <p>
+                          <strong>Tọa độ:</strong> {acc.location.latitude},{" "}
+                          {acc.location.longitude}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <Button
                   danger
                   type="primary"
                   onClick={() => handleRemoveFavorite(acc._id)}
@@ -142,6 +164,7 @@ const handleRemoveFavorite = async (accommodationId) => {
                   Remove from favorites
                 </Button>
               </Card>
+
             </Col>
           );
         })}
@@ -163,7 +186,7 @@ const handleRemoveFavorite = async (accommodationId) => {
         centered
         bodyStyle={{ padding: 0 }}
       >
-        <img alt="preview" src={previewImage}  style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain' }} />
+        <img alt="preview" src={previewImage} style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain' }} />
       </Modal>
     </div>
   );
