@@ -1,60 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { message } from "antd";
 import PostFilterBar from "./PostFilterBar";
 import PostTable from "./PostTable";
 import PostDetailModal from "./PostDetailModal";
 import PostDeleteModal from "./PostDeleteModal";
-import dayjs from "dayjs";
-
-// Demo data with report reasons
-const demoPosts = [
-  {
-    id: 1,
-    title: "Spacious Apartment in District 1",
-    owner: "Nguyen Van A",
-    status: "approved",
-    datePosted: "2025-06-10",
-    reported: 0,
-    reportReasons: [],
-  },
-  {
-    id: 2,
-    title: "Nice House with Garden",
-    owner: "Tran Thi B",
-    status: "reported",
-    datePosted: "2025-06-09",
-    reported: 6,
-    reportReasons: [
-      "Spam content",
-      "Misleading information",
-      "Offensive language",
-      "Duplicate post",
-      "Scam suspicion",
-      "Fake images",
-    ],
-  },
-  {
-    id: 3,
-    title: "Studio for Rent",
-    owner: "Le Van C",
-    status: "pending",
-    datePosted: "2025-06-08",
-    reported: 0,
-    reportReasons: [],
-  },
-  {
-    id: 4,
-    title: "Cheap Room in District 5",
-    owner: "Pham Thi D",
-    status: "deleted",
-    datePosted: "2025-06-07",
-    reported: 2,
-    reportReasons: ["Spam content", "Inappropriate images"],
-  },
-];
+// import dayjs from "dayjs";
+import { getAdminAccommodations, approveAccommodationAdmin, deleteAccommodationAdmin } from "./services/accommodationService";
 
 const Posts = () => {
-  const [posts, setPosts] = useState(demoPosts);
+  const [messageApi, contextHolder] = message.useMessage();
+  const [posts, setPosts] = useState([]);
   const [filters, setFilters] = useState({
     owner: undefined,
     status: undefined,
@@ -63,79 +18,191 @@ const Posts = () => {
   });
   const [viewPost, setViewPost] = useState(null);
   const [deletePost, setDeletePost] = useState(null);
-  const [history, setHistory] = useState({});
+  const [loading, setLoading] = useState(false);
 
-  // Update status handler
-  const handleStatusChange = (postId, newStatus, reason) => {
-    setPosts((prev) =>
-      prev.map((p) => {
-        if (p.id === postId) {
-          setHistory(h => ({ ...h, [postId]: p.status }));
-          return { ...p, status: newStatus };
-        }
-        return p;
-      })
-    );
-    message.success(`Post status updated to "${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}"`);
+  // Fetch accommodations from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const params = {
+          page: 1,
+          limit: 20,
+          owner: filters.owner,
+          status: filters.approvedStatus,
+          fromDate: filters.dateRange?.[0]?.format?.("YYYY-MM-DD"),
+          toDate: filters.dateRange?.[1]?.format?.("YYYY-MM-DD"),
+          search: filters.search,
+        };
+        const data = await getAdminAccommodations(params);
+        setPosts(data.accommodations || []);
+        
+      } catch (err) {
+        messageApi.open({
+          type: 'error',
+          content: 'Không thể tải dữ liệu. Vui lòng thử lại!',
+          duration: 4,
+        });
+        console.error('Error fetching accommodations:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [filters, messageApi]);
+
+  // Refresh data helper function
+  const refreshData = async () => {
+    const params = {
+      page: 1,
+      limit: 20,
+      owner: filters.owner,
+      status: filters.approvedStatus,
+      fromDate: filters.dateRange?.[0]?.format?.("YYYY-MM-DD"),
+      toDate: filters.dateRange?.[1]?.format?.("YYYY-MM-DD"),
+      search: filters.search,
+    };
+    const data = await getAdminAccommodations(params);
+    setPosts(data.accommodations || []);
   };
 
-  // Filter logic
-  const filteredPosts = posts.filter((post) => {
-    const matchOwner = filters.owner ? post.owner === filters.owner : true;
-    const matchStatus = filters.status ? post.status === filters.status : true;
-    const matchDate =
-      filters.dateRange.length === 2
-        ? dayjs(post.datePosted).isAfter(filters.dateRange[0].startOf("day").subtract(1, "day")) &&
-        dayjs(post.datePosted).isBefore(filters.dateRange[1].endOf("day").add(1, "day"))
-        : true;
-    const matchSearch = filters.search
-      ? post.title.toLowerCase().includes(filters.search.toLowerCase())
-      : true;
-    return matchOwner && matchStatus && matchDate && matchSearch;
-  });
+  // Handle approve post
+  const handleApprove = async (postId, approvedStatus) => {
+    // Hiển thị loading message
+    const loadingKey = 'approve-loading';
+    messageApi.open({
+      key: loadingKey,
+      type: 'loading',
+      content: 'Đang xử lý phê duyệt...',
+      duration: 0,
+    });
 
-  // Owner options for filter
-  const ownerOptions = [...new Set(posts.map((p) => p.owner))];
-
-  // Delete post handler (soft delete)
-  const handleDelete = () => {
-    if (deletePost) {
-      setPosts((prev) =>
-        prev.map((p) =>
-          p.id === deletePost.id ? { ...p, status: "deleted" } : p
-        )
-      );
-      message.success("Post moved to Deleted status.");
-      setDeletePost(null);
+    try {
+      await approveAccommodationAdmin(postId, approvedStatus);
+      
+      // Ẩn loading và hiển thị success
+      messageApi.open({
+        key: loadingKey,
+        type: 'success',
+        content: 'Browser login successful!',
+        duration: 3,
+      });
+      
+      // Refresh data
+      await refreshData();
+    } catch (err) {
+      // Ẩn loading và hiển thị error
+      messageApi.open({
+        key: loadingKey,
+        type: 'error',
+        content: 'Post could not be approved. Please try again!',
+        duration: 4,
+      });
+      console.error('Error approving post:', err);
     }
   };
 
-  const handleUndo = (postId) => {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId && history[postId]
-          ? { ...p, status: history[postId] }
-          : p
-      )
-    );
+  // Handle reject post with reason
+  const handleReject = async (postId, approvedStatus, rejectedReason) => {
+    // Hiển thị loading message
+    const loadingKey = 'reject-loading';
+    messageApi.open({
+      key: loadingKey,
+      type: 'loading',
+      content: 'Processing rejection...',
+      duration: 0,
+    });
+
+    try {
+      await approveAccommodationAdmin(postId, approvedStatus, rejectedReason);
+      
+      // Ẩn loading và hiển thị warning
+      messageApi.open({
+        key: loadingKey,
+        type: 'warning',
+        content: `Post rejected${rejectedReason ? `: ${rejectedReason}` : ''}`,
+        duration: 4,
+      });
+      
+      // Refresh data
+      await refreshData();
+    } catch (err) {
+      // Ẩn loading và hiển thị error
+      messageApi.open({
+        key: loadingKey,
+        type: 'error',
+        content: 'Post could not be rejected. Please try again!',
+        duration: 4,
+      })
+      console.error('Error rejecting post:', err);
+    }
   };
 
+  // Handle delete post with reason
+  const handleDelete = async (postId, reason) => {
+    // Hiển thị loading message
+    const loadingKey = 'delete-loading';
+    messageApi.open({
+      key: loadingKey,
+      type: 'loading',
+      content: 'Processing deletion...',
+      duration: 0,
+    });
+
+    try {
+      await deleteAccommodationAdmin(postId, reason);
+      
+      // Ẩn loading và hiển thị success (dùng error type để nhấn mạnh tính nghiêm trọng)
+      messageApi.open({
+        key: loadingKey,
+        type: 'error',
+        content: `Post deleted successfully! Reason: ${reason}`,
+        duration: 4,
+      });
+      
+      // Refresh data
+      await refreshData();
+    } catch (err) {
+      // Ẩn loading và hiển thị error
+      messageApi.open({
+        key: loadingKey,
+        type: 'error',
+        content: 'Post could not be deleted. Please try again!',
+        duration: 4,
+      });
+      console.error('Error deleting post:', err);
+    }
+  };
+
+  // Only show: name, owner, createdAt in the table
+  const tableData = posts.map((post) => ({
+    id: post._id,
+    title: post.title,
+    owner: post.owner?.name || "N/A",
+    status: post.approvedStatus || post.status || "unknown",
+    createdAt: post.createdAt,
+    raw: post, // for detail modal
+  }));
 
   return (
-    <div className="page-container" style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <h1 style={{ marginBottom: 24 }}>Posts Management</h1>
-      <PostFilterBar filters={filters} setFilters={setFilters} ownerOptions={ownerOptions} />
-      <PostTable
-        data={filteredPosts}
-        onView={setViewPost}
-        onApprove={(id) => handleStatusChange(id, "approved")}
-        onDelete={setDeletePost}
-        onDropdownAction={handleStatusChange}
-        onUndo={handleUndo}
-      />
-      <PostDetailModal post={viewPost} onClose={() => setViewPost(null)} />
-      <PostDeleteModal open={!!deletePost} onCancel={() => setDeletePost(null)} onOk={handleDelete} />
-    </div>
+    <>
+      {contextHolder}
+      <div className="page-container" style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <h1 style={{ marginBottom: 24 }}>Posts Management</h1>
+        <PostFilterBar filters={filters} setFilters={setFilters} ownerOptions={[]} />
+        <PostTable
+          data={tableData}
+          loading={loading}
+          onView={(row) => setViewPost(row.raw)}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onDelete={handleDelete}
+          // Add other handlers as needed
+        />
+        <PostDetailModal post={viewPost} onClose={() => setViewPost(null)} />
+        <PostDeleteModal open={!!deletePost} onCancel={() => setDeletePost(null)} onOk={() => {}} />
+      </div>
+    </>
   );
 };
 

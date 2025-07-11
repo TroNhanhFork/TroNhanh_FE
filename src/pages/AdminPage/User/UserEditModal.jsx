@@ -24,13 +24,13 @@ import {
 } from '@ant-design/icons';
 import moment from 'moment';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 const { Option } = Select;
 
 const ROLE_OPTIONS = [
-  { id: 1, name: 'Owner' },
-  { id: 2, name: 'User' },
-  { id: 3, name: 'Admin' },
+  { id: 1, name: 'Admin' },
+  { id: 2, name: 'Owner' },
+  { id: 3, name: 'Customer' },
 ];
 
 
@@ -41,13 +41,16 @@ const UserEditModal = ({ user, onClose, onSave }) => {
   // Khởi tạo form với dữ liệu user tĩnh
   useEffect(() => {
     if (user) {
+      // Get the first role name or default to empty string
+      const userRole = user.roles && user.roles.length > 0 ? user.roles[0].name : '';
+      
       form.setFieldsValue({
         fullName: user.fullName,
         email: user.email,
         phoneNumber: user.phoneNumber,
         dob: user.dob ? moment(user.dob, "YYYY-MM-DD") : null,
         gender: user.gender || null,
-        roles: user.roles ? user.roles.map(role => role.name) : [],
+        role: userRole, // Single role instead of array
       });
     }
   }, [user, form]);
@@ -56,25 +59,35 @@ const UserEditModal = ({ user, onClose, onSave }) => {
     try {
       setLoading(true);
       const values = await form.validateFields();
-      // Chuyển đổi dữ liệu ngày sinh
+      
+      console.log('📝 Form values:', values);
+      console.log('📝 Original user:', user);
+      
+      // Transform the data for the API
       const updatedUser = {
         ...user,
-        ...values,
+        fullName: values.fullName,
+        email: values.email,
+        phoneNumber: values.phoneNumber,
+        gender: values.gender,
         dob: values.dob ? values.dob.format('YYYY-MM-DD') : null,
-        roles: values.roles
-          ? values.roles.map(roleName => {
-            const found = ROLE_OPTIONS.find(r => r.name === roleName);
-            return found ? { id: found.id, name: found.name } : { id: null, name: roleName };
-          })
-          : [],
+        // Convert single role back to array format for frontend consistency
+        roles: values.role ? [{ id: null, name: values.role }] : [],
       };
-      message.success('User updated (local only)');
-      setTimeout(() => {
-        if (onSave) onSave(updatedUser);
-        onClose();
-      }, 600);
+      
+      console.log('💾 Submitting user edit:', updatedUser);
+      console.log('💾 Updated user roles:', updatedUser.roles);
+      
+      if (onSave) {
+        await onSave(updatedUser);
+      }
     } catch (error) {
-      message.error('Please check your input!');
+      console.error('💾 Error in handleSubmit:', error);
+      if (error.errorFields) {
+        message.error('Please check your input!');
+      } else {
+        message.error('Failed to update user. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -193,13 +206,12 @@ const UserEditModal = ({ user, onClose, onSave }) => {
             </Row>
 
             <Form.Item
-              name="roles"
-              label="Roles"
-              rules={[{ required: true, message: 'Please select at least one role' }]}
+              name="role"
+              label="Role"
+              rules={[{ required: true, message: 'Please select a role' }]}
             >
               <Select
-                mode="multiple"
-                placeholder="Select roles"
+                placeholder="Select role"
                 allowClear
               >
                 {ROLE_OPTIONS.map(role => (
