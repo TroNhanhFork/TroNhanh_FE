@@ -1,3 +1,4 @@
+// file TroNhanh_FE/src/pages/AdminPage/Membership/services/membershipService.js
 import axios from "axios";
 import { getValidAccessToken } from "../../../../services/authService";
 
@@ -10,7 +11,7 @@ export const getAllMembershipPackages = async (params = {}) => {
   }
   const response = await axios.get(`${API_BASE_URL}/admin/membership-packages`, {
     params,
-    headers: { Authorization: `Bearer ${token}` } 
+    headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;
 };

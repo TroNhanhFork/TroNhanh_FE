@@ -98,6 +98,22 @@
   margin-top: auto;
 }
 
+.plan-card.active {
+  border: 2px solid #4caf50;
+  background-color: #eaffea;
+  box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+}
+
+.active-badge {
+  background-color: #28a745;
+  color: white;
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
 .upgrade-section {
   background-color: #e6f3e6;
   padding: 15px;

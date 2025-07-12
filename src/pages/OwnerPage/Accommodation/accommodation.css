@@ -38,32 +38,6 @@ h2 {
   transform: translateY(-1px);
 }
 
-/*đoạn code mặc định cho ant design*/
-/* .ant-table {
-  background-color: #F5FBF6;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.ant-table-thead > tr > th {
-  background-color: #DDEBDD !important;
-  color: #2f3e2f;
-  font-weight: 600;
-  font-size: 15px;
-}
-
-.ant-table-tbody > tr > td {
-  background-color: #F5FBF6;
-  color: #3e3e3e;
-  font-size: 14px;
-}
-
-.ant-table-tbody > tr:hover > td {
-  background-color: #e8f5ea !important;
-} */
-
-
-
 /* Chỉ áp dụng cho bảng trong Accommodation */
 .accommodation-table {
   background-color: #F5FBF6;
