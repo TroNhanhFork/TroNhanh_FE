@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// file TroNhanh_FE/src/pages/OwnerPage/Report/report.jsx
+import React, { useState, useEffect } from "react";
 import "./report.css";
 import { Table, Button, Select, Modal, message } from "antd";
 const { Option } = Select;
@@ -11,35 +12,79 @@ const Report = () => {
     content: "",
   });
 
+  useEffect(() => {
+  const fetchReports = async () => {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user?.id) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/reports?reporterId=${user.id}`);
+      const data = await res.json();
+
+      if (res.ok) {
+        const formatted = data.reports.map((r) => ({
+          ...r,
+          key: r._id,
+          submittedAt: new Date(r.createAt).toLocaleString(),
+        }));
+        setReportList(formatted);
+      } else {
+        console.error("❌ Lỗi khi tải danh sách report:", data.message);
+      }
+    } catch (err) {
+      console.error("❌ Không thể tải danh sách report:", err);
+    }
+  };
+
+  fetchReports();
+}, []);
+
   const handleChange = (field, value) => {
     setReportForm({ ...reportForm, [field]: value });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    const user = JSON.parse(localStorage.getItem("user")); // 👈 cần có id
+
     const { type, content } = reportForm;
-
     if (!type || content.trim().length < 10) {
-    alert("Vui lòng chọn loại report và nội dung tối thiểu 10 ký tự."); // 👈 dùng alert thay vì message.error
-    return;
-  }
+      alert("Vui lòng chọn loại report và nội dung tối thiểu 10 ký tự.");
+      return;
+    }
 
+    try {
+      const res = await fetch("http://localhost:5000/api/reports", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          reporterId: user.id,
+          type,
+          content,
+        }),
+      });
 
-    const newReport = {
-      key: reportList.length + 1,
-      type,
-      content,
-      status: "Pending",
-      submittedAt: new Date().toLocaleString(),
-    };
+      const data = await res.json();
+      if (res.ok) {
+        setReportList([...reportList, {
+          ...data.data,
+          key: data.data._id,
+          submittedAt: new Date(data.data.createAt).toLocaleString(),
+        }]);
 
-    setReportList([...reportList, newReport]);
-    setReportForm({ type: "", content: "" });
-    setIsModalVisible(false);
-
-    // ✅ Hiển thị thông báo thành công
-    alert("Report đã được gửi tới admin!"); // 👈 dùng alert thành công
-
+        setIsModalVisible(false);
+        setReportForm({ type: "", content: "" });
+        alert("✅ Report đã được gửi tới admin!");
+      } else {
+        alert("❌ Lỗi gửi report: " + data.message);
+      }
+    } catch (err) {
+      console.error("❌ Error sending report:", err);
+      alert("Không thể gửi report. Vui lòng thử lại.");
+    }
   };
+
 
   const columns = [
     {
@@ -60,6 +105,10 @@ const Report = () => {
     {
       title: "Submitted At",
       dataIndex: "submittedAt",
+    },
+    {
+      title: "Admin Feedback",
+      dataIndex: "adminFeedback",
     },
   ];
 
