@@ -5,22 +5,30 @@ const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
 
   const fetchUser = async () => {
     try {
-      const res = await getUserInfo();
-      setUser(res.data);
+      const res = await getUserInfo(); // returns basic credentials
+      const token = localStorage.getItem("token"); // grab saved token
+      if (token) {
+        setUser({ ...res.data, token }); // include token in user state
+      } else {
+        setUser(null);
+      }
     } catch (err) {
-      setUser(null); 
+      setUser(null);
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
+  // clean up tokens after logout
   const logout = () => {
     setUser(null);
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("tokenExpire");
   };
 
   useEffect(() => {
@@ -28,7 +36,7 @@ export const UserProvider = ({ children }) => {
     if (token) {
       fetchUser();
     } else {
-      setLoading(false); 
+      setLoading(false);
     }
   }, []);
 

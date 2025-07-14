@@ -15,6 +15,13 @@
   border-radius: 12px;
 }
 
+.property-gallery-image {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
 .favorite-btn {
   position: absolute;
   top: 16px;
@@ -27,7 +34,6 @@
   cursor: pointer;
   border: none;
 }
-
 
 .property-gallery-image {
   width: 100%;
@@ -102,7 +108,6 @@
 .booking-button {
   background-color: #004d47;
   color: white;
-  width: 100%;
   border-radius: 8px;
   margin-top: 16px;
 }
@@ -113,22 +118,29 @@
   text-align: center;
 }
 
-.property-amenities {
-  margin-top: 24px;
-}
-
-.amenity-item {
+.amenity-category {
+  font-weight: 600;
+  color: #004d47;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
-.amenity-icon {
-  font-size: 24px;
+.amenity-category-icon {
+  color: #004d47;
+  font-size: 3rem;
 }
 
-.amenity-note {
-  font-size: 12px;
+.amenity-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.amenity-list li {
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
 }
 
 .map-container {
@@ -161,4 +173,83 @@
 
 .roommate-card h3 {
   margin-bottom: 0.5rem;
+}
+
+.custom-review-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+  border: 1px solid #e6e6e6;
+  padding: 16px;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.review-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.review-rating-date {
+  font-size: 14px;
+  color: #555;
+}
+
+.review-rating {
+  font-weight: bold;
+  color: #004d47;
+}
+
+.review-time {
+  margin-left: 8px;
+  color: #999;
+}
+
+.review-body {
+  font-size: 15px;
+  color: #333;
+  margin: 12px 0;
+}
+
+.review-body a {
+  color: #004d47;
+  font-size: 14px;
+}
+
+.review-action-buttons {
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.review-action-buttons .ant-btn {
+  color: #fff;
+  background-color: #004d47;
+  padding: 2px 12px;
+  font-size: 13px;
+  border-radius: 6px;
+}
+
+.review-action-buttons .ant-btn-dangerous {
+  background-color: #ff4d4f;
+  border-color: #ff4d4f;
+}
+
+.review-action-buttons .ant-btn-dangerous:hover {
+  background-color: #d9363e;
+  border-color: #d9363e;
+}
+
+.review-footer {
+  font-size: 14px;
+  color: #004d47;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
 }
