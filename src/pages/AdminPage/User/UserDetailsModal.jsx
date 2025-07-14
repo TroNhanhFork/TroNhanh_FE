@@ -30,7 +30,7 @@ const UserDetailsModal = ({ user }) => {
           <p><strong>Email:</strong> {user.email}</p>
           <p><strong>Phone:</strong> {user.phoneNumber || 'N/A'}</p>
           <p><strong>Date of Birth:</strong> {user.dob || 'N/A'}</p>
-          <p><strong>Gender:</strong> {user.gender?.name || 'N/A'}</p>
+          <p><strong>Gender:</strong> {user.gender ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1) : 'N/A'}</p>
         </div>
 
         <div style={{ marginLeft: 20 }}>
@@ -38,20 +38,21 @@ const UserDetailsModal = ({ user }) => {
           <p>
             <strong>Account:</strong>
             <Tag
-              color={user.isLocked ? 'red' : 'green'}
+              color={user.status === 'banned' ? 'red' : user.status === 'inactive' ? 'volcano' : 'green'}
               style={{ marginLeft: 8 }}
             >
-              {user.isLocked ? 'Locked' : 'Active'}
+              {user.status === 'banned' ? 'Locked' : user.status === 'inactive' ? 'Deleted' : 'Active'}
             </Tag>
           </p>
-          {user.roles?.some(role => role.name === "Owner") && (
+          {/* Show membership status only for User and Owner roles */}
+          {user.roles?.some(role => role.name === "Owner" || role.name === "User") && (
             <p>
               <strong>Membership:</strong>
               <Tag
-                color={user.membership === "active" ? 'green' : 'default'}
+                color={user.isMembership ? 'green' : 'orange'}
                 style={{ marginLeft: 8 }}
               >
-                {user.membership === "active" ? 'Active' : 'None'}
+                {user.isMembership ? 'Active' : 'None'}
               </Tag>
             </p>
           )}

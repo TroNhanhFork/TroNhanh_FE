@@ -135,9 +135,43 @@ const Accommodation = () => {
     <div className="accommodation-wrapper">
       <div className="header-row">
         <h2>Manage Accommodation</h2>
-        <Button className="add-btn" onClick={() => setIsAddModalVisible(true)}>
+        <Button
+          className="add-btn"
+          onClick={async () => {
+            const user = JSON.parse(localStorage.getItem("user"));
+            if (!user || !user.id) {
+              alert("Vui lòng đăng nhập lại.");
+              return;
+            }
+
+            try {
+              const res = await axios.get(`http://localhost:5000/api/payment/current/${user.id}`);
+              const pkg = res.data.package;
+
+              if (!pkg) {
+                alert("❌ Bạn chưa mua gói membership nào. Vui lòng mua để sử dụng tính năng này.");
+                return;
+              }
+
+              const expiredAt = new Date(res.data.expiredAt);
+              const now = new Date();
+
+              if (now > expiredAt) {
+                alert("❌ Gói membership của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục.");
+                return;
+              }
+
+              // ✅ Nếu membership còn hạn → mở modal
+              setIsAddModalVisible(true);
+            } catch (err) {
+              console.error("❌ Lỗi khi kiểm tra membership:", err);
+              alert("Không thể kiểm tra trạng thái membership. Vui lòng thử lại.");
+            }
+          }}
+        >
           ADD
         </Button>
+
       </div>
 
       <Table

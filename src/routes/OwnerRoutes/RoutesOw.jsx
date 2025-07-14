@@ -1,4 +1,4 @@
-// File: src/routes/OwnerRoutes/RoutesOw.jsx
+// File: TroNhanh_FE/src/routes/OwnerRoutes/RoutesOw.jsx
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import OwnerLayout from "../../pages/OwnerPage/Components/Layout/OwnerLayout";
@@ -10,6 +10,7 @@ import DetailRating from "../../pages/OwnerPage/Rating/DetailRating";
 import Communication from "../../pages/OwnerPage/Communication/communication";
 import Membership from "../../pages/OwnerPage/MemberShip/membership";
 import Cancellation from "../../pages/OwnerPage/Cancellation/cancellation";
+import PaymentResult from "../../pages/OwnerPage/MemberShip/PaymentResult"; 
 
 const RoutesOw = () => {
     return (
@@ -23,6 +24,7 @@ const RoutesOw = () => {
                 <Route path="rating/:id" element={<DetailRating />} />
                 <Route path="communication" element={<Communication />} />
                 <Route path="membership" element={<Membership />} />
+                <Route path="membership-result" element={<PaymentResult />} /> 
                 <Route path="cancellation" element={<Cancellation />} />
             </Route>
         </Routes>
