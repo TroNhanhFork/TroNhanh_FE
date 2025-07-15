@@ -5,7 +5,7 @@ import PostTable from "./PostTable";
 import PostDetailModal from "./PostDetailModal";
 import PostDeleteModal from "./PostDeleteModal";
 // import dayjs from "dayjs";
-import { getAdminAccommodations, approveAccommodationAdmin, deleteAccommodationAdmin } from "./services/accommodationService";
+import { getAdminAccommodations, approveAccommodationAdmin, deleteAccommodationAdmin } from "../../../services/accommodationAdminService";
 
 const Posts = () => {
   const [messageApi, contextHolder] = message.useMessage();

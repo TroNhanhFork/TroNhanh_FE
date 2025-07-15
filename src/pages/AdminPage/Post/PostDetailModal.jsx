@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Modal, Tag, Space, Image, Spin, message } from "antd";
 import { UserOutlined, EnvironmentOutlined, DollarOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { getAccommodationDetailAdmin } from "./services/accommodationService";
+import { getAccommodationDetailAdmin } from "../../../services/accommodationAdminService";
 
 const statusColors = {
   pending: "blue",

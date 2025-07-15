@@ -1,4 +1,3 @@
-// file: src/App.js
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import HeaderComponent from './components/header/header';
@@ -13,7 +12,11 @@ import RegisterPage from './pages/CustomerPage/Auth/RegisterPage';
 import { initAutoLogout, stopAutoLogout } from './services/autoLogout';
 import useUser, { UserProvider } from './contexts/UserContext';
 import { setupInterceptors } from './services/api';
-import Communication from './components/Communication/communication';
+import VerifyOtpPage from './pages/CustomerPage/Auth/VerifyOTP';
+import ForgotPasswordPage from './pages/CustomerPage/Auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/CustomerPage/Auth/ResetPasswordPage';
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 function AppRoutes() {
   const location = useLocation();
@@ -39,7 +42,7 @@ function AppRoutes() {
 
   if (loading) return <p>Loading...</p>;
 
-  const hideLayout = ["/login", "/register"].some(path => location.pathname.startsWith(path));
+const hideLayout = ["/login", "/register","/verify-otp","/forgot-password","/reset-password"].some(path => location.pathname.startsWith(path));
 
   return (
     <>
@@ -47,18 +50,19 @@ function AppRoutes() {
 
       <main className="main-container" style={{ marginTop: hideLayout ? '0px' : '80px' }}>
         <Routes>
-          <Route index element={<Navigate to="/homepage" replace />} />
+            <Route index element={<Navigate to="/homepage" replace />} />
           {/* Auth routes */}
 
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-
+          <Route path="/verify-otp" element={<VerifyOtpPage/>}/>
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           {/* App routes */}
           <Route path="/homepage" element={<RoutesApp />} />
           <Route path="/owner/*" element={<RoutesOw />} />
           <Route path="/admin/*" element={<RoutesAd />} />
           <Route path="/customer/*" element={<RoutesCus />} />
-          <Route path="/chat" element={<Communication />} />
 
           {/* Exception route */}
           <Route path="*" element={<ExceptionRoutes />} />

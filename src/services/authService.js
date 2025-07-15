@@ -3,7 +3,11 @@ import api from './api';
 import { stopAutoLogout } from './autoLogout';
 export const login = (data) => api.post('/auth/login', data);
 export const register = (data) => api.post('/auth/register', data);
-
+export const sendOTP = (data) => api.post("/auth/send-otp", data);
+export const verifyOTP = (data) => api.post("/auth/verify-otp", data);
+export const resendOTP = (data) => api.post("/auth/resend-otp", data);
+export const forgotPassword = (data) => api.post("/auth/forgot-password", data);
+export const resetPassword = (token, data) => api.post(`/auth/reset-password/${token}`, data);
 let isRefreshing = false;
 let refreshSubscribers = [];
 let loggedOut = false;

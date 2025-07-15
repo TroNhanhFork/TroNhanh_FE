@@ -6,7 +6,7 @@ import MembershipCardList from "./MembershipCardList";
 import MembershipFormModal from "./MembershipFormModal";
 import MembershipViewModal from "./MembershipViewModal";
 import TransactionHistoryTab from "./TransactionHistoryTab";
-import { getAllMembershipPackages, createMembershipPackage, updateMembershipPackage, deleteMembershipPackage } from "./services/membershipService";
+import { getAllMembershipPackages, createMembershipPackage, updateMembershipPackage, deleteMembershipPackage } from "../../../services/membershipService";
 
 const Membership = () => {
   const [packages, setPackages] = useState([]);

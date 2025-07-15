@@ -30,9 +30,9 @@ const RoommatePostModal = ({ visible, onClose, accommodationId, onSuccess }) => 
         </Form.Item>
         <Form.Item name="genderPreference" label="Gender Preference">
           <Select defaultValue="Any">
-            <Select.Option value="Any">Any</Select.Option>
-            <Select.Option value="Male">Male</Select.Option>
-            <Select.Option value="Female">Female</Select.Option>
+            <Select.Option value="other">Other</Select.Option>
+            <Select.Option value="male">Male</Select.Option>
+            <Select.Option value="female">Female</Select.Option>
           </Select>
         </Form.Item>
         <Form.Item name="habits" label="Habits">

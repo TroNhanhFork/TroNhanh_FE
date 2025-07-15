@@ -8,7 +8,7 @@ import {
   SafetyOutlined,
   DashboardOutlined
 } from '@ant-design/icons';
-import { getUserStats } from './services/userService';
+import { getUserStats } from '../../../services/userService';
 
 const UserStatsDashboard = () => {
   const [stats, setStats] = useState({

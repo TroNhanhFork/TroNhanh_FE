@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Table, Input, DatePicker, Select, Space, Tag, Alert, Button, message, Spin, Statistic, Row, Col, Card, Typography } from "antd";
 import { EyeOutlined, ReloadOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { getTransactionHistory } from "./services/transactionService";
+import { getTransactionHistory } from "../../../services/transactionService";
 import TransactionDetailModal from "./TransactionDetailModal";
 
 const { RangePicker } = DatePicker;

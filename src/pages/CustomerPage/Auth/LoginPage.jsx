@@ -1,18 +1,6 @@
-// file: TroNhanh_FE/src/pages/CustomerPage/Auth/LoginPage.jsx
 import React, { useState } from 'react';
-import {
-  Form,
-  Input,
-  Button,
-  Typography,
-  message as antMessage
-} from 'antd';
+import { Form, Input, Button, Typography, message as antMessage } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import {
-  UserOutlined,
-  LockOutlined,
-  LoginOutlined
-} from '@ant-design/icons';
 import { login, saveAccessToken } from '../../../services/authService';
 import { initAutoLogout } from '../../../services/autoLogout';
 import useUser from '../../../contexts/UserContext';
@@ -32,21 +20,27 @@ const LoginPage = () => {
     try {
       const res = await login(values);
 
-     // ✅ Lưu user và token vào localStorage
-     localStorage.setItem("user", JSON.stringify(res.data.user)); // ⬅️ THÊM DÒNG NÀY
-
       saveAccessToken(res.data.accessToken, 30 * 60 * 1000, res.data.refreshToken);
       await fetchUser();
       initAutoLogout();
 
-      const role = res.data.user.role?.toLowerCase();
-      if (['admin', 'owner', 'customer'].includes(role)) {
+      const role = res.data.user.role;
+
+      if (role === 'admin') {
+        await messageApi.success('Login successful!');
+        navigate('/admin/dashboard');
+      } else if (role === 'owner') {
+        await messageApi.success('Login successful!');
+        navigate('/homepage');
+      } else if (role === 'customer') {
+        await messageApi.success('Login successful!');
         navigate('/homepage');
       } else {
         messageApi.error('Role không hợp lệ hoặc chưa được phân quyền!');
         return;
       }
-      messageApi.success('Login successful!');
+
+
     } catch (err) {
       const errors = err.response?.data?.errors;
       if (Array.isArray(errors)) {
@@ -55,6 +49,7 @@ const LoginPage = () => {
           errors: [error.msg],
         })));
       } else {
+        console.log('Login error:', err);
         messageApi.error(err.response?.data?.message || 'Login failed');
       }
     } finally {
@@ -63,69 +58,51 @@ const LoginPage = () => {
   };
 
   return (
-    <div className={styles.loginWrapper}>
-      {/* Left Video Banner */}
-      <div className={styles.leftPane}>
-        <video
-          className={styles.video}
-          src={require('../../../assets/images/Login.mp4')}
-          autoPlay
-          loop
-          muted
-        />
-      </div>
+    <div className={styles.container}>
+      {contextHolder} { }
+      <Title level={2} style={{ textAlign: 'center' }}>Login</Title>
+      <Form layout="vertical" form={form} onFinish={onFinish}>
+        <Form.Item
+          label="Email"
+          name="email"
+          rules={[{ required: true, message: 'Please enter your email!' }]}
+        >
+          <Input type="email" placeholder="Enter your email" />
+        </Form.Item>
 
-      {/* Right Form */}
-      <div className={styles.rightPane}>
-        {contextHolder}
-        <Form layout="vertical" form={form} onFinish={onFinish} className={styles.formBox}>
-  <Title level={2} className={styles.title}>Welcome Back 👋</Title>
+        <Form.Item
+          label="Password"
+          name="password"
+          rules={[{ required: true, message: 'Please enter your password!' }]}
+        >
+          <Input.Password placeholder="Enter your password" />
+        </Form.Item>
 
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[{ required: true, message: 'Please enter your email!' }]}
+        <Form.Item>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={loading}
+            block
+            className={styles.submitButton}
           >
-            <Input
-              prefix={<UserOutlined style={{ color: '#49735A' }} />}
-              placeholder="Enter your email"
-              type="email"
-            />
-          </Form.Item>
+            Login
+          </Button>
 
-          <Form.Item
-            label="Password"
-            name="password"
-            rules={[{ required: true, message: 'Please enter your password!' }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined style={{ color: '#49735A' }} />}
-              placeholder="Enter your password"
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              className={styles.submitButton}
-            >
-              <LoginOutlined />
-              Login
-            </Button>
-          </Form.Item>
-
-          <Form.Item>
-            <p className={styles.login}>
-              Don't have an account? <a href="/register">Register</a>
-            </p>
-          </Form.Item>
-        </Form>
-      </div>
+        </Form.Item>
+        <Form.Item style={{ textAlign: 'center', marginTop: -10 }}>
+          <Button type="link" size="small" href="/forgot-password">
+            Forgot password?
+          </Button>
+        </Form.Item>
+        <Form.Item style={{ marginTop: -20 }}>
+          <p className={styles.login}>
+            Don't have an account? <a href='/register'>Register</a>
+          </p>
+        </Form.Item>
+      </Form>
     </div>
   );
 };
 
 export default LoginPage;
-
