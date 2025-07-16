@@ -2,6 +2,8 @@ import { Tag } from "antd";
 import { Link } from "react-router-dom";
 
 const PropertyCard = ({ property }) => {
+  if (!property) return null;
+
   return (
     <Link
       to={`/customer/property/${property._id}`}
@@ -28,48 +30,44 @@ const PropertyCard = ({ property }) => {
         }}
       >
         <img
-          alt="property"
-          src={property.photos && property.photos.length > 0
-            ? `http://localhost:5000${property.photos[0]}`
-            : "/default-image.jpg"}
+          alt="accommodation"
+          src={`http://localhost:5000${
+            property.photos?.[0] || "/uploads/accommodation/default.png"
+          }`}
           style={{
             width: "200px",
             height: "150px",
             objectFit: "cover",
           }}
         />
-
         <div style={{ padding: "16px", flex: 1 }}>
           <h3 style={{ margin: 0, marginBottom: "8px" }}>{property.title}</h3>
           <p style={{ margin: 0, marginBottom: "8px", color: "#555" }}>
-            {property.location?.street}, {property.location?.district}
+            {property.locationDetails}
+          </p>
+          <p style={{ margin: 0, marginBottom: "8px", color: "#555" }}>
+            {property.roomDetails}
           </p>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <Tag
               style={{
-                backgroundColor:
-                  property.status === "Available"
-                    ? "#52c41a"
-                    : property.status === "Unavailable"
-                      ? "#faad14"
-                      : "#f5222d",
+                backgroundColor: "#49735A",
                 color: "#fff",
                 borderRadius: "8px",
                 padding: "4px 12px",
                 fontWeight: "bold",
                 fontSize: "14px",
-                textTransform: "capitalize",
               }}
             >
-              {property.status}
+              Available {property.available}
             </Tag>
             <span style={{ fontSize: "16px" }}>
+              from{" "}
               <span style={{ fontWeight: "bold" }}>
-                {property.price?.toLocaleString("vi-VN")}
+                {property.price.toLocaleString("vi-VN")}₫
               </span>{" "}
-              VNĐ/month
+              /month
             </span>
-
           </div>
         </div>
       </div>

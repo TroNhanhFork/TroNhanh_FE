@@ -4,32 +4,38 @@ import Filters from "./components/Filters";
 import PropertyList from "./components/PropertyList";
 import MapView from "./components/MapView";
 import FAQ from "./components/FAQ";
-import { searchAccommodations, getAllAccommodations } from "../../../services/accommodationAPI";
-import { map } from "leaflet";
+import {
+  searchAccommodations,
+  getAllAccommodations,
+} from "../../../services/accommodationAPI";
 
 const ApartmentSearch = () => {
   const [filteredData, setFilteredData] = useState([]);
+  const [filteredList, setFilteredList] = useState([]);
+  const [activeFilters, setActiveFilters] = useState({});
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const accomData = await getAllAccommodations()
+        const accomData = await getAllAccommodations();
         const mapData = accomData.map((item) => ({
           ...item,
           position: [
             parseFloat(item.location.latitude),
-            parseFloat(item.location.longitude)
-          ]
-        }))
-        setFilteredData(mapData)
+            parseFloat(item.location.longitude),
+          ],
+        }));
+        setFilteredData(mapData);
       } catch (error) {
         console.error("Failed to fetch accommodations:", error);
       }
-    }
+    };
     fetchData();
-  }, [])
+  }, []);
   const handleSearch = async (filters) => {
     try {
+      setActiveFilters(filters);
+
       const data = await searchAccommodations(filters);
 
       const mappedData = data.map((item) => ({
@@ -48,7 +54,11 @@ const ApartmentSearch = () => {
 
   return (
     <div>
-      <Filters onSearch={handleSearch} />
+      <Filters
+        onSearch={handleSearch}
+        totalResults={filteredData.length}
+        filtersSummary={activeFilters}
+      />
       <Row gutter={16} style={{ padding: 16 }}>
         <Col xs={24} lg={16}>
           <PropertyList data={filteredData} />

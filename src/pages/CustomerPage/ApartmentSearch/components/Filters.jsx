@@ -1,26 +1,13 @@
 import { useState } from "react";
-import {
-  InputNumber,
-  DatePicker,
-  Button,
-  Select,
-  Dropdown,
-  Menu,
-  Checkbox,
-  Space,
-  notification,
-} from "antd";
-import {
-  DownOutlined,
-  SearchOutlined,
-  UserOutlined,
-  CalendarOutlined,
-} from "@ant-design/icons";
+import { InputNumber, Button, Select, Popover, Checkbox, Space } from "antd";
+import { DownOutlined, SearchOutlined, UserOutlined } from "@ant-design/icons";
 
-const Filters = ({onSearch}) => {
+const Filters = ({ onSearch, totalResults, filtersSummary }) => {
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [selectedBedrooms, setSelectedBedrooms] = useState(null);
   const [selectedBathrooms, setSelectedBathrooms] = useState(null);
+  const [filterVisible, setFilterVisible] = useState(false);
+
   const [features, setFeatures] = useState({
     disabledAccess: false,
     parking: false,
@@ -31,7 +18,6 @@ const Filters = ({onSearch}) => {
   const [addressDetail, setAddressDetail] = useState("");
 
   const [guestCount, setGuestCount] = useState("");
-  const [errors, setErrors] = useState({});
 
   const districtOptions = [
     { label: "Liên Chiểu", value: "Liên Chiểu" },
@@ -47,11 +33,14 @@ const Filters = ({onSearch}) => {
       district: selectedDistrict,
       street,
       addressDetail,
+      guestCount,
+      bedrooms: selectedBedrooms,
+      bathrooms: selectedBathrooms,
+      features,
     };
 
-    onSearch(filters); 
+    onSearch(filters);
   };
-
 
   const handleFeatureChange = (featureName, checked) => {
     setFeatures((prev) => ({
@@ -60,14 +49,16 @@ const Filters = ({onSearch}) => {
     }));
   };
 
-  const moreFiltersMenu = (
-    <Menu>
-      <Menu.Item key="bedrooms" disabled>
+  const handleVisibleChange = (visible) => {
+    setFilterVisible(visible);
+  };
+
+  const moreFiltersContent = (
+    <div style={{ width: 250 }}>
+      <div style={{ marginBottom: 12 }}>
         <strong>Bedrooms</strong>
-      </Menu.Item>
-      <Menu.Item key="bedroom-select" style={{ padding: 8 }}>
         <Select
-          style={{ width: "100%" }}
+          style={{ width: "100%", marginTop: 4 }}
           placeholder="Select Bedrooms"
           value={selectedBedrooms}
           onChange={setSelectedBedrooms}
@@ -77,16 +68,12 @@ const Filters = ({onSearch}) => {
           <Select.Option value="2">2</Select.Option>
           <Select.Option value="3">3</Select.Option>
         </Select>
-      </Menu.Item>
+      </div>
 
-      <Menu.Divider />
-
-      <Menu.Item key="bathrooms" disabled>
+      <div style={{ marginBottom: 12 }}>
         <strong>Bathrooms</strong>
-      </Menu.Item>
-      <Menu.Item key="bathroom-select" style={{ padding: 8 }}>
         <Select
-          style={{ width: "100%" }}
+          style={{ width: "100%", marginTop: 4 }}
           placeholder="Select Bathrooms"
           value={selectedBathrooms}
           onChange={setSelectedBathrooms}
@@ -95,22 +82,18 @@ const Filters = ({onSearch}) => {
           <Select.Option value="2">2</Select.Option>
           <Select.Option value="3">3</Select.Option>
         </Select>
-      </Menu.Item>
+      </div>
 
-      <Menu.Divider />
-
-      <Menu.Item key="features" disabled>
+      <div>
         <strong>Features</strong>
-      </Menu.Item>
-      <Menu.Item key="features-checkboxes" style={{ padding: 8 }}>
-        <Space direction="vertical">
+        <Space direction="vertical" style={{ marginTop: 8 }}>
           <Checkbox
             checked={features.disabledAccess}
             onChange={(e) =>
               handleFeatureChange("disabledAccess", e.target.checked)
             }
           >
-            Disabled accesses
+            Disabled Access
           </Checkbox>
           <Checkbox
             checked={features.parking}
@@ -130,11 +113,11 @@ const Filters = ({onSearch}) => {
               handleFeatureChange("washingMachine", e.target.checked)
             }
           >
-            Washing machine
+            Washing Machine
           </Checkbox>
         </Space>
-      </Menu.Item>
-    </Menu>
+      </div>
+    </div>
   );
 
   return (
@@ -225,7 +208,6 @@ const Filters = ({onSearch}) => {
           />
         </div>
 
-
         {/* Guests */}
         <div
           style={{
@@ -279,7 +261,14 @@ const Filters = ({onSearch}) => {
         }}
       >
         {/* More filters */}
-        <Dropdown overlay={moreFiltersMenu} trigger={["click"]}>
+        <Popover
+          content={moreFiltersContent}
+          title="More Filters"
+          trigger="click"
+          visible={filterVisible}
+          onVisibleChange={handleVisibleChange}
+          placement="bottomLeft"
+        >
           <Button
             style={{
               backgroundColor: "#004d47",
@@ -292,14 +281,31 @@ const Filters = ({onSearch}) => {
           >
             More filters <DownOutlined />
           </Button>
-        </Dropdown>
+        </Popover>
 
         {/* Result summary */}
         <div style={{ fontSize: "16px" }}>
-          <span style={{ fontWeight: "bold" }}>52 results</span> for{" "}
-          <span style={{ fontStyle: "italic" }}>
-            "1 Bedroom property in West London"
+          <span style={{ fontWeight: "bold" }}>
+            Found {totalResults} results
           </span>
+          {filtersSummary?.bedrooms || filtersSummary?.district ? (
+            <>
+              {" "}
+              for{" "}
+              <span style={{ fontStyle: "italic" }}>
+                {filtersSummary?.bedrooms
+                  ? `${
+                      filtersSummary.bedrooms === "studio"
+                        ? "Studio"
+                        : filtersSummary.bedrooms + " Bedroom"
+                    }`
+                  : ""}
+                {filtersSummary?.district
+                  ? ` in ${filtersSummary.district}`
+                  : ""}
+              </span>
+            </>
+          ) : null}
         </div>
 
         {/* Sort by */}
