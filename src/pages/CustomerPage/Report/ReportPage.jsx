@@ -1,8 +1,19 @@
-import React, { useState } from "react";
-import { Typography, Form, Input, Button, Select, message as antMessage, Spin, Card, Alert } from "antd";
+import React, { useEffect, useState } from "react";
+import {
+  Typography,
+  Form,
+  Input,
+  Button,
+  Select,
+  message as antMessage,
+  Spin,
+  Card,
+  Alert,
+} from "antd";
 import { createReport } from "../../../services/reportService";
 import useUser from "../../../contexts/UserContext";
 import { ExclamationCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { getOwner } from "../../../services/reportService"; 
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -13,6 +24,19 @@ const ReportPage = () => {
   const { user, loading: userLoading } = useUser();
   const [messageApi, contextHolder] = antMessage.useMessage();
   const [submitting, setSubmitting] = useState(false);
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await getOwner(); 
+        setUsers(res.data.filter((u) => u._id !== user?._id));
+      } catch (error) {
+        console.error("❌ Failed to fetch users", error);
+      }
+    };
+    if (user) fetchUsers();
+  }, [user]);
 
   const onFinish = async (values) => {
     try {
@@ -26,19 +50,13 @@ const ReportPage = () => {
       await createReport(payload);
       messageApi.open({
         type: "success",
-        content: " Report submitted successfully!",
+        content: "Report submitted successfully!",
         icon: <CheckCircleOutlined style={{ color: "#52c41a" }} />,
       });
       form.resetFields();
     } catch (error) {
       console.error("❌ Report submission failed:", error);
-
-      if (error.response) {
-        console.log("❌ Response data:", error.response.data);
-        messageApi.error(error.response.data.message || "Failed to submit report.");
-      } else {
-        messageApi.error(error.message || "Failed to submit report.");
-      }
+      messageApi.error(error?.response?.data?.message || "Failed to submit report.");
     } finally {
       setSubmitting(false);
     }
@@ -61,31 +79,15 @@ const ReportPage = () => {
   }
 
   return (
-    <div
-      className="report-page"
-      style={{
-        maxWidth: 650,
-        margin: "0 auto",
-        padding: 24,
-        background: "#f9f9f9",
-        minHeight: "100vh",
-      }}
-    >
+    <div style={{ maxWidth: 650, margin: "0 auto", padding: 24, background: "#f9f9f9", minHeight: "100vh" }}>
       {contextHolder}
-      <Card
-        bordered={false}
-        style={{
-          background: "#fff",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-          borderRadius: 8,
-        }}
-      >
+      <Card bordered={false} style={{ background: "#fff", boxShadow: "0 4px 20px rgba(0,0,0,0.1)", borderRadius: 8 }}>
         <Title level={2} style={{ textAlign: "center", marginBottom: 0 }}>
           Submit a Report to Administrator
         </Title>
 
         <Paragraph style={{ textAlign: "center", color: "#888", marginBottom: 24 }}>
-          If you encounter issues such as fraud, fake listings, or abusive landlords, please submit a report for admin review.
+          If you encounter issues such as fraud, fake listings, or abusive landlords, please submit a report.
         </Paragraph>
 
         <Alert
@@ -94,17 +96,35 @@ const ReportPage = () => {
           message={
             <span>
               <ExclamationCircleOutlined style={{ marginRight: 8 }} />
-              Your report is <b>confidential</b> and will only be seen by administrators.
+              Your report is <b>confidential</b> and only visible to administrators.
             </span>
           }
           style={{ marginBottom: 24 }}
         />
 
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-        >
+        <Form form={form} layout="vertical" onFinish={onFinish}>
+          {/* NGƯỜI BỊ BÁO CÁO */}
+          <Form.Item
+  label="Reported User"
+  name="reportedUserId"
+  rules={[{ required: true, message: "Please select a user to report." }]}
+>
+  <Select
+    showSearch
+    placeholder="Select user to report"
+    filterOption={(input, option) =>
+      option.children.toLowerCase().includes(input.toLowerCase())
+    }
+  >
+    {users.map((u) => (
+      <Option key={u._id} value={u._id}>
+        {u.name || u.email}
+      </Option>
+    ))}
+  </Select>
+</Form.Item>
+
+          {/* LOẠI BÁO CÁO */}
           <Form.Item
             label="Report Category"
             name="type"
@@ -118,6 +138,7 @@ const ReportPage = () => {
             </Select>
           </Form.Item>
 
+          {/* NỘI DUNG */}
           <Form.Item
             label="Report Details"
             name="content"
@@ -127,12 +148,7 @@ const ReportPage = () => {
           </Form.Item>
 
           <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              block
-              loading={submitting}
-            >
+            <Button type="primary" htmlType="submit" block loading={submitting}>
               {submitting ? "Submitting..." : "Submit Report"}
             </Button>
           </Form.Item>
