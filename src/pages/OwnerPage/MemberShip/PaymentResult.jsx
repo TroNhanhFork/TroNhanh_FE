@@ -2,8 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import './paymentResult.css';
+import useUser from '../../../contexts/UserContext';
 
 const PaymentResult = () => {
+    const { user } = useUser(); // ✅ Lấy user từ context
     const location = useLocation();
     const query = new URLSearchParams(location.search);
     const success = query.get("success");
@@ -23,7 +25,9 @@ const PaymentResult = () => {
         <main className="ticket-system">
             <div className="top">
                 <h1 className="title">
-                    {status === "success" ? "Mua gói thành công, hóa đơn của bạn đang được in..." : "Mua gói thất bại, kiểm tra lại đơn hàng."}
+                    {status === "success"
+                        ? "Mua gói thành công, hóa đơn của bạn đang được in..."
+                        : "Mua gói thất bại, kiểm tra lại đơn hàng."}
                 </h1>
                 <div className="printer" />
             </div>
@@ -32,7 +36,9 @@ const PaymentResult = () => {
                 <div className="receipts">
                     <div className={`receipt ${status === "success" ? '' : 'fail'}`}>
                         <h2 className="receipt-title">
-                            {status === "success" ? "🧾 HÓA ĐƠN THANH TOÁN" : "❌ THANH TOÁN THẤT BẠI"}
+                            {status === "success"
+                                ? "🧾 HÓA ĐƠN THANH TOÁN"
+                                : "❌ THANH TOÁN THẤT BẠI"}
                         </h2>
 
                         <div className="details">
@@ -50,7 +56,7 @@ const PaymentResult = () => {
                             </div>
                             <div className="item">
                                 <span>Thành viên</span>
-                                <h3>{JSON.parse(localStorage.getItem("user"))?.name || 'Người dùng'}</h3>
+                                <h3>{user?.name || 'Người dùng'}</h3>
                             </div>
                         </div>
 
@@ -62,7 +68,11 @@ const PaymentResult = () => {
                     </div>
 
                     <div className="receipt qr-code">
-                        <img src={`${process.env.PUBLIC_URL}/Logo_TrọNhanh.png`} alt="Logo TrọNhanh" className="qr" />
+                        <img
+                            src={`${process.env.PUBLIC_URL}/Logo_TrọNhanh.png`}
+                            alt="Logo TrọNhanh"
+                            className="qr"
+                        />
                         <div className="description">
                             <h2>TroNhanh.vn</h2>
                             <p>Cảm ơn bạn đã nâng cấp gói thành viên TroNhanh</p>

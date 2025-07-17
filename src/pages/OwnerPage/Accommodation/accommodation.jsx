@@ -7,6 +7,7 @@ import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import { geocodeWithOpenCage } from "../../../services/OpenCage";
 import "./accommodation.css";
 import { getValidAccessToken } from "../../../services/authService";
+import useUser from "../../../contexts/UserContext";
 
 const Accommodation = () => {
 
@@ -20,7 +21,7 @@ const Accommodation = () => {
     "Hoà Vang",
   ];
 
-
+  const { user } = useUser();
   const [data, setData] = useState([]);
   const [selectedRow, setSelectedRow] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -50,10 +51,10 @@ const Accommodation = () => {
 
   const fetchAccommodations = async () => {
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      if (!user || !user.id) return;
+      
+      if (!user || !user._id) return;
 
-      const res = await axios.get(`http://localhost:5000/api/accommodation?ownerId=${user.id}`);
+      const res = await axios.get(`http://localhost:5000/api/accommodation?ownerId=${user._id}`);
       const fetchedData = res.data.map((item) => ({
         ...item,
         key: item._id,
@@ -138,14 +139,14 @@ const Accommodation = () => {
         <Button
           className="add-btn"
           onClick={async () => {
-            const user = JSON.parse(localStorage.getItem("user"));
-            if (!user || !user.id) {
+            
+            if (!user || !user._id) {
               alert("Vui lòng đăng nhập lại.");
               return;
             }
 
             try {
-              const res = await axios.get(`http://localhost:5000/api/payment/current/${user.id}`);
+              const res = await axios.get(`http://localhost:5000/api/payment/current/${user._id}`);
               const pkg = res.data.package;
 
               if (!pkg) {
@@ -188,9 +189,9 @@ const Accommodation = () => {
         onCancel={() => setIsAddModalVisible(false)}
         onOk={async () => {
           try {
-            const user = JSON.parse(localStorage.getItem("user"));
+            
             const token = await getValidAccessToken();
-            if (!user || !user.id || !token) {
+            if (!user || !user._id || !token) {
               return alert("Bạn chưa đăng nhập. Hãy đăng nhập lại!");
             }
 
@@ -213,7 +214,7 @@ const Accommodation = () => {
             formData.append("description", newAccommodation.description);
             formData.append("price", newAccommodation.price);
             formData.append("status", newAccommodation.status);
-            formData.append("ownerId", user.id);
+            formData.append("ownerId", user._id);
             formData.append("location", JSON.stringify(locationFull));
 
             newAccommodation.files.forEach((file) => {

@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Typography, message as antMessage } from 'antd';
+import {
+  UserOutlined,
+  LockOutlined,
+  LoginOutlined
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { login, saveAccessToken } from '../../../services/authService';
 import { initAutoLogout } from '../../../services/autoLogout';
@@ -58,49 +63,73 @@ const LoginPage = () => {
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.loginWrapper}>
       {contextHolder} { }
-      <Title level={2} style={{ textAlign: 'center' }}>Login</Title>
-      <Form layout="vertical" form={form} onFinish={onFinish}>
-        <Form.Item
-          label="Email"
-          name="email"
-          rules={[{ required: true, message: 'Please enter your email!' }]}
-        >
-          <Input type="email" placeholder="Enter your email" />
-        </Form.Item>
 
-        <Form.Item
-          label="Password"
-          name="password"
-          rules={[{ required: true, message: 'Please enter your password!' }]}
-        >
-          <Input.Password placeholder="Enter your password" />
-        </Form.Item>
+      <div className={styles.leftPane}>
+        <video
+          className={styles.video}
+          src={require('../../../assets/images/Login.mp4')}
+          autoPlay
+          loop
+          muted
+        />
+      </div>
 
-        <Form.Item>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={loading}
-            block
-            className={styles.submitButton}
+      <div className={styles.rightPane}>
+        <Form layout="vertical" form={form} onFinish={onFinish} className={styles.formBox}>
+          <Title level={2} className={styles.title}>Welcome Back 👋</Title>
+
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[{ required: true, message: 'Please enter your email!' }]}
           >
-            Login
-          </Button>
+            <Input
+              prefix={<UserOutlined style={{ color: '#49735A' }} />}
+              placeholder="Enter your email"
+              type="email"
+            />
+          </Form.Item>
 
-        </Form.Item>
-        <Form.Item style={{ textAlign: 'center', marginTop: -10 }}>
-          <Button type="link" size="small" href="/forgot-password">
-            Forgot password?
-          </Button>
-        </Form.Item>
-        <Form.Item style={{ marginTop: -20 }}>
-          <p className={styles.login}>
-            Don't have an account? <a href='/register'>Register</a>
-          </p>
-        </Form.Item>
-      </Form>
+          <Form.Item
+            label="Password"
+            name="password"
+            rules={[{ required: true, message: 'Please enter your password!' }]}
+          >
+            <Input.Password
+              prefix={<LockOutlined style={{ color: '#49735A' }} />}
+              placeholder="Enter your password"
+            />
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              className={styles.submitButton}
+            >
+              <LoginOutlined />
+              Login
+            </Button>
+          </Form.Item>
+
+          <Form.Item style={{ textAlign: 'center', marginTop: -10 }}>
+            <Button type="link" size="small" href="/forgot-password">
+              Forgot password?
+            </Button>
+          </Form.Item>
+
+          <Form.Item>
+            <p className={styles.login}>
+              Don't have an account? <a href="/register">Register</a>
+            </p>
+          </Form.Item>
+        </Form>
+      </div>
+
+
     </div>
   );
 };

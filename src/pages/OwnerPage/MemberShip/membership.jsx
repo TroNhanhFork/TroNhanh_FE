@@ -3,15 +3,18 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './membership.css';
+import useUser from '../../../contexts/UserContext';
+
+
 
 const Membership = () => {
   const [packages, setPackages] = useState([]);
   const [currentPackageId, setCurrentPackageId] = useState(null);
+  const { user } = useUser()
 
   // ⚠️ Kiểm tra đăng nhập ngay khi vào trang
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (!storedUser || !storedUser.id) {
+    if (!user || !user._id) {
       alert("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
       window.location.href = "/login";
     }
@@ -44,8 +47,7 @@ const Membership = () => {
   useEffect(() => {
     fetchMembershipPackages();
 
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    const userId = storedUser?.id;
+    const userId = user?._id;
 
     if (userId) {
       fetchCurrentPackage(userId);
@@ -62,44 +64,43 @@ const Membership = () => {
   // Xử lý khi click Subscribe
 
   const handleSubscribe = async (pkg) => {
-  try {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    const userId = storedUser?.id;
+    try {
+      const userId = user?._id;
 
-    if (!userId) {
-      alert("Bạn chưa đăng nhập!");
-      return;
+      if (!userId) {
+        alert("Bạn chưa đăng nhập!");
+        return;
+      }
+
+      // ✅ Nếu đang dùng đúng gói này → cảnh báo
+      if (String(currentPackageId) === String(pkg._id)) {
+        alert("Bạn đã mua gói thành viên này rồi.");
+        return;
+      }
+
+      // ✅ Nếu đang dùng gói khác → chặn
+      if (currentPackageId && String(currentPackageId) !== String(pkg._id)) {
+        const currentPkg = packages.find(p => String(p._id) === String(currentPackageId));
+        alert(`Bạn đã mua gói thành viên "${currentPkg?.packageName}" rồi. Chỉ khi gói đó hết hạn thì bạn mới có thể mua gói "${pkg.packageName}".`);
+        return;
+      }
+
+      console.log("💡 Subscribing with userId:", userId);
+      console.log("📦 Package:", pkg.packageName, "—", pkg.price);
+
+      const res = await axios.post("http://localhost:5000/api/payment/create", {
+        amount: pkg.price,
+        packageId: pkg._id,
+        userId: userId,
+        role: "owner"
+      });
+
+      window.location.href = res.data.url;
+    } catch (err) {
+      console.error("❌ Error creating VNPay URL:", err);
+      alert("Đã có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.");
     }
-
-    // ✅ Nếu đang dùng đúng gói này → cảnh báo
-    if (String(currentPackageId) === String(pkg._id)) {
-      alert("Bạn đã mua gói thành viên này rồi.");
-      return;
-    }
-
-    // ✅ Nếu đang dùng gói khác → chặn
-    if (currentPackageId && String(currentPackageId) !== String(pkg._id)) {
-      const currentPkg = packages.find(p => String(p._id) === String(currentPackageId));
-      alert(`Bạn đã mua gói thành viên "${currentPkg?.packageName}" rồi. Chỉ khi gói đó hết hạn thì bạn mới có thể mua gói "${pkg.packageName}".`);
-      return;
-    }
-
-    console.log("💡 Subscribing with userId:", userId);
-    console.log("📦 Package:", pkg.packageName, "—", pkg.price);
-
-    const res = await axios.post("http://localhost:5000/api/payment/create", {
-      amount: pkg.price,
-      packageId: pkg._id,
-      userId: userId,
-      role: "owner"
-    });
-
-    window.location.href = res.data.url;
-  } catch (err) {
-    console.error("❌ Error creating VNPay URL:", err);
-    alert("Đã có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.");
-  }
-};
+  };
 
   return (
     <div className="membership-container">

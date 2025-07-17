@@ -86,7 +86,7 @@ const HeaderComponent = () => {
         icon: <UserOutlined />,
         onClick: () => {
           if (role === "customer") navigate("/customer/profile/personal-info");
-          else if (role === "owner") navigate("/owner/profile");
+          else if (role === "owner") navigate("/customer/profile/personal-info");
           else navigate("/profile");
         },
       },
@@ -145,7 +145,7 @@ const HeaderComponent = () => {
                 <Link to="/owner/accommodation">Manage Room</Link>
               </Menu.Item>
               <Menu.Item key="profile">
-                <Link to="/owner/profile">Profile</Link>
+                <Link to="/customer/profile/personal-info">Profile</Link>
               </Menu.Item>
               <Menu.Item key="membership">
                 <Link to="/owner/membership">Membership</Link>

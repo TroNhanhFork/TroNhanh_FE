@@ -174,6 +174,13 @@ const Users = () => {
 
   // Handle lock/unlock user
   const handleToggleLock = async (user) => {
+    // Check if user is admin
+    const isAdmin = user.roles?.some(role => role.name === 'Admin');
+    if (isAdmin) {
+      messageApi.error('Cannot lock/unlock admin users for security reasons!');
+      return;
+    }
+
     const action = user.isLocked ? 'unlock' : 'lock';
 
     // Show loading message
@@ -257,37 +264,17 @@ const Users = () => {
   };
 
   // Handle delete user - show confirmation modal
-  const handleDeleteUser = async (user) => {
-    const loadingKey = 'delete-loading';
-    messageApi.open({
-      key: loadingKey,
-      type: 'loading',
-      content: '🔄 Deleting user account...',
-      duration: 0,
-    });
-
-    try {
-      await deleteUser(user.id);
-
-      messageApi.open({
-        key: loadingKey,
-        type: 'error', // Using error type to emphasize destructive action
-        content: 'User deleted successfully!',
-        duration: 3,
-      });
-
-      // Refresh the current page data
-      fetchUsers(pagination.current, pagination.pageSize, filters);
-    } catch (error) {
-      console.error('Error deleting user:', error);
-
-      messageApi.open({
-        key: loadingKey,
-        type: 'error',
-        content: 'Failed to delete user. Please try again.',
-        duration: 4,
-      });
+  const handleDeleteUser = (user) => {
+    // Check if user is admin
+    const isAdmin = user.roles?.some(role => role.name === 'Admin');
+    if (isAdmin) {
+      messageApi.error('Cannot delete admin users for security reasons!');
+      return;
     }
+    
+    setUserToDelete(user);
+    setDeleteModalVisible(true);
+    setDeleteConfirmText('');
   };
 
   // Handle confirm delete
@@ -297,9 +284,24 @@ const Users = () => {
       return;
     }
 
+    const loadingKey = 'delete-loading';
+    messageApi.open({
+      key: loadingKey,
+      type: 'loading',
+      content: '🔄 Deleting user account...',
+      duration: 0,
+    });
+
     try {
       await deleteUser(userToDelete.id);
-      message.success('User deleted successfully');
+      
+      messageApi.open({
+        key: loadingKey,
+        type: 'success',
+        content: 'User deleted successfully!',
+        duration: 3,
+      });
+
       // Refresh the current page data
       fetchUsers(pagination.current, pagination.pageSize, filters);
       setDeleteModalVisible(false);
@@ -307,11 +309,13 @@ const Users = () => {
       setDeleteConfirmText('');
     } catch (error) {
       console.error('Error deleting user:', error);
-      if (error.message === 'Authentication failed. Please login again.') {
-        message.error('Your session has expired. Please login again.');
-      } else {
-        message.error(error.message || 'Failed to delete user. Please try again.');
-      }
+      
+      messageApi.open({
+        key: loadingKey,
+        type: 'error',
+        content: error.message || 'Failed to delete user. Please try again.',
+        duration: 4,
+      });
     }
   };
 
@@ -419,6 +423,7 @@ const Users = () => {
       key: 'actions',
       render: (_, record) => {
         const isDeleted = record.isDeleted;
+        const isAdmin = record.roles?.some(role => role.name === 'Admin');
 
         return (
           <Space>
@@ -439,18 +444,18 @@ const Users = () => {
             <Button
               style={{ border: 'none', display: 'inline-block' }}
               icon={!record.isLocked ? <UnlockOutlined /> : <LockOutlined style={{ color: isDeleted ? '#8c8c8c' : "blue" }} />}
-              title={!record.isLocked ? "Lock Account" : "Unlock Account"}
-              danger={!record.isLocked && !isDeleted}
+              title={isAdmin ? "Cannot lock/unlock admin users" : (!record.isLocked ? "Lock Account" : "Unlock Account")}
+              danger={!record.isLocked && !isDeleted && !isAdmin}
               onClick={() => handleToggleLock(record)}
-              disabled={isDeleted}
+              disabled={isDeleted || isAdmin}
             />
             <Button
               style={{ border: 'none', display: 'inline-block' }}
               icon={<DeleteOutlined />}
-              danger={!isDeleted}
+              danger={!isDeleted && !isAdmin}
               onClick={() => handleDeleteUser(record)}
-              title="Delete User"
-              disabled={isDeleted}
+              title={isAdmin ? "Cannot delete admin users" : "Delete User"}
+              disabled={isDeleted || isAdmin}
             />
           </Space>
         );
