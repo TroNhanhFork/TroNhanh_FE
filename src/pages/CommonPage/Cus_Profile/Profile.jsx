@@ -5,6 +5,7 @@ import Sidebar from './sidebar/SideBarCustomer';
 import PersonalInfo from './sections/PersonalInfo';
 import Favorites from './sections/Favorites';
 import Messages from './sections/Messages';
+import BookingHistory from './sections/BookingHistory';
 import { getUserInfo, getUserMessages, getUserFavorites } from '../../../services/profileServices';
 import MyReportsPage from './sections/MyReportPage';
 
@@ -53,6 +54,7 @@ const ProfilePage = () => {
             <Route path="personal-info" element={<PersonalInfo />} />
             <Route path="messages" element={<Messages />} />
             <Route path="favorites" element={<Favorites favorites={favorites} />} />
+            <Route path="booking-history" element={<BookingHistory />} />
             <Route path='my-reports' element={<MyReportsPage></MyReportsPage>} />
           </Routes>
         </Content>
