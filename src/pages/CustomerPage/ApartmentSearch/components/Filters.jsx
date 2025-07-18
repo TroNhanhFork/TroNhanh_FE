@@ -17,7 +17,7 @@ import {
   CalendarOutlined,
 } from "@ant-design/icons";
 
-const Filters = ({onSearch}) => {
+const Filters = ({ onSearch, resultText }) => {
   const [selectedDistrict, setSelectedDistrict] = useState(null);
   const [selectedBedrooms, setSelectedBedrooms] = useState(null);
   const [selectedBathrooms, setSelectedBathrooms] = useState(null);
@@ -47,11 +47,14 @@ const Filters = ({onSearch}) => {
       district: selectedDistrict,
       street,
       addressDetail,
+      guestCount,
+      bedrooms: selectedBedrooms,
+      bathrooms: selectedBathrooms,
+      features,
     };
 
-    onSearch(filters); 
+    onSearch(filters);
   };
-
 
   const handleFeatureChange = (featureName, checked) => {
     setFeatures((prev) => ({
@@ -174,7 +177,7 @@ const Filters = ({onSearch}) => {
         </div>
 
         {/* Street */}
-        <div
+        {/* <div
           style={{
             display: "flex",
             alignItems: "center",
@@ -197,7 +200,7 @@ const Filters = ({onSearch}) => {
               color: "#004d47",
             }}
           />
-        </div>
+        </div> */}
 
         {/* Address Detail */}
         <div
@@ -224,7 +227,6 @@ const Filters = ({onSearch}) => {
             }}
           />
         </div>
-
 
         {/* Guests */}
         <div
@@ -278,29 +280,13 @@ const Filters = ({onSearch}) => {
           gap: "12px",
         }}
       >
-        {/* More filters */}
-        <Dropdown overlay={moreFiltersMenu} trigger={["click"]}>
-          <Button
-            style={{
-              backgroundColor: "#004d47",
-              color: "#fff",
-              borderRadius: "40px",
-              padding: "10px 24px",
-              border: "none",
-              fontWeight: "bold",
-            }}
-          >
-            More filters <DownOutlined />
-          </Button>
-        </Dropdown>
 
         {/* Result summary */}
-        <div style={{ fontSize: "16px" }}>
-          <span style={{ fontWeight: "bold" }}>52 results</span> for{" "}
-          <span style={{ fontStyle: "italic" }}>
-            "1 Bedroom property in West London"
-          </span>
-        </div>
+        {resultText && (
+          <div style={{ fontSize: "16px" }}>
+            <span style={{ fontWeight: "bold" }}>{resultText}</span>
+          </div>
+        )}
 
         {/* Sort by */}
         <div style={{ fontSize: "16px" }}>

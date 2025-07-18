@@ -5,7 +5,7 @@ import PropertyCard from "./PropertyCard";
 
 const PropertyList = ({ data }) => {
   const navigate = useNavigate();
-  const [visibleCount] = useState(7); // show 7
+  const [visibleCount] = useState(50); // show 7
 
   const handleShowMore = () => {
     navigate("/customer/apartments");

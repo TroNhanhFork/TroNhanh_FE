@@ -1,42 +1,70 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { Row, Col, Button, DatePicker, Input, Divider, Carousel, Card, Avatar } from "antd";
-import { UserOutlined, CalendarOutlined, HeartOutlined, HeartFilled, LeftOutlined, RightOutlined } from "@ant-design/icons";
-import { getAccommodationById, addToFavorite } from '../../../services/accommodationAPI'
+import {
+  Row,
+  Col,
+  Button,
+  DatePicker,
+  Input,
+  Divider,
+  Carousel,
+  Card,
+  Avatar,
+  Select,
+} from "antd";
+import {
+  UserOutlined,
+  CalendarOutlined,
+  HeartOutlined,
+  HeartFilled,
+  LeftOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
+import axios from "axios";
+import {
+  getAccommodationById,
+  addToFavorite,
+} from "../../../services/accommodationAPI";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./ApartmentDetails.css";
 import { useEffect, useState, useRef } from "react";
-import useUser from "../../../contexts/UserContext"
-import RoommatePostModal from './RoommatePostModal';
-import { getRoommatePosts } from '../../../services/roommateAPI';
+import useUser from "../../../contexts/UserContext";
+import { useSocket } from "../../../contexts/SocketContext";
+import RoommatePostModal from "./RoommatePostModal";
+import { getRoommatePosts } from "../../../services/roommateAPI";
 import Slider from "react-slick";
 
+const { Option } = Select;
 
 const PropertyDetails = () => {
   const { id } = useParams();
-  const [property, setProperty] = useState()
-  const [isFavorite, setIsFavorite] = useState(false)
-  const { user } = useUser()
+  const [property, setProperty] = useState();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const { user } = useUser();
   const [showModal, setShowModal] = useState(false);
   const [roommatePosts, setRoommatePosts] = useState([]);
   const sliderRef = useRef();
 
+  const socket = useSocket();
+  const [chatId, setChatId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getAccommodationById(id)
+        const data = await getAccommodationById(id);
         const position = [
           parseFloat(data.location.latitude),
           parseFloat(data.location.longitude),
         ];
-        setProperty({ ...data, position })
+        setProperty({ ...data, position });
       } catch (error) {
-        console.log("No Accommodation found!")
+        console.log("No Accommodation found!");
       }
-    }
-    fetchData()
-  }, [id])
-
+    };
+    fetchData();
+  }, [id]);
 
   const fetchRoommates = async () => {
     if (property?._id) {
@@ -44,7 +72,7 @@ const PropertyDetails = () => {
         const posts = await getRoommatePosts(property._id);
         setRoommatePosts(posts);
       } catch (err) {
-        console.log('Failed to load roommate posts', err);
+        console.log("Failed to load roommate posts", err);
       }
     }
   };
@@ -52,6 +80,46 @@ const PropertyDetails = () => {
   useEffect(() => {
     fetchRoommates();
   }, [property?._id]);
+
+  useEffect(() => {
+    const initChat = async () => {
+      const res = await axios.post(
+        "http://localhost:5000/api/chats/get-or-create",
+        {
+          userId: user._id,
+          ownerId: property.ownerId, // adjust to match your property schema
+        }
+      );
+      setChatId(res.data._id);
+      socket.emit("joinRoom", { chatId: res.data._id });
+
+      const msgRes = await axios.get(
+        `http://localhost:5000/api/chats/${res.data._id}/messages`
+      );
+      setMessages(msgRes.data);
+    };
+    if (user && property?.ownerId) initChat();
+  }, [user, property]);
+
+  useEffect(() => {
+    socket?.on("newMessage", (message) => {
+      setMessages((prev) => [...prev, message]);
+    });
+
+    return () => socket?.off("newMessage");
+  }, [socket]);
+
+  const sendMessage = async () => {
+    const message = {
+      chatId,
+      senderId: user._id,
+      content: newMessage,
+    };
+
+    await axios.post("http://localhost:5000/api/chats/send", message);
+    socket.emit("sendMessage", message);
+    setNewMessage("");
+  };
 
   const navigate = useNavigate();
 
@@ -64,22 +132,21 @@ const PropertyDetails = () => {
       alert("Please log in to favorite this property.");
       return;
     }
-    setIsFavorite(prev => !prev)
+    setIsFavorite((prev) => !prev);
 
     try {
       await addToFavorite({
-        accommodationId: property._id
-      })
-      console.log('Added to favorite!')
+        accommodationId: property._id,
+      });
+      console.log("Added to favorite!");
     } catch (error) {
-      console.log('Failed to add to favorite', error)
+      console.log("Failed to add to favorite", error);
     }
-  }
+  };
 
-
-
+  // pass acco ID when navigating
   const handleContinueBooking = () => {
-    navigate("/customer/checkout");
+    navigate("/customer/checkout", { state: { propertyId: property._id } });
   };
 
   const sliderSettings = {
@@ -91,13 +158,13 @@ const PropertyDetails = () => {
     responsive: [
       {
         breakpoint: 1024,
-        settings: { slidesToShow: 2 }
+        settings: { slidesToShow: 2 },
       },
       {
         breakpoint: 768,
-        settings: { slidesToShow: 1 }
-      }
-    ]
+        settings: { slidesToShow: 1 },
+      },
+    ],
   };
 
   return (
@@ -107,9 +174,11 @@ const PropertyDetails = () => {
           <Col xs={24}>
             <div className="property-main-image-wrapper">
               <img
-                src={property.photos && property.photos.length > 0
-                  ? `http://localhost:5000${property.photos[0]}`
-                  : "/image/default-image.jpg"}
+                src={
+                  property.photos && property.photos.length > 0
+                    ? `http://localhost:5000${property.photos[0]}`
+                    : "/image/default-image.jpg"
+                }
                 alt="property main"
                 className="property-main-image"
               />
@@ -128,7 +197,11 @@ const PropertyDetails = () => {
         <Col xs={24} md={16}>
           <h1 className="property-title">{property.title}</h1>
           <p className="property-location">
-            {[property.location?.street, property.location?.district, property.location?.addressDetail,]
+            {[
+              property.location?.street,
+              property.location?.district,
+              property.location?.addressDetail,
+            ]
               .filter(Boolean)
               .join(", ")}
           </p>
@@ -138,7 +211,6 @@ const PropertyDetails = () => {
               property.summary.map((item, idx) => (
                 <span key={idx}>{item}</span>
               ))}
-
           </div>
 
           <h2>Description</h2>
@@ -159,23 +231,7 @@ const PropertyDetails = () => {
 
         <Col xs={24} md={8}>
           <div className="booking-card">
-            <h2 className="booking-price">£{property.price} / Month</h2>
-
-            <div className="booking-dates">
-              <DatePicker
-                placeholder="Move in"
-                suffixIcon={<CalendarOutlined />}
-              />
-              <DatePicker
-                placeholder="Move out"
-                suffixIcon={<CalendarOutlined />}
-              />
-            </div>
-
-            <div className="booking-guests">
-              <UserOutlined />
-              <Input type="number" placeholder="Guests" defaultValue={1} />
-            </div>
+            <h2 className="booking-price">{property.price}đ/ Month</h2>
 
             <p>All utilities are included</p>
             <Divider />
@@ -183,15 +239,30 @@ const PropertyDetails = () => {
             <div className="booking-costs">
               <div className="cost-row">
                 <span>Average monthly rent</span>
-                <span>£{(property.price * 0.93).toFixed(2)}</span>
+                <span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(property.price * 0.93)}
+                </span>
               </div>
               <div className="cost-row">
                 <span>Pay upon booking</span>
-                <span>£{(property.price * 0.9998).toFixed(2)}</span>
+                <span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(property.price * 0.9998)}
+                </span>
               </div>
               <div className="cost-row total-cost">
                 <span>Total costs</span>
-                <span>£{(property.price * 1.003).toFixed(2)}</span>
+                <span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(property.price * 1.003)}
+                </span>
               </div>
             </div>
 
@@ -231,12 +302,12 @@ const PropertyDetails = () => {
       tristique maecenas vitae fames eget ut.Nisl commodo lacinia ultrices ut
       odio dui at.Adipiscing ac auctor hac urna dictum.Urna quis enim lobortis
       vel dignissim sed posuere.Semper lectus neque leo mollis pellentesque
-      auctor pharetra, sed.Varius facilisis in sem tristique.Mauris
-      condimentum pellentesque non commodo, quisque eget dolor.Et ultrices id
-      placerat accumsan.Consectetur consectetur libero orci dolor dolor
-      sagittis.Leo, augue sit sem adipiscing purus ut at malesuada.Dolor, eu
-      dignissim adipiscing eget sed metus.
-      < p ></p >
+      auctor pharetra, sed.Varius facilisis in sem tristique.Mauris condimentum
+      pellentesque non commodo, quisque eget dolor.Et ultrices id placerat
+      accumsan.Consectetur consectetur libero orci dolor dolor sagittis.Leo,
+      augue sit sem adipiscing purus ut at malesuada.Dolor, eu dignissim
+      adipiscing eget sed metus.
+      <p></p>
       <Divider />
       <h1 className="text-heading">Location</h1>
       <div className="map-container">
@@ -254,26 +325,34 @@ const PropertyDetails = () => {
             <Marker key={property._id} position={property.position}>
               <Popup>{property.title}</Popup>
             </Marker>
-          ) : null};
+          ) : null}
+          ;
         </MapContainer>
       </div>
-
       <Divider />
       <h1 className="text-heading">Looking for Roommates</h1>
-
-      <Button onClick={() => setShowModal(true)} type="primary" style={{ marginBottom: '1rem' }}>
+      <Button
+        onClick={() => setShowModal(true)}
+        type="primary"
+        style={{ marginBottom: "1rem" }}
+      >
         + Create Roommate Post
       </Button>
-
       {roommatePosts.length === 0 ? (
         <p>No roommate posts yet.</p>
       ) : (
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: "relative" }}>
           <Slider {...sliderSettings} ref={sliderRef}>
             {roommatePosts.map((post) => (
               <div key={post._id} style={{ padding: "0 10px" }}>
                 <Card className="roommate-card" hoverable>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: 12,
+                    }}
+                  >
                     <Avatar
                       src={
                         post.userId?.avatar
@@ -284,10 +363,10 @@ const PropertyDetails = () => {
                       style={{ marginRight: 12 }}
                     />
 
-
-
                     <div>
-                      <h3 style={{ margin: 0 }}>{ post.userId?.name || "Unknown"}</h3>
+                      <h3 style={{ margin: 0 }}>
+                        {post.userId?.name || "Unknown"}
+                      </h3>
                       <small>{post.createdAt?.slice(0, 10)}</small>
                     </div>
                   </div>
@@ -304,7 +383,7 @@ const PropertyDetails = () => {
                               height: 200,
                               objectFit: "cover",
                               borderRadius: 8,
-                              marginBottom: 12
+                              marginBottom: 12,
                             }}
                           />
                         </div>
@@ -314,7 +393,8 @@ const PropertyDetails = () => {
 
                   <p>{post.intro}</p>
                   <p>
-                    <strong>Habits:</strong> {post.habits?.join(", ") || "Not specified"}
+                    <strong>Habits:</strong>{" "}
+                    {post.habits?.join(", ") || "Not specified"}
                   </p>
                 </Card>
               </div>
@@ -323,23 +403,27 @@ const PropertyDetails = () => {
 
           {/* Custom Buttons */}
           <div className="custom-carousel-buttons">
-            <button className="nav-button" onClick={() => sliderRef.current.slickPrev()}>
+            <button
+              className="nav-button"
+              onClick={() => sliderRef.current.slickPrev()}
+            >
               <LeftOutlined />
             </button>
-            <button className="nav-button" onClick={() => sliderRef.current.slickNext()}>
+            <button
+              className="nav-button"
+              onClick={() => sliderRef.current.slickNext()}
+            >
               <RightOutlined />
             </button>
           </div>
         </div>
       )}
-
       <RoommatePostModal
         visible={showModal}
         onClose={() => setShowModal(false)}
         accommodationId={property._id}
         onSuccess={fetchRoommates}
       />
-
       <Divider />
       <h1 className="text-heading">Policy detail</h1>
       <Row gutter={[32, 32]} justify="center">
@@ -383,7 +467,7 @@ const PropertyDetails = () => {
           </ul>
         </Col>
       </Row>
-    </div >
+    </div>
   );
 };
 
