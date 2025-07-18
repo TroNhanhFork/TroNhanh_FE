@@ -145,72 +145,72 @@
   }
 }
 
-/* Table Customization */
-.ant-table-thead > tr > th {
+/* Table Customization - Custom Classes */
+.booking-history-table .ant-table-thead > tr > th {
   background-color: #fafafa;
   font-weight: 600;
   color: #004d40;
 }
 
-.ant-table-tbody > tr:hover > td {
+.booking-history-table .ant-table-tbody > tr:hover > td {
   background-color: #f0f9ff;
 }
 
-/* Status Tags */
-.ant-tag {
+/* Status Tags - Custom Classes */
+.booking-history-tag {
   border-radius: 12px;
   font-weight: 600;
   font-size: 13px;
   padding: 4px 12px;
 }
 
-/* Button Styling */
-.ant-btn-primary {
+/* Button Styling - Custom Classes */
+.booking-history-btn-primary {
   background-color: #004d40;
   border-color: #004d40;
 }
 
-.ant-btn-primary:hover {
+.booking-history-btn-primary:hover {
   background-color: #00695c;
   border-color: #00695c;
 }
 
-/* Modal Customization */
-.ant-modal-header {
+/* Modal Customization - Custom Classes */
+.booking-history-modal .ant-modal-header {
   border-radius: 8px 8px 0 0;
 }
 
-.ant-modal-title {
+.booking-history-modal .ant-modal-title {
   color: #004d40;
   font-weight: 600;
 }
 
-/* Override button Details color - Stronger CSS */
-.booking-history-card .ant-table-tbody .ant-btn-primary {
+/* Details Button Styling - Custom Classes */
+.booking-history-details-btn {
   background-color: #004d40 !important;
   border-color: #004d40 !important;
   box-shadow: 0 2px 0 rgba(0, 77, 64, 0.1) !important;
   color: white !important;
 }
 
-.booking-history-card .ant-table-tbody .ant-btn-primary:hover,
-.booking-history-card .ant-table-tbody .ant-btn-primary:focus,
-.booking-history-card .ant-table-tbody .ant-btn-primary:active {
+.booking-history-details-btn:hover,
+.booking-history-details-btn:focus,
+.booking-history-details-btn:active {
   background-color: #00695c !important;
   border-color: #00695c !important;
   box-shadow: 0 3px 0 rgba(0, 105, 92, 0.1) !important;
   color: white !important;
 }
 
-.booking-history-card .ant-table-tbody .ant-btn-primary:not(:disabled):not(.ant-btn-disabled):hover {
+.booking-history-details-btn:not(:disabled):not(.ant-btn-disabled):hover {
   background-color: #00695c !important;
   border-color: #00695c !important;
   color: white !important;
 }
 
 /* Remove any blue tint from button */
-.booking-history-card .ant-table-tbody .ant-btn-primary,
-.booking-history-card .ant-table-tbody .ant-btn-primary * {
+.booking-history-details-btn,
+.booking-history-details-btn * {
   background-image: none !important;
   background: #004d40 !important;
 }
