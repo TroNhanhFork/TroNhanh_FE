@@ -29,7 +29,7 @@ import "leaflet/dist/leaflet.css";
 import "./ApartmentDetails.css";
 import { useEffect, useState, useRef } from "react";
 import useUser from "../../../contexts/UserContext";
-import { useSocket } from "../../../contexts/SocketContext";
+// import { useSocket } from "../../../contexts/SocketContext";
 import RoommatePostModal from "./RoommatePostModal";
 import { getRoommatePosts } from "../../../services/roommateAPI";
 import Slider from "react-slick";
@@ -45,7 +45,7 @@ const PropertyDetails = () => {
   const [roommatePosts, setRoommatePosts] = useState([]);
   const sliderRef = useRef();
 
-  const socket = useSocket();
+  // const socket = useSocket();
   const [chatId, setChatId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -81,45 +81,45 @@ const PropertyDetails = () => {
     fetchRoommates();
   }, [property?._id]);
 
-  useEffect(() => {
-    const initChat = async () => {
-      const res = await axios.post(
-        "http://localhost:5000/api/chats/get-or-create",
-        {
-          userId: user._id,
-          ownerId: property.ownerId, // adjust to match your property schema
-        }
-      );
-      setChatId(res.data._id);
-      socket.emit("joinRoom", { chatId: res.data._id });
+  // useEffect(() => {
+  //   const initChat = async () => {
+  //     const res = await axios.post(
+  //       "http://localhost:5000/api/chats/get-or-create",
+  //       {
+  //         userId: user._id,
+  //         ownerId: property.ownerId, // adjust to match your property schema
+  //       }
+  //     );
+  //     setChatId(res.data._id);
+  //     socket.emit("joinRoom", { chatId: res.data._id });
 
-      const msgRes = await axios.get(
-        `http://localhost:5000/api/chats/${res.data._id}/messages`
-      );
-      setMessages(msgRes.data);
-    };
-    if (user && property?.ownerId) initChat();
-  }, [user, property]);
+  //     const msgRes = await axios.get(
+  //       `http://localhost:5000/api/chats/${res.data._id}/messages`
+  //     );
+  //     setMessages(msgRes.data);
+  //   };
+  //   if (user && property?.ownerId) initChat();
+  // }, [user, property]);
 
-  useEffect(() => {
-    socket?.on("newMessage", (message) => {
-      setMessages((prev) => [...prev, message]);
-    });
+  // useEffect(() => {
+  //   socket?.on("newMessage", (message) => {
+  //     setMessages((prev) => [...prev, message]);
+  //   });
 
-    return () => socket?.off("newMessage");
-  }, [socket]);
+  //   return () => socket?.off("newMessage");
+  // }, [socket]);
 
-  const sendMessage = async () => {
-    const message = {
-      chatId,
-      senderId: user._id,
-      content: newMessage,
-    };
+  // const sendMessage = async () => {
+  //   const message = {
+  //     chatId,
+  //     senderId: user._id,
+  //     content: newMessage,
+  //   };
 
-    await axios.post("http://localhost:5000/api/chats/send", message);
-    socket.emit("sendMessage", message);
-    setNewMessage("");
-  };
+  //   await axios.post("http://localhost:5000/api/chats/send", message);
+  //   socket.emit("sendMessage", message);
+  //   setNewMessage("");
+  // };
 
   const navigate = useNavigate();
 
