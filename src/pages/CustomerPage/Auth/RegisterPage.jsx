@@ -9,7 +9,7 @@ import {
   message as antMessage,
 } from "antd";
 import { useNavigate } from "react-router-dom";
-import { register } from "../../../services/authService";
+import { register,sendOTP } from "../../../services/authService";
 import styles from "./RegisterPage.module.css";
 
 const { Title } = Typography;
@@ -24,9 +24,13 @@ const RegisterPage = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      await register(values);
-      messageApi.success("Registration successful! You can now log in.");
-      navigate("/login");
+ const res =  await register(values);
+       const { userId, email } = res.data; 
+         await sendOTP({ id: userId, email });
+     await messageApi.success('Registration successful! Check your email for OTP to verify your account.');
+          navigate('/verify-otp', {
+      state: { userId, email }
+    });
     } catch (err) {
       const errors = err.response?.data?.errors;
       if (Array.isArray(errors)) {
@@ -46,7 +50,7 @@ const RegisterPage = () => {
 
   return (
     <div className={styles.registerPageWrapper}>
-      {contextHolder} {/* Bắt buộc để hiển thị message */}
+      {contextHolder} 
       <div className={styles.container}>
         <Title level={2} className={styles.title}>
           Register

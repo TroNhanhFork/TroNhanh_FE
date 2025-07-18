@@ -1,49 +1,43 @@
 import { useEffect, useState } from "react";
 import { Row, Col } from "antd";
+import { useLocation } from "react-router-dom";
 import Filters from "./components/Filters";
 import PropertyList from "./components/PropertyList";
 import MapView from "./components/MapView";
 import FAQ from "./components/FAQ";
 import { searchAccommodations, getAllAccommodations } from "../../../services/accommodationAPI";
-import { map } from "leaflet";
 
 const ApartmentSearch = () => {
   const [filteredData, setFilteredData] = useState([]);
+  const location = useLocation();
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const accomData = await getAllAccommodations()
-        const mapData = accomData.map((item) => ({
-          ...item,
-          position: [
-            parseFloat(item.location.latitude),
-            parseFloat(item.location.longitude)
-          ]
-        }))
-        setFilteredData(mapData)
-      } catch (error) {
-        console.error("Failed to fetch accommodations:", error);
-      }
-    }
-    fetchData();
-  }, [])
-  const handleSearch = async (filters) => {
+  const fetchAndMap = async (searchFn) => {
     try {
-      const data = await searchAccommodations(filters);
-
-      const mappedData = data.map((item) => ({
+      const data = await searchFn();
+      const mapData = data.map((item) => ({
         ...item,
         position: [
           parseFloat(item.location.latitude),
           parseFloat(item.location.longitude),
         ],
       }));
-
-      setFilteredData(mappedData);
+      setFilteredData(mapData);
     } catch (error) {
-      console.error("Search failed:", error);
+      console.error("Failed to fetch accommodations:", error);
     }
+  };
+
+  useEffect(() => {
+    if (location.state) {
+      const filters = location.state;
+      fetchAndMap(() => searchAccommodations(filters));
+    } else {
+      fetchAndMap(getAllAccommodations);
+    }
+  }, [location.state]);
+
+  const handleSearch = async (filters) => {
+    fetchAndMap(() => searchAccommodations(filters));
   };
 
   return (

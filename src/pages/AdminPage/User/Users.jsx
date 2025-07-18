@@ -100,7 +100,13 @@ const Users = () => {
         };
       });
 
-      setUsers(transformedUsers);
+      const sortedUsers = [...transformedUsers].sort((a, b) => {
+        const aIsAdmin = a.roles?.some(role => role.name === 'Admin') ? 1 : 0;
+        const bIsAdmin = b.roles?.some(role => role.name === 'Admin') ? 1 : 0;
+        return bIsAdmin - aIsAdmin; 
+      });
+
+      setUsers(sortedUsers);
       setPagination(prev => ({
         ...prev,
         current: page,
@@ -271,7 +277,7 @@ const Users = () => {
       messageApi.error('Cannot delete admin users for security reasons!');
       return;
     }
-    
+
     setUserToDelete(user);
     setDeleteModalVisible(true);
     setDeleteConfirmText('');
@@ -294,7 +300,7 @@ const Users = () => {
 
     try {
       await deleteUser(userToDelete.id);
-      
+
       messageApi.open({
         key: loadingKey,
         type: 'success',
@@ -309,7 +315,7 @@ const Users = () => {
       setDeleteConfirmText('');
     } catch (error) {
       console.error('Error deleting user:', error);
-      
+
       messageApi.open({
         key: loadingKey,
         type: 'error',
@@ -384,7 +390,7 @@ const Users = () => {
       render: (roles) => (
         <Space>
           {roles?.map(role => (
-            <Tag key={role.id} color={role.name === 'Owner' ? 'purple' : 'blue'}>
+            <Tag key={role.id} color={role.name === 'Admin' ? 'red' : role.name === 'Owner' ? 'purple' : 'blue'}>
               {role.name}
             </Tag>
           ))}

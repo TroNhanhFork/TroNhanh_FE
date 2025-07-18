@@ -1,85 +1,191 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { Row, Col, Button, DatePicker, Input, Divider, Carousel, Card, Avatar } from "antd";
-import { UserOutlined, CalendarOutlined, HeartOutlined, HeartFilled, LeftOutlined, RightOutlined } from "@ant-design/icons";
-import { getAccommodationById, addToFavorite } from '../../../services/accommodationAPI'
+import {
+  Row,
+  Col,
+  Button,
+  DatePicker,
+  Input,
+  Divider,
+  Carousel,
+  Card,
+  Avatar,
+  Select,
+} from "antd";
+import {
+  UserOutlined,
+  CalendarOutlined,
+  HeartOutlined,
+  HeartFilled,
+  LeftOutlined,
+  RightOutlined,
+} from "@ant-design/icons";
+import axios from "axios";
+import {
+  getAccommodationById,
+  addToFavorite,
+  getUserFavorites,
+  removeFromFavorite
+} from "../../../services/accommodationAPI";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./ApartmentDetails.css";
 import { useEffect, useState, useRef } from "react";
-import useUser from "../../../contexts/UserContext"
-import RoommatePostModal from './RoommatePostModal';
-import { getRoommatePosts } from '../../../services/roommateAPI';
+import useUser from "../../../contexts/UserContext";
+import { useSocket } from "../../../contexts/SocketContext";
+import RoommatePostModal from "./RoommatePostModal";
+import { getRoommatePosts } from "../../../services/roommateAPI";
 import Slider from "react-slick";
+import { getValidAccessToken } from "../../../services/authService";
 
+const { Option } = Select;
 
 const PropertyDetails = () => {
   const { id } = useParams();
-  const [property, setProperty] = useState()
-  const [isFavorite, setIsFavorite] = useState(false)
-  const { user } = useUser()
+  const [accommodation, setAccommodation] = useState();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const { user } = useUser();
   const [showModal, setShowModal] = useState(false);
   const [roommatePosts, setRoommatePosts] = useState([]);
   const sliderRef = useRef();
-
+  const [reviewContent, setReviewContent] = useState("");
+  const [reviewPurpose, setReviewPurpose] = useState("");
+  const [reviewRating, setReviewRating] = useState(null);
+  const [editingReviewId, setEditingReviewId] = useState(null);
+  const [editedReviewContent, setEditedReviewContent] = useState("");
+  const [editedReviewRating, setEditedReviewRating] = useState(null);
+  const [editedReviewPurpose, setEditedReviewPurpose] = useState("");
+  const socket = useSocket();
+  const [chatId, setChatId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [token, setToken] = useState('');
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getAccommodationById(id)
+        const data = await getAccommodationById(id);
         const position = [
           parseFloat(data.location.latitude),
           parseFloat(data.location.longitude),
         ];
-        setProperty({ ...data, position })
+        setAccommodation({ ...data, position });
+        const userToken = await getValidAccessToken()
+        setToken(userToken)
       } catch (error) {
-        console.log("No Accommodation found!")
+        console.log("No Accommodation found!");
       }
-    }
-    fetchData()
-  }, [id])
+    };
+    fetchData();
+  }, [id]);
 
+  useEffect(() => {
+    const fetchIsFavorite = async () => {
+      if (!user || !accommodation?._id) return;
+
+      try {
+        const favorites = await getUserFavorites();
+        const isFav = favorites.some(
+          (fav) => fav.accommodationId._id === accommodation._id
+        );
+        setIsFavorite(isFav);
+      } catch (err) {
+        console.error("Error checking favorite", err);
+      }
+    };
+
+    fetchIsFavorite();
+  }, [user, accommodation?._id]);
 
   const fetchRoommates = async () => {
-    if (property?._id) {
+    if (accommodation?._id) {
       try {
-        const posts = await getRoommatePosts(property._id);
+        const posts = await getRoommatePosts(accommodation._id);
         setRoommatePosts(posts);
       } catch (err) {
-        console.log('Failed to load roommate posts', err);
+        console.log("Failed to load roommate posts", err);
       }
     }
   };
 
   useEffect(() => {
     fetchRoommates();
-  }, [property?._id]);
+  }, [accommodation?._id]);
+
+  // useEffect(() => {
+  //   const initChat = async () => {
+  //     const res = await axios.post(
+  //       "http://localhost:5000/api/chats/get-or-create",
+  //       {
+  //         userId: user._id,
+  //         ownerId: accommodation.ownerId, // adjust to match your accommodation schema
+  //       }
+  //     );
+  //     setChatId(res.data._id);
+  //     console.log("Socket: ", socket)
+  //     socket.emit("joinRoom", { chatId: res.data._id });
+
+  //     const msgRes = await axios.get(
+  //       `http://localhost:5000/api/chats/${res.data._id}/messages`
+  //     );
+  //     setMessages(msgRes.data);
+  //   };
+  //   if (user && accommodation?.ownerId) initChat();
+  // }, [user, accommodation]);
+
+  // useEffect(() => {
+  //   socket?.on("newMessage", (message) => {
+  //     setMessages((prev) => [...prev, message]);
+  //   });
+
+  //   return () => socket?.off("newMessage");
+  // }, [socket]);
+
+  // const sendMessage = async () => {
+  //   const message = {
+  //     chatId,
+  //     senderId: user._id,
+  //     content: newMessage,
+  //   };
+
+  //   await axios.post("http://localhost:5000/api/chats/send", message);
+  //   socket.emit("sendMessage", message);
+  //   setNewMessage("");
+  // };
 
   const navigate = useNavigate();
 
-  if (!property) {
-    return <div className="property-not-found">Property not found.</div>;
+  if (!accommodation) {
+    return <div className="accommodation-not-found">accommodation not found.</div>;
   }
+
+
 
   const toggleFavorite = async () => {
     if (!user) {
-      alert("Please log in to favorite this property.");
+      alert("Please log in to favorite this accommodation.");
       return;
     }
-    setIsFavorite(prev => !prev)
 
     try {
-      await addToFavorite({
-        accommodationId: property._id
-      })
-      console.log('Added to favorite!')
+      if (isFavorite) {
+        await removeFromFavorite(accommodation._id);
+        setIsFavorite(false);
+      } else {
+        await addToFavorite({ accommodationId: accommodation._id });
+        setIsFavorite(true);
+      }
     } catch (error) {
-      console.log('Failed to add to favorite', error)
+      console.error("Favorite toggle error:", error);
     }
-  }
+  };
 
 
-
+  // pass acco ID when navigating
   const handleContinueBooking = () => {
-    navigate("/customer/checkout");
+    if (!user) {
+      alert("Please log in to booking!.");
+      return;
+    }
+    navigate("/customer/checkout", { state: { accommodationId: accommodation._id } });
   };
 
   const sliderSettings = {
@@ -91,27 +197,158 @@ const PropertyDetails = () => {
     responsive: [
       {
         breakpoint: 1024,
-        settings: { slidesToShow: 2 }
+        settings: { slidesToShow: 2 },
       },
       {
         breakpoint: 768,
-        settings: { slidesToShow: 1 }
+        settings: { slidesToShow: 1 },
+      },
+    ],
+  };
+
+  // review submission handler section
+  const handleSubmitReview = async () => {
+    if (!reviewRating || !reviewContent || !reviewPurpose) {
+      alert("Please fill in all review fields.");
+      return;
+    }
+
+    console.log(" >>>[DEBUG] User context before review submission:", user);
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/accommodation/${accommodation._id}/reviews`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            rating: reviewRating,
+            comment: reviewContent,
+            purpose: reviewPurpose,
+          }),
+        }
+      );
+      console.log("Token: ", token)
+      const contentType = response.headers.get("content-type");
+
+      if (!response.ok) {
+        const errorText = contentType.includes("application/json")
+          ? await response.json()
+          : await response.text(); // fallback for HTML
+
+        console.error("Submit error:", errorText);
+        alert("Failed to submit review.");
+        return;
       }
-    ]
+
+      const result = await response.json();
+
+      alert("Review submitted successfully!");
+      setAccommodation((prev) => ({
+        ...prev,
+        reviews: Array.isArray(prev.reviews)
+          ? [result.review, ...prev.reviews]
+          : [result.review],
+      }));
+      setReviewContent("");
+      setReviewPurpose("");
+      setReviewRating(null);
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      alert("An error occurred while submitting your review.");
+    }
+  };
+
+  const handleEditReview = async (reviewId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/accommodation/${accommodation._id}/reviews/${reviewId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            rating: editedReviewRating,
+            comment: editedReviewContent,
+            purpose: editedReviewPurpose,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("Review updated!");
+        setAccommodation((prev) => {
+          const updatedReviews = Array.isArray(prev.reviews)
+            ? prev.reviews.map((r) =>
+              r._id === reviewId ? result.review : r
+            )
+            : [];
+          return { ...prev, reviews: updatedReviews };
+        });
+        setEditingReviewId(null);
+      } else {
+        alert(result.message || "Failed to update review.");
+      }
+    } catch (err) {
+      console.error("Error editing review:", err);
+      alert("Error editing review.");
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/accommodation/${accommodation._id}/reviews/${reviewId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("Review deleted.");
+        setAccommodation((prev) => ({
+          ...prev,
+          reviews: Array.isArray(prev.reviews)
+            ? prev.reviews.filter((r) => r._id !== reviewId)
+            : [],
+        }));
+      } else {
+        alert(result.message || "Failed to delete review.");
+      }
+    } catch (err) {
+      console.error("Error deleting review:", err);
+      alert("Error deleting review.");
+    }
   };
 
   return (
     <div>
-      {property && (
+      {accommodation && (
         <Row gutter={[16, 16]}>
           <Col xs={24}>
-            <div className="property-main-image-wrapper">
+            <div className="accommodation-main-image-wrapper">
               <img
-                src={property.photos && property.photos.length > 0
-                  ? `http://localhost:5000${property.photos[0]}`
-                  : "/image/default-image.jpg"}
-                alt="property main"
-                className="property-main-image"
+                src={
+                  accommodation.photos && accommodation.photos.length > 0
+                    ? `http://localhost:5000${accommodation.photos[0]}`
+                    : "/image/default-image.jpg"
+                }
+                alt="accommodation main"
+                className="accommodation-main-image"
               />
               <button className="favorite-btn" onClick={toggleFavorite}>
                 {isFavorite ? (
@@ -120,29 +357,33 @@ const PropertyDetails = () => {
                   <HeartOutlined style={{ color: "black", fontSize: 24 }} />
                 )}
               </button>
+
             </div>
           </Col>
         </Row>
       )}
-      <Row gutter={32} className="property-main-content">
+      <Row gutter={32} className="accommodation-main-content">
         <Col xs={24} md={16}>
-          <h1 className="property-title">{property.title}</h1>
-          <p className="property-location">
-            {[property.location?.street, property.location?.district, property.location?.addressDetail,]
+          <h1 className="accommodation-title">{accommodation.title}</h1>
+          <p className="accommodation-location">
+            {[
+              accommodation.location?.street,
+              accommodation.location?.district,
+              accommodation.location?.addressDetail,
+            ]
               .filter(Boolean)
               .join(", ")}
           </p>
 
-          <div className="property-summary">
-            {Array.isArray(property.summary) &&
-              property.summary.map((item, idx) => (
+          <div className="accommodation-summary">
+            {Array.isArray(accommodation.summary) &&
+              accommodation.summary.map((item, idx) => (
                 <span key={idx}>{item}</span>
               ))}
-
           </div>
 
           <h2>Description</h2>
-          <p>{property.description}</p>
+          <p>{accommodation.description}</p>
 
           <h3>In sed</h3>
           <p>
@@ -159,23 +400,7 @@ const PropertyDetails = () => {
 
         <Col xs={24} md={8}>
           <div className="booking-card">
-            <h2 className="booking-price">£{property.price} / Month</h2>
-
-            <div className="booking-dates">
-              <DatePicker
-                placeholder="Move in"
-                suffixIcon={<CalendarOutlined />}
-              />
-              <DatePicker
-                placeholder="Move out"
-                suffixIcon={<CalendarOutlined />}
-              />
-            </div>
-
-            <div className="booking-guests">
-              <UserOutlined />
-              <Input type="number" placeholder="Guests" defaultValue={1} />
-            </div>
+            <h2 className="booking-price">{accommodation.price}đ/ Month</h2>
 
             <p>All utilities are included</p>
             <Divider />
@@ -183,15 +408,30 @@ const PropertyDetails = () => {
             <div className="booking-costs">
               <div className="cost-row">
                 <span>Average monthly rent</span>
-                <span>£{(property.price * 0.93).toFixed(2)}</span>
+                <span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(accommodation.price * 0.93)}
+                </span>
               </div>
               <div className="cost-row">
                 <span>Pay upon booking</span>
-                <span>£{(property.price * 0.9998).toFixed(2)}</span>
+                <span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(accommodation.price * 0.9998)}
+                </span>
               </div>
               <div className="cost-row total-cost">
                 <span>Total costs</span>
-                <span>£{(property.price * 1.003).toFixed(2)}</span>
+                <span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(accommodation.price * 1.003)}
+                </span>
               </div>
             </div>
 
@@ -207,8 +447,8 @@ const PropertyDetails = () => {
       </Row>
       <Divider />
       <h1 className="text-heading">Amenities</h1>
-      <Row gutter={[24, 24]} className="property-amenities">
-        {property.amenities?.map((item, index) => (
+      <Row gutter={[24, 24]} className="accommodation-amenities">
+        {accommodation.amenities?.map((item, index) => (
           <Col xs={12} sm={8} md={6} key={index} className="amenity-item">
             <i className={`bi ${item.icon} amenity-icon`}></i>
             <div>
@@ -231,17 +471,17 @@ const PropertyDetails = () => {
       tristique maecenas vitae fames eget ut.Nisl commodo lacinia ultrices ut
       odio dui at.Adipiscing ac auctor hac urna dictum.Urna quis enim lobortis
       vel dignissim sed posuere.Semper lectus neque leo mollis pellentesque
-      auctor pharetra, sed.Varius facilisis in sem tristique.Mauris
-      condimentum pellentesque non commodo, quisque eget dolor.Et ultrices id
-      placerat accumsan.Consectetur consectetur libero orci dolor dolor
-      sagittis.Leo, augue sit sem adipiscing purus ut at malesuada.Dolor, eu
-      dignissim adipiscing eget sed metus.
-      < p ></p >
+      auctor pharetra, sed.Varius facilisis in sem tristique.Mauris condimentum
+      pellentesque non commodo, quisque eget dolor.Et ultrices id placerat
+      accumsan.Consectetur consectetur libero orci dolor dolor sagittis.Leo,
+      augue sit sem adipiscing purus ut at malesuada.Dolor, eu dignissim
+      adipiscing eget sed metus.
+      <p></p>
       <Divider />
       <h1 className="text-heading">Location</h1>
       <div className="map-container">
         <MapContainer
-          center={[property.location.latitude, property.location.longitude]}
+          center={[accommodation.location.latitude, accommodation.location.longitude]}
           zoom={14}
           scrollWheelZoom={false}
           className="map-leaflet"
@@ -250,44 +490,53 @@ const PropertyDetails = () => {
             attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          {property.position ? (
-            <Marker key={property._id} position={property.position}>
-              <Popup>{property.title}</Popup>
+          {accommodation.position ? (
+            <Marker key={accommodation._id} position={accommodation.position}>
+              <Popup>{accommodation.title}</Popup>
             </Marker>
-          ) : null};
+          ) : null}
+          ;
         </MapContainer>
       </div>
-
       <Divider />
       <h1 className="text-heading">Looking for Roommates</h1>
-
-      <Button onClick={() => setShowModal(true)} type="primary" style={{ marginBottom: '1rem' }}>
+      <Button
+        onClick={() => setShowModal(true)}
+        type="primary"
+        style={{ marginBottom: "1rem" }}
+      >
         + Create Roommate Post
       </Button>
-
       {roommatePosts.length === 0 ? (
         <p>No roommate posts yet.</p>
       ) : (
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: "relative" }}>
           <Slider {...sliderSettings} ref={sliderRef}>
             {roommatePosts.map((post) => (
               <div key={post._id} style={{ padding: "0 10px" }}>
                 <Card className="roommate-card" hoverable>
-                  <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: 12,
+                    }}
+                  >
                     <Avatar
                       src={
-                        post.userId?.avatar
-                          ? `http://localhost:5000${post.userId?.avatar}`
+                        post.userId.avatar
+                          ? `${post.userId.avatar}`
                           : "/default-avatar.png"
                       }
+
                       size={48}
                       style={{ marginRight: 12 }}
                     />
 
-
-
                     <div>
-                      <h3 style={{ margin: 0 }}>{ post.userId?.name || "Unknown"}</h3>
+                      <h3 style={{ margin: 0 }}>
+                        {post.userId?.name || "Unknown"}
+                      </h3>
                       <small>{post.createdAt?.slice(0, 10)}</small>
                     </div>
                   </div>
@@ -304,7 +553,7 @@ const PropertyDetails = () => {
                               height: 200,
                               objectFit: "cover",
                               borderRadius: 8,
-                              marginBottom: 12
+                              marginBottom: 12,
                             }}
                           />
                         </div>
@@ -314,7 +563,8 @@ const PropertyDetails = () => {
 
                   <p>{post.intro}</p>
                   <p>
-                    <strong>Habits:</strong> {post.habits?.join(", ") || "Not specified"}
+                    <strong>Habits:</strong>{" "}
+                    {post.habits?.join(", ") || "Not specified"}
                   </p>
                 </Card>
               </div>
@@ -323,22 +573,197 @@ const PropertyDetails = () => {
 
           {/* Custom Buttons */}
           <div className="custom-carousel-buttons">
-            <button className="nav-button" onClick={() => sliderRef.current.slickPrev()}>
+            <button
+              className="nav-button"
+              onClick={() => sliderRef.current.slickPrev()}
+            >
               <LeftOutlined />
             </button>
-            <button className="nav-button" onClick={() => sliderRef.current.slickNext()}>
+            <button
+              className="nav-button"
+              onClick={() => sliderRef.current.slickNext()}
+            >
               <RightOutlined />
             </button>
           </div>
         </div>
       )}
-
       <RoommatePostModal
         visible={showModal}
         onClose={() => setShowModal(false)}
-        accommodationId={property._id}
+        accommodationId={accommodation._id}
         onSuccess={fetchRoommates}
       />
+      <Divider />
+
+      <h1 className="text-heading">Reviews</h1>
+
+      <Row gutter={32} align="top">
+        {/* Left: Add Review */}
+        <Col xs={24} md={10}>
+          <h2 style={{ marginBottom: 16 }}>Leave a Review</h2>
+
+          {user ? (
+            <div
+              style={{
+                background: "#fafafa",
+                padding: 24,
+                borderRadius: 12,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              }}
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder="Write your review..."
+                value={reviewContent}
+                onChange={(e) => setReviewContent(e.target.value)}
+                style={{ marginBottom: 12 }}
+              />
+              <Input
+                placeholder="Purpose (e.g., Business trip)"
+                value={reviewPurpose}
+                onChange={(e) => setReviewPurpose(e.target.value)}
+                style={{ marginBottom: 12 }}
+              />
+              <Input
+                placeholder="Rating (1–10)"
+                type="number"
+                min={1}
+                max={10}
+                value={reviewRating}
+                onChange={(e) => setReviewRating(Number(e.target.value))}
+                style={{ marginBottom: 12 }}
+              />
+              <Button className="booking-button" onClick={handleSubmitReview}>
+                Submit Review
+              </Button>
+            </div>
+          ) : (
+            <p>Please log in to leave a review.</p>
+          )}
+        </Col>
+
+        {/* Right: Review List */}
+        <Col xs={24} md={14}>
+          <h2 style={{ marginBottom: 16, textAlign: "right" }}>
+            Reviews from Others
+          </h2>
+
+          {accommodation.reviews && accommodation.reviews.length > 0 ? (
+            accommodation.reviews.map((review, index) => (
+              <Card
+                key={index}
+                className="custom-review-card"
+                style={{ marginBottom: 16 }}
+              >
+                <div className="review-header">
+                  <Avatar
+                    style={{ backgroundColor: "#004d47", marginRight: 12 }}
+                  >
+                    {review.name?.[0]?.toUpperCase() ||
+                      review.user?.name?.[0]?.toUpperCase() ||
+                      "U"}{" "}
+                  </Avatar>
+                  <div className="review-meta">
+                    <strong>
+                      {review.name || review.user?.name || "Unknown"}
+                    </strong>{" "}
+                    <div className="review-rating-date">
+                      <span className="review-rating">
+                        <i
+                          className="bi bi-star-fill"
+                          style={{ color: "#004d47" }}
+                        />{" "}
+                        {review.rating.toFixed(1)} /10
+                      </span>
+                      <span className="review-time">
+                        • From {review.weeksAgo} weeks ago
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {editingReviewId === review._id ? (
+                  <>
+                    <Input.TextArea
+                      rows={3}
+                      value={editedReviewContent}
+                      onChange={(e) => setEditedReviewContent(e.target.value)}
+                      style={{ marginBottom: 8 }}
+                    />
+                    <Input
+                      type="number"
+                      min={1}
+                      max={10}
+                      placeholder="Rating"
+                      value={editedReviewRating}
+                      onChange={(e) =>
+                        setEditedReviewRating(Number(e.target.value))
+                      }
+                      style={{ marginBottom: 8 }}
+                    />
+                    <Input
+                      placeholder="Purpose"
+                      value={editedReviewPurpose}
+                      onChange={(e) => setEditedReviewPurpose(e.target.value)}
+                      style={{ marginBottom: 8 }}
+                    />
+                    <Button
+                      type="primary"
+                      onClick={() =>
+                        handleEditReview(review._id || review?.user?._id)
+                      }
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      onClick={() => setEditingReviewId(null)}
+                      style={{ marginLeft: 8 }}
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                ) : (
+                  <div className="review-body">
+                    <p>{review.comment}</p>
+                    <p>
+                      <strong>Purpose:</strong> {review.purpose}
+                    </p>
+
+                    {user &&
+                      review.user?._id &&
+                      String(review.user._id) === String(user._id) && (
+                        <div className="review-action-buttons">
+                          <Button
+                            size="small"
+                            onClick={() => {
+                              setEditingReviewId(review._id);
+                              setEditedReviewContent(review.comment);
+                              setEditedReviewRating(review.rating);
+                              setEditedReviewPurpose(review.purpose);
+                            }}
+                          >
+                            Edit
+                          </Button>
+
+                          <Button
+                            size="small"
+                            onClick={() => handleDeleteReview(review._id)}
+                            style={{ marginLeft: 8 }}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      )}
+                  </div>
+                )}
+              </Card>
+            ))
+          ) : (
+            <p>No reviews yet for this accommodation.</p>
+          )}
+        </Col>
+      </Row>
 
       <Divider />
       <h1 className="text-heading">Policy detail</h1>
@@ -383,7 +808,7 @@ const PropertyDetails = () => {
           </ul>
         </Col>
       </Row>
-    </div >
+    </div>
   );
 };
 

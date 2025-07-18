@@ -1,14 +1,14 @@
-.property-not-found {
+.accommodation-not-found {
   padding: 24px;
 }
 
-.property-main-image-wrapper {
+.accommodation-main-image-wrapper {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-.property-main-image {
+.accommodation-main-image {
   width: 100%;
   height: 400px;
   object-fit: cover;
@@ -29,28 +29,28 @@
 }
 
 
-.property-gallery-image {
+.accommodation-gallery-image {
   width: 100%;
   height: 190px;
   object-fit: cover;
   border-radius: 8px;
 }
 
-.property-main-content {
+.accommodation-main-content {
   margin-top: 24px;
 }
 
-.property-title {
+.accommodation-title {
   font-size: 28px;
   margin-bottom: 8px;
 }
 
-.property-location {
+.accommodation-location {
   color: #555;
   margin-bottom: 16px;
 }
 
-.property-summary {
+.accommodation-summary {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
@@ -113,7 +113,7 @@
   text-align: center;
 }
 
-.property-amenities {
+.accommodation-amenities {
   margin-top: 24px;
 }
 

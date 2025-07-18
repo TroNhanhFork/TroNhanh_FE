@@ -54,3 +54,12 @@ export const addToFavorite = async (data) => {
     const response = await axiosInstance.post(`${API_FAV_URL}/`, data);
     return response.data;
 }
+export const getUserFavorites = async () => {
+  const res = await axiosInstance.get("/favorites");
+  return res.data.favorites; // đảm bảo backend trả về { favorites: [...] }
+};
+
+export const removeFromFavorite = async (accommodationId) => {
+  const res = await axiosInstance.delete(`/favorites/${accommodationId}`);
+  return res.data;
+};

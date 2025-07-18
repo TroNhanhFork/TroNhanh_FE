@@ -36,7 +36,7 @@ const ProfilePage = () => {
       {error}
     </div>
   ) : (
-    <div style={{ marginTop: '-80px' }}>
+    <div>
       <Layout style={{
         minHeight: '100vh', width: '100vw',
         marginLeft: 'calc(-50vw + 50%)',

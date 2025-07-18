@@ -125,7 +125,7 @@ const HeaderComponent = () => {
 
         <Menu mode="horizontal" className="nav-menu">
           <Menu.Item key="about">
-            <Link to="/about-us">About Us</Link>
+            <Link to="/about">About Us</Link>
           </Menu.Item>
 
           {user?.role === "customer" && (
@@ -138,17 +138,8 @@ const HeaderComponent = () => {
 
           {user?.role === "owner" && (
             <>
-              <Menu.Item key="communication">
-                <Link to="/owner/communication">Communication</Link>
-              </Menu.Item>
               <Menu.Item key="manage-room">
                 <Link to="/owner/accommodation">Manage Room</Link>
-              </Menu.Item>
-              <Menu.Item key="profile">
-                <Link to="/customer/profile/personal-info">Profile</Link>
-              </Menu.Item>
-              <Menu.Item key="membership">
-                <Link to="/owner/membership">Membership</Link>
               </Menu.Item>
             </>
           )}

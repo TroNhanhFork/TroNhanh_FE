@@ -15,6 +15,7 @@ import { setupInterceptors } from './services/api';
 import VerifyOtpPage from './pages/CustomerPage/Auth/VerifyOTP';
 import ForgotPasswordPage from './pages/CustomerPage/Auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/CustomerPage/Auth/ResetPasswordPage';
+import ScrollToTop from './pages/CommonPage/ScrollToTop/ScrollToTop';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -79,6 +80,7 @@ function AppWrapper() {
   return (
     <BrowserRouter>
       <UserProvider>
+        <ScrollToTop />
         <AppRoutes />
       </UserProvider>
     </BrowserRouter>

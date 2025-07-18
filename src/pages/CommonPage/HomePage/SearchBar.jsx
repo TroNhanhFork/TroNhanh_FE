@@ -1,30 +1,23 @@
 import React, { useState } from 'react';
 import { Row, Col, Select, Input, Button } from 'antd';
+import { useNavigate } from 'react-router-dom';
 
 const { Option } = Select;
 
-export default function SearchBar({ onSearch }) {
+export default function SearchBar() {
   const [district, setDistrict] = useState('');
   const [street, setStreet] = useState('');
-  const [facilities, setFacilities] = useState('');
+  const [streetDetails, setStreetDetails] = useState('');
+  const navigate = useNavigate();
 
-  const handleSearch = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ district, street, facilities }),
-      });
+  const handleSearch = () => {
+    const filters = {
+      district,
+      street,
+      streetDetails,
+    };
 
-      const data = await response.json();
-      console.log('Search result:', data);
-
-      if (onSearch) {
-        onSearch(data);
-      }
-    } catch (err) {
-      console.error('Error Searching:', err);
-    }
+    navigate("/customer/search", { state: filters });
   };
 
   return (
@@ -58,9 +51,9 @@ export default function SearchBar({ onSearch }) {
 
         <Col xs={24} md={8}>
           <Input
-            placeholder="Nearby facilities (mart, convenience stores, etc.)"
-            value={facilities}
-            onChange={(e) => setFacilities(e.target.value)}
+            placeholder="Street Details"
+            value={streetDetails}
+            onChange={(e) => setStreetDetails(e.target.value)}
           />
         </Col>
 

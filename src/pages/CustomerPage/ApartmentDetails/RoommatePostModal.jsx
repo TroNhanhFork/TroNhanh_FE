@@ -29,7 +29,7 @@ const RoommatePostModal = ({ visible, onClose, accommodationId, onSuccess }) => 
           <Input.TextArea />
         </Form.Item>
         <Form.Item name="genderPreference" label="Gender Preference">
-          <Select defaultValue="Any">
+          <Select defaultValue="other">
             <Select.Option value="other">Other</Select.Option>
             <Select.Option value="male">Male</Select.Option>
             <Select.Option value="female">Female</Select.Option>
