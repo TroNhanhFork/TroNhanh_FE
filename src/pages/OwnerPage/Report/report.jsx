@@ -8,6 +8,7 @@ import axios from "axios";
 const { Option } = Select;
 
 const Report = () => {
+  const [messageApi, contextHolder] = message.useMessage();
   const { user } = useUser();
   const [reportList, setReportList] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -135,7 +136,7 @@ const Report = () => {
       setReportList(formattedReports);
     } catch (error) {
       console.error("❌ Failed to fetch reports:", error);
-      message.error("Unable to load reports!");
+      messageApi.error("Unable to load reports!");
     } finally {
       setLoading(false);
     }
@@ -149,7 +150,7 @@ const Report = () => {
     const { type, content, accommodationId } = reportForm;
 
     if (!type || content.trim().length < 10) {
-      message.error("Vui lòng chọn loại report và nội dung tối thiểu 10 ký tự.");
+      messageApi.error("Vui lòng chọn loại report và nội dung tối thiểu 10 ký tự.");
       return;
     }
 
@@ -185,11 +186,11 @@ const Report = () => {
         accommodationId: "",
       });
       setIsModalVisible(false);
-      message.success("Report đã được gửi tới admin!");
+      messageApi.success("Report đã được gửi tới admin!");
       
     } catch (error) {
       console.error("❌ Owner Report submission failed:", error);
-      message.error(error?.response?.data?.message || "Failed to submit report.");
+      messageApi.error(error?.response?.data?.message || "Failed to submit report.");
     } finally {
       setSubmitting(false);
     }
@@ -269,15 +270,17 @@ const Report = () => {
   ];
 
   return (
-    <div className="report-wrapper">
-      <div className="report-header">
-        <h2>Report to Admin</h2>
-        <div>
-          <Button className="open-modal-btn" onClick={() => setIsModalVisible(true)}>
-            Create Report
-          </Button>
+    <>
+      {contextHolder}
+      <div className="report-wrapper">
+        <div className="report-header">
+          <h2>Report to Admin</h2>
+          <div>
+            <Button className="open-modal-btn" onClick={() => setIsModalVisible(true)}>
+              Create Report
+            </Button>
+          </div>
         </div>
-      </div>
 
       <Table 
         className="report-table" 
@@ -419,6 +422,7 @@ const Report = () => {
         </div>
       </Modal>
     </div>
+    </>
   );
 };
 

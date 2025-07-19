@@ -5,7 +5,7 @@ import {
   DownOutlined,
   LogoutOutlined,
   UserOutlined,
-  TransactionOutlined,
+  BarChartOutlined,
   MailOutlined,
   MessageOutlined,
   HomeOutlined,
@@ -61,10 +61,10 @@ const HeaderComponent = () => {
           onClick: () => navigate("/owner/accommodation"),
         },
         {
-          key: "transaction",
-          label: "Transaction",
-          icon: <TransactionOutlined />,
-          onClick: () => navigate("/owner/transaction"),
+          key: "statistics",
+          label: "Statistics",
+          icon: <BarChartOutlined />,
+          onClick: () => navigate("/owner/statistics"),
         }
       );
     }
