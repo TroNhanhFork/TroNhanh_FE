@@ -4,7 +4,7 @@ import {
   Legend, CartesianGrid, Label
 } from "recharts";
 import { Table, Col, Row, Radio, Card } from "antd";
-import "./dashboard.css";
+import "./dashboard.module.css";
 
 // Data and constants
 const postData = [
@@ -127,7 +127,7 @@ const Dashboard = () => {
         <Col xs={24} sm={16}>
           {/* Revenue & Profit Column Chart */}
           <Card
-            className="super-compact-card chart-container"
+            className="super-compact-card dashborad-chart-container"
           >
             <div className="chart-header revenue-header">
               <div>
@@ -191,7 +191,7 @@ const Dashboard = () => {
         <Col xs={24} sm={8}>
           {/* Brand Popularity Donut Chart */}
           <Card
-            className="super-compact-card chart-container"
+            className="super-compact-card dashborad-chart-container"
             title="Brand popularity"
             headStyle={{ fontSize: '0.95rem', fontWeight: 600, padding: '8px 16px' }}
             bodyStyle={{ padding: '8px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}

@@ -10,7 +10,8 @@ import {
   Card,
   Avatar,
   Select,
-  Tag
+  Tag,
+  message,
 } from "antd";
 import {
   UserOutlined,
@@ -28,17 +29,16 @@ import {
   getUserFavorites,
   removeFromFavorite
 } from "../../../services/accommodationAPI";
+import { getUserBookingForAccommodation } from "../../../services/bookingService";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./ApartmentDetails.css";
 import { useEffect, useState, useRef } from "react";
 import useUser from "../../../contexts/UserContext";
-import { useSocket } from "../../../contexts/SocketContext";
 import RoommatePostModal from "./RoommatePostModal";
 import { getRoommatePosts } from "../../../services/roommateAPI";
 import Slider from "react-slick";
 import { getValidAccessToken } from "../../../services/authService";
-import { getUserBookingForAccommodation } from "../../../services/bookingService";
 
 const { Option } = Select;
 
@@ -59,22 +59,26 @@ const PropertyDetails = () => {
   const [editedReviewRating, setEditedReviewRating] = useState(null);
   const [editedReviewPurpose, setEditedReviewPurpose] = useState("");
   const [token, setToken] = useState('');
+  const [messageApi, contextHolder] = message.useMessage();
+
+  // Tạo function riêng để fetch accommodation data
+  const fetchAccommodationData = async () => {
+    try {
+      const data = await getAccommodationById(id);
+      const position = [
+        parseFloat(data.location.latitude),
+        parseFloat(data.location.longitude),
+      ];
+      setAccommodation({ ...data, position });
+      const userToken = await getValidAccessToken()
+      setToken(userToken)
+    } catch (error) {
+      console.log("No Accommodation found!");
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await getAccommodationById(id);
-        const position = [
-          parseFloat(data.location.latitude),
-          parseFloat(data.location.longitude),
-        ];
-        setAccommodation({ ...data, position });
-        const userToken = await getValidAccessToken()
-        setToken(userToken)
-      } catch (error) {
-        console.log("No Accommodation found!");
-      }
-    };
-    fetchData();
+    fetchAccommodationData();
   }, [id]);
 
   useEffect(() => {
@@ -128,6 +132,26 @@ const PropertyDetails = () => {
     fetchRoommates();
   }, [accommodation?._id]);
 
+  // Fetch user's booking for this accommodation
+  useEffect(() => {
+    const fetchUserBooking = async () => {
+      if (!user || !accommodation?._id) {
+        return;
+      }
+
+      try {
+        const booking = await getUserBookingForAccommodation(user._id, accommodation._id);
+        setUserBooking(booking);
+      } catch (error) {
+        console.error("Error fetching user booking:", error);
+        setUserBooking(null);
+      }
+    };
+
+    fetchUserBooking();
+  }, [user, accommodation?._id]);
+
+
   const navigate = useNavigate();
 
   if (!accommodation) {
@@ -138,7 +162,7 @@ const PropertyDetails = () => {
 
   const toggleFavorite = async () => {
     if (!user) {
-      alert("Please log in to favorite this accommodation.");
+      messageApi.warning("Please log in to favorite this accommodation.");
       return;
     }
 
@@ -146,12 +170,15 @@ const PropertyDetails = () => {
       if (isFavorite) {
         await removeFromFavorite(accommodation._id);
         setIsFavorite(false);
+        messageApi.success("Removed from favorites");
       } else {
         await addToFavorite({ accommodationId: accommodation._id });
         setIsFavorite(true);
+        messageApi.success("Added to favorites");
       }
     } catch (error) {
       console.error("Favorite toggle error:", error);
+      messageApi.error("Failed to update favorites");
     }
   };
 
@@ -159,7 +186,7 @@ const PropertyDetails = () => {
   // pass acco ID when navigating
   const handleContinueBooking = () => {
     if (!user) {
-      alert("Please log in to booking!.");
+      messageApi.warning("Please log in to booking!");
       return;
     }
     navigate("/customer/checkout", { state: { accommodationId: accommodation._id } });
@@ -177,6 +204,7 @@ const PropertyDetails = () => {
     navigate(`/customer/chat/${roommatePosts.user._id}`);
   };
 
+
   // Render booking card hoặc booking info
   const renderBookingSection = () => {
     // Kiểm tra xem accommodation có status "Booked" không
@@ -186,12 +214,12 @@ const PropertyDetails = () => {
       // User đã có booking, hiển thị thông tin booking
       return (
         <div className="booking-card">
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+          <div className="booking-status-header">
             <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 20, marginRight: 8 }} />
-            <h2 style={{ margin: 0, color: '#52c41a' }}>You've Booked This Place!</h2>
+            <h2 className="booking-success-title">You've Booked This Place!</h2>
           </div>
 
-          <Tag color={userBooking.status === 'paid' ? 'green' : 'orange'} style={{ marginBottom: 16 }}>
+          <Tag color={userBooking.status === 'paid' ? 'green' : 'orange'} className="booking-status-tag">
             Status: {userBooking.status.toUpperCase()}
           </Tag>
 
@@ -217,7 +245,7 @@ const PropertyDetails = () => {
             <div className="info-row">
               <span><strong>Start Date:</strong></span>
               <span>{new Date(userBooking.guestInfo.startDate).toLocaleDateString('vi-VN')}</span>
-            </div >
+            </div>
             <div className="info-row">
               <span><strong>Lease Duration:</strong></span>
               <span>{userBooking.guestInfo.leaseDuration} months</span>
@@ -227,53 +255,51 @@ const PropertyDetails = () => {
               <span>{userBooking.guestInfo.guests} person(s)</span>
             </div>
 
-            {
-              userBooking.status === 'paid' && userBooking.paymentInfo && (
-                <>
-                  <Divider />
-                  <div className="payment-info">
-                    <h3 style={{ color: '#52c41a' }}>Payment Information</h3>
-                    <div className="info-row">
-                      <span><strong>Amount Paid:</strong></span>
-                      <span>{new Intl.NumberFormat("vi-VN", {
-                        style: "currency",
-                        currency: "VND",
-                      }).format(userBooking.paymentInfo.amount)}</span>
-                    </div>
-                    <div className="info-row">
-                      <span><strong>Transaction ID:</strong></span>
-                      <span>{userBooking.paymentInfo.vnpayTransactionId}</span>
-                    </div>
-                    <div className="info-row">
-                      <span><strong>Paid At:</strong></span>
-                      <span>{new Date(userBooking.paymentInfo.paidAt).toLocaleString('vi-VN')}</span>
-                    </div>
+            {userBooking.status === 'paid' && userBooking.paymentInfo && (
+              <>
+                <Divider />
+                <div className="payment-info">
+                  <h3 className="booking-payment-info-title">Payment Information</h3>
+                  <div className="info-row">
+                    <span><strong>Amount Paid:</strong></span>
+                    <span>{new Intl.NumberFormat("vi-VN", {
+                      style: "currency",
+                      currency: "VND",
+                    }).format(userBooking.paymentInfo.amount)}</span>
                   </div>
-                </>
-              )
-            }
-          </div >
+                  <div className="info-row">
+                    <span><strong>Transaction ID:</strong></span>
+                    <span>{userBooking.paymentInfo.vnpayTransactionId}</span>
+                  </div>
+                  <div className="info-row">
+                    <span><strong>Paid At:</strong></span>
+                    <span>{new Date(userBooking.paymentInfo.paidAt).toLocaleString('vi-VN')}</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
-          <div style={{ marginTop: 16 }}>
-            <p style={{ fontSize: 12, color: '#666' }}>
+          <div className="booking-meta-info">
+            <p className="booking-meta-text">
               Booking ID: {userBooking._id}
             </p>
-            <p style={{ fontSize: 12, color: '#666' }}>
+            <p className="booking-meta-text">
               Booked on: {new Date(userBooking.createdAt).toLocaleString('vi-VN')}
             </p>
           </div>
-        </div >
+        </div>
       );
     } else if (isBooked) {
       // Accommodation đã được book bởi user khác
       return (
         <div className="booking-card">
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+          <div className="booking-unavailable-header">
             <div className="unavailable-icon">✕</div>
-            <h2 style={{ margin: 0, color: '#ff4d4f' }}>Đã hết phòng</h2>
+            <h2 className="booking-unavailable-title">Đã hết phòng</h2>
           </div>
 
-          <Tag color="red" style={{ marginBottom: 16 }}>
+          <Tag color="red" className="booking-status-tag">
             KHÔNG CÒN TRỐNG
           </Tag>
 
@@ -369,7 +395,7 @@ const PropertyDetails = () => {
   // review submission handler section
   const handleSubmitReview = async () => {
     if (!reviewRating || !reviewContent || !reviewPurpose) {
-      alert("Please fill in all review fields.");
+      messageApi.error("Please fill in all review fields.");
       return;
     }
 
@@ -400,25 +426,31 @@ const PropertyDetails = () => {
           : await response.text(); // fallback for HTML
 
         console.error("Submit error:", errorText);
-        alert("Failed to submit review.");
+
+        // Hiển thị thông báo lỗi cụ thể từ backend
+        if (response.status === 403) {
+          messageApi.error("You can only review accommodations that you have booked and stayed at.");
+        } else if (response.status === 400) {
+          messageApi.error(errorText.message || "You have already reviewed this accommodation or missing required fields.");
+        } else {
+          messageApi.error("Failed to submit review.");
+        }
         return;
       }
 
       const result = await response.json();
 
-      alert("Review submitted successfully!");
-      setAccommodation((prev) => ({
-        ...prev,
-        reviews: Array.isArray(prev.reviews)
-          ? [result.review, ...prev.reviews]
-          : [result.review],
-      }));
+      messageApi.success("Review submitted successfully!");
+
+      // Refresh toàn bộ accommodation data để đảm bảo reviews được load đúng
+      await fetchAccommodationData();
+
       setReviewContent("");
       setReviewPurpose("");
       setReviewRating(null);
     } catch (error) {
       console.error("Error submitting review:", error);
-      alert("An error occurred while submitting your review.");
+      messageApi.error("An error occurred while submitting your review.");
     }
   };
 
@@ -443,7 +475,7 @@ const PropertyDetails = () => {
       const result = await response.json();
 
       if (response.ok) {
-        alert("Review updated!");
+        messageApi.success("Review updated successfully!");
         setAccommodation((prev) => {
           const updatedReviews = Array.isArray(prev.reviews)
             ? prev.reviews.map((r) =>
@@ -454,18 +486,36 @@ const PropertyDetails = () => {
         });
         setEditingReviewId(null);
       } else {
-        alert(result.message || "Failed to update review.");
+        messageApi.error(result.message || "Failed to update review.");
       }
     } catch (err) {
       console.error("Error editing review:", err);
-      alert("Error editing review.");
+      messageApi.error("Error editing review.");
     }
   };
 
   const handleDeleteReview = async (reviewId) => {
-    if (!window.confirm("Are you sure you want to delete this review?")) return;
-
     try {
+      const confirmed = await new Promise((resolve) => {
+        messageApi.warning({
+          content: 'Are you sure you want to delete this review?',
+          duration: 0,
+          onClose: () => resolve(false),
+          action: (
+            <div>
+              <Button size="small" type="primary" onClick={() => { messageApi.destroy(); resolve(true); }}>
+                Yes
+              </Button>
+              <Button size="small" style={{ marginLeft: 8 }} onClick={() => { messageApi.destroy(); resolve(false); }}>
+                No
+              </Button>
+            </div>
+          ),
+        });
+      });
+
+      if (!confirmed) return;
+
       const response = await fetch(
         `http://localhost:5000/api/accommodation/${accommodation._id}/reviews/${reviewId}`,
         {
@@ -479,7 +529,7 @@ const PropertyDetails = () => {
       const result = await response.json();
 
       if (response.ok) {
-        alert("Review deleted.");
+        messageApi.success("Review deleted successfully.");
         setAccommodation((prev) => ({
           ...prev,
           reviews: Array.isArray(prev.reviews)
@@ -487,16 +537,17 @@ const PropertyDetails = () => {
             : [],
         }));
       } else {
-        alert(result.message || "Failed to delete review.");
+        messageApi.error(result.message || "Failed to delete review.");
       }
     } catch (err) {
       console.error("Error deleting review:", err);
-      alert("Error deleting review.");
+      messageApi.error("Error deleting review.");
     }
   };
 
   return (
     <div>
+      {contextHolder}
       {accommodation && (
         <Row gutter={[16, 16]}>
           <Col xs={24}>
@@ -721,51 +772,79 @@ const PropertyDetails = () => {
       <Row gutter={32} align="top">
         {/* Left: Add Review */}
         <Col xs={24} md={10}>
-          <h2 style={{ marginBottom: 16 }}>Leave a Review</h2>
+          <div className="leave-review-section">
+            <h2 className="leave-review-title">Leave a Review</h2>
 
-          {user ? (
-            <div
-              style={{
-                background: "#fafafa",
-                padding: 24,
-                borderRadius: 12,
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-              }}
-            >
-              <Input.TextArea
-                rows={4}
-                placeholder="Write your review..."
-                value={reviewContent}
-                onChange={(e) => setReviewContent(e.target.value)}
-                style={{ marginBottom: 12 }}
-              />
-              <Input
-                placeholder="Purpose (e.g., Business trip)"
-                value={reviewPurpose}
-                onChange={(e) => setReviewPurpose(e.target.value)}
-                style={{ marginBottom: 12 }}
-              />
-              <Input
-                placeholder="Rating (1–10)"
-                type="number"
-                min={1}
-                max={10}
-                value={reviewRating}
-                onChange={(e) => setReviewRating(Number(e.target.value))}
-                style={{ marginBottom: 12 }}
-              />
-              <Button className="booking-button" onClick={handleSubmitReview}>
-                Submit Review
-              </Button>
-            </div>
-          ) : (
-            <p>Please log in to leave a review.</p>
-          )}
+            {user ? (
+              userBooking ? (
+                <div className="review-form-container">
+                  <div className="review-form-row">
+                    <label className="review-form-label">Your Review</label>
+                    <Input.TextArea
+                      rows={4}
+                      placeholder="Share your experience about this accommodation..."
+                      value={reviewContent}
+                      onChange={(e) => setReviewContent(e.target.value)}
+                      className="review-custom-textarea"
+                    />
+                  </div>
+
+                  <div className="review-form-row">
+                    <label className="review-form-label">Purpose</label>
+                    <Input
+                      placeholder="e.g., Business trip, Vacation, Study"
+                      value={reviewPurpose}
+                      onChange={(e) => setReviewPurpose(e.target.value)}
+                      className="review-custom-input"
+                    />
+                  </div>
+
+                  <div className="review-form-row">
+                    <label className="review-form-label">Rating (1-5)</label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={5}
+                      placeholder="Rate from 1 to 5 stars"
+                      value={reviewRating}
+                      onChange={(e) => setReviewRating(Number(e.target.value))}
+                      className="review-custom-input"
+                    />
+                  </div>
+
+                  <Button
+                    className="review-submit-button"
+                    onClick={handleSubmitReview}
+                    size="large"
+                  >
+                    Submit Review
+                  </Button>
+                </div>
+              ) : (
+                <div className="login-prompt-custom">
+                  <div className="review-prompt-container">
+                    <i className="bi bi-info-circle review-prompt-icon"></i>
+                    <h3 className="review-prompt-title">Only Verified Guests Can Review</h3>
+                    <p className="review-prompt-description">
+                      You need to book and stay at this accommodation to leave a review.
+                    </p>
+                    <p className="review-prompt-note">
+                      This helps ensure authentic and helpful reviews for other travelers.
+                    </p>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="login-prompt-custom">
+                Please log in to leave a review.
+              </div>
+            )}
+          </div>
         </Col>
 
         {/* Right: Review List */}
         <Col xs={24} md={14}>
-          <h2 style={{ marginBottom: 16, textAlign: "right" }}>
+          <h2 className="reviews-section-header">
             Reviews from Others
           </h2>
 
@@ -778,28 +857,30 @@ const PropertyDetails = () => {
               >
                 <div className="review-header">
                   <Avatar
+                    size={48}
                     style={{ backgroundColor: "#004d47", marginRight: 12 }}
                   >
                     {review.name?.[0]?.toUpperCase() ||
                       review.user?.name?.[0]?.toUpperCase() ||
+                      review.customerId?.name?.[0]?.toUpperCase() ||
                       "U"}{" "}
                   </Avatar>
                   <div className="review-meta">
-                    <strong>
-                      {review.name || review.user?.name || "Unknown"}
-                    </strong>{" "}
-                    <div className="review-rating-date">
+                    <div className="review-name-rating">
+                      <strong className="review-customer-name">
+                        {review.name || review.user?.name || review.customerId?.name || "Unknown User"}
+                      </strong>
                       <span className="review-rating">
                         <i
                           className="bi bi-star-fill"
-                          style={{ color: "#004d47" }}
+                          style={{ color: "#004d40" }}
                         />{" "}
-                        {review.rating.toFixed(1)} /10
-                      </span>
-                      <span className="review-time">
-                        • From {review.weeksAgo} weeks ago
+                        {review.rating}/5
                       </span>
                     </div>
+                    <span className="review-time">
+                      • From {review.weeksAgo} weeks ago
+                    </span>
                   </div>
                 </div>
 
@@ -814,8 +895,8 @@ const PropertyDetails = () => {
                     <Input
                       type="number"
                       min={1}
-                      max={10}
-                      placeholder="Rating"
+                      max={5}
+                      placeholder="Rating (1-5 stars)"
                       value={editedReviewRating}
                       onChange={(e) =>
                         setEditedReviewRating(Number(e.target.value))
@@ -851,8 +932,8 @@ const PropertyDetails = () => {
                     </p>
 
                     {user &&
-                      review.user?._id &&
-                      String(review.user._id) === String(user._id) && (
+                      (review.user?._id || review.customerId?._id) &&
+                      (String(review.user?._id || review.customerId?._id) === String(user._id)) && (
                         <div className="review-action-buttons">
                           <Button
                             size="small"
