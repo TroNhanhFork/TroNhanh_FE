@@ -8,6 +8,7 @@ import { UserOutlined } from "@ant-design/icons";
 import { geocodeWithOpenCage } from "../../../services/OpenCage";
 import "./accommodation.css";
 import { getValidAccessToken } from "../../../services/authService";
+import { getOwnerMembershipInfo } from "../../../services/accommodationAPI";
 import useUser from "../../../contexts/UserContext";
 
 const Accommodation = () => {
@@ -25,6 +26,7 @@ const Accommodation = () => {
 
   const { user } = useUser();
   const [data, setData] = useState([]);
+  const [membershipInfo, setMembershipInfo] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
@@ -49,7 +51,17 @@ const Accommodation = () => {
 
   useEffect(() => {
     fetchAccommodations();
+    fetchMembershipInfo();
   }, []);
+
+  const fetchMembershipInfo = async () => {
+    try {
+      const response = await getOwnerMembershipInfo();
+      setMembershipInfo(response.data);
+    } catch (error) {
+      console.error("Error fetching membership info:", error);
+    }
+  };
 
   const fetchAccommodations = async () => {
     try {
@@ -86,6 +98,10 @@ const Accommodation = () => {
       if (window.confirm("Bạn có chắc chắn muốn xóa chỗ ở này?")) {
         await axios.delete(`http://localhost:5000/api/accommodation/${id}`);
         setData(data.filter((item) => item._id !== id));
+        
+        // Refresh membership info to update current post count
+        fetchMembershipInfo();
+        
         messageApi.success("Xóa accommodation thành công!");
       }
     } catch (error) {
@@ -125,9 +141,25 @@ const Accommodation = () => {
     {
       title: "Status",
       dataIndex: "status",
-      render: (status) => (
-        <Tag color={status === "Available" ? "green" : "volcano"}>{status}</Tag>
-      ),
+      render: (status) => {
+        let color = "default";
+        
+        switch(status) {
+          case "Available":
+            color = "green";
+            break;
+          case "Booked":
+            color = "blue";
+            break;
+          case "Unavailable":
+            color = "volcano";
+            break;
+          default:
+            color = "default";
+        }
+        
+        return <Tag color={color}>{status}</Tag>;
+      },
     },
     {
       title: "Actions",
@@ -195,6 +227,41 @@ const Accommodation = () => {
 
         </div>
 
+        {/* Membership Info Display */}
+        {membershipInfo && (
+          <div className="membership-info-card">
+            <div className="membership-info-content">
+              <h3>Membership Information</h3>
+              <div className="membership-details">
+                <div className="membership-item">
+                  <span className="label">Plan:</span>
+                  <span className="value">{membershipInfo.membership?.name || 'Free'}</span>
+                </div>
+                <div className="membership-item">
+                  <span className="label">Posts Usage:</span>
+                  <span className="value">
+                    {membershipInfo.currentPosts} / {membershipInfo.maxPosts} Active Posts
+                  </span>
+                </div>
+                <div className="membership-progress">
+                  <div 
+                    className="progress-bar"
+                    style={{
+                      width: `${(membershipInfo.currentPosts / membershipInfo.maxPosts) * 100}%`,
+                      backgroundColor: membershipInfo.currentPosts >= membershipInfo.maxPosts ? '#ff4d4f' : '#52c41a'
+                    }}
+                  ></div>
+                </div>
+                {membershipInfo.currentPosts >= membershipInfo.maxPosts && (
+                  <div className="membership-warning">
+                    ⚠️ You have reached the maximum number of posts for your current plan.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
       <Table
         className="accommodation-table"
         columns={columns}
@@ -250,6 +317,9 @@ const Accommodation = () => {
 
             setData([...data, { ...res.data.data, key: res.data.data._id }]);
             setIsAddModalVisible(false);
+            
+            // Refresh membership info to update current post count
+            fetchMembershipInfo();
 
             // 👇 Đừng quên reset lại full location có latitude + longitude
             setNewAccommodation({
@@ -271,7 +341,25 @@ const Accommodation = () => {
             messageApi.success("Accommodation added successfully!");
           } catch (error) {
             console.error("Error adding accommodation:", error);
-            messageApi.error("Có lỗi xảy ra khi thêm accommodation!");
+            
+            // Xử lý các loại lỗi khác nhau
+            if (error.response && error.response.status === 403) {
+              const errorData = error.response.data;
+              
+              if (errorData.currentCount !== undefined && errorData.allowedCount !== undefined) {
+                // Lỗi về giới hạn số lượng accommodations
+                messageApi.error(
+                  `${errorData.message}\n\nHiện tại: ${errorData.currentCount}/${errorData.allowedCount} accommodations`,
+                  5 // Hiển thị lâu hơn để user đọc được
+                );
+              } else {
+                // Lỗi membership khác (hết hạn, chưa mua)
+                messageApi.error(errorData.message || "Bạn cần có membership hợp lệ để đăng accommodation!");
+              }
+            } else {
+              // Lỗi khác
+              messageApi.error("Có lỗi xảy ra khi thêm accommodation!");
+            }
           }
         }}
 

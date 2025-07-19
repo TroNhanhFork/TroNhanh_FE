@@ -2,111 +2,78 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import "./detailRating.css";
-import { Rate, message } from "antd";
+import { Rate, message, Spin } from "antd";
 import { useNavigate } from "react-router-dom";
-
-// Dummy ratings theo accommodationId
-const dummyRatings = {
-  "1": [
-    {
-      _id: "r1",
-      customerId: "cust001",
-      rating: 5,
-      comment: "Rất tuyệt vời!",
-      createdAt: "2024-05-01",
-    },
-    {
-      _id: "r2",
-      customerId: "cust002",
-      rating: 4,
-      comment: "Phòng sạch sẽ, tiện nghi.",
-      createdAt: "2024-06-10",
-    },
-  ],
-  "2": [
-    {
-      _id: "r3",
-      customerId: "cust001",
-      rating: 4,
-      comment: "View biển đẹp, nhưng phòng hơi nhỏ.",
-      createdAt: "2024-05-20",
-    },
-    {
-      _id: "r4",
-      customerId: "cust002",
-      rating: 5,
-      comment: "Chủ nhà rất nhiệt tình, sẽ quay lại!",
-      createdAt: "2024-06-05",
-    },
-  ],
-  "3": [
-    {
-      _id: "r3",
-      customerId: "cust003",
-      rating: 3,
-      comment: "Vị trí đẹp nhưng hơi xa trung tâm.",
-      createdAt: "2024-05-15",
-    },
-  ],
-  "4": [
-    {
-      _id: "r4",
-      customerId: "cust004",
-      rating: 4,
-      comment: "Giá hợp lý, chủ nhà thân thiện.",
-      createdAt: "2024-06-01",
-    },
-  ],
-  "5": [
-    {
-      _id: "r5",
-      customerId: "cust005",
-      rating: 5,
-      comment: "Phòng như hình, rất đáng tiền.",
-      createdAt: "2024-06-11",
-    },
-  ],
-};
-
-
-const accommodationNames = {
-  "1": "Cozy Apartment",
-  "2": "Beachfront Villa",
-  "3": "Mountain Cabin",
-};
-
-const customerNames = {
-  cust001: "Nguyễn Văn An",
-  cust002: "Trần Thị Lan",
-  cust003: "Lê Văn Cường",
-  cust004: "Phạm Thị Dung",
-  cust005: "Hoàng Văn Hải",
-};
-
+import { getAccommodationRatings } from "../../../services/accommodationAPI";
 
 const DetailRating = () => {
   const { id } = useParams();
   const [ratings, setRatings] = useState([]);
+  const [accommodationTitle, setAccommodationTitle] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [avgRating, setAvgRating] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (dummyRatings[id]) {
-      setRatings(dummyRatings[id]);
-    } else {
-      message.error("System error while loading ratings.");
-    }
+    fetchAccommodationRatings();
   }, [id]);
 
-  const avgRating =
-    ratings.length > 0
-      ? (
-          ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length
-        ).toFixed(1)
-      : null;
+  const fetchAccommodationRatings = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 [DEBUG DetailRating] Fetching ratings for accommodation ID:', id);
+      const response = await getAccommodationRatings(id);
+      console.log('📝 [DEBUG DetailRating] API Response:', response);
+      
+      if (response.success) {
+        console.log('✅ [DEBUG DetailRating] API Success');
+        console.log('📊 [DEBUG DetailRating] Ratings:', response.ratings);
+        console.log('🏠 [DEBUG DetailRating] Accommodation Title:', response.accommodationTitle);
+        
+        setRatings(response.ratings);
+        setAccommodationTitle(response.accommodationTitle);
+        
+        // Tính average rating
+        if (response.ratings.length > 0) {
+          const total = response.ratings.reduce((sum, rating) => sum + rating.rating, 0);
+          const avg = (total / response.ratings.length).toFixed(1);
+          setAvgRating(avg);
+          console.log('⭐ [DEBUG DetailRating] Calculated average rating:', avg);
+        } else {
+          console.log('📝 [DEBUG DetailRating] No ratings found for this accommodation');
+        }
+      } else {
+        console.log('❌ [DEBUG DetailRating] API Failed:', response.message);
+        message.error(response.message || 'Không thể tải dữ liệu ratings');
+      }
+    } catch (error) {
+      console.error('💥 [DEBUG DetailRating] Error fetching accommodation ratings:', error);
+      message.error('Có lỗi xảy ra khi tải dữ liệu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="detail-rating-wrapper" style={{ textAlign: 'center', marginTop: 50 }}>
+        <Spin size="large" />
+        <p>Đang tải dữ liệu...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="detail-rating-wrapper">
-      <h2>Ratings for: {accommodationNames[id]}</h2>
+      <h2>Ratings for: {accommodationTitle}</h2>
 
       {ratings.length === 0 ? (
         <div className="no-rating">No ratings available yet.</div>
@@ -116,7 +83,7 @@ const DetailRating = () => {
             <span>
               <strong>Average Rating:</strong>{" "}
               <Rate disabled allowHalf value={parseFloat(avgRating)} />
-              <span className="rating-number">({avgRating})</span>
+              <span className="rating-number">({avgRating}/5)</span>
             </span>
             <span>
               <strong>Total Reviews:</strong> {ratings.length}
@@ -124,12 +91,12 @@ const DetailRating = () => {
           </div>
 
           <div className="rating-list">
-            {ratings.map((r) => (
-              <div key={r._id} className="rating-item">
-                <Rate disabled value={r.rating} />
-                <p className="comment">"{r.comment}"</p>
+            {ratings.map((rating) => (
+              <div key={rating._id} className="rating-item">
+                <Rate disabled value={rating.rating} />
+                <p className="comment">"{rating.comment}"</p>
                 <p className="info">
-                   Customer: {customerNames[r.customerId] || r.customerId} | {r.createdAt}
+                  Customer: {rating.customerId?.name || 'Anonymous'} | {formatDate(rating.createdAt)}
                 </p>
               </div>
             ))}
@@ -137,8 +104,8 @@ const DetailRating = () => {
         </>
       )}
       <button className="back-btn" onClick={() => navigate("/owner/rating")}>
-           Back
-        </button>
+        Back
+      </button>
     </div>
   );
 };

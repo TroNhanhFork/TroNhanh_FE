@@ -14,6 +14,78 @@
   margin-bottom: 24px;
 }
 
+/* Membership Info Card */
+.membership-info-card {
+  background: linear-gradient(135deg, #49735A 0%, #5a8568 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(73, 115, 90, 0.15);
+}
+
+.membership-info-content {
+  padding: 20px;
+  color: white;
+}
+
+.membership-info-content h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+}
+
+.membership-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.membership-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.membership-item .label {
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.membership-item .value {
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 4px 12px;
+  border-radius: 6px;
+  backdrop-filter: blur(10px);
+}
+
+.membership-progress {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  transition: all 0.3s ease;
+  border-radius: 4px;
+}
+
+.membership-warning {
+  background: rgba(255, 77, 79, 0.1);
+  border: 1px solid rgba(255, 77, 79, 0.3);
+  color: #ff6b6b;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 8px;
+  backdrop-filter: blur(10px);
+}
+
 h2 {
   color: #49735A;
   font-size: 24px;

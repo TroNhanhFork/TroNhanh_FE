@@ -1,5 +1,5 @@
 import React from "react";
-import { Menu, Avatar, Typography } from "antd";
+import { Menu, Avatar, Typography, message } from "antd";
 import {
   FileTextOutlined,
   UserOutlined,
@@ -8,25 +8,33 @@ import {
   StarOutlined,
   CreditCardOutlined,
   LogoutOutlined,
-  WarningOutlined,
   BarChartOutlined,
 } from "@ant-design/icons";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./sidebar.css";
 import useUser from "../../../../contexts/UserContext";
 
 const { Title, Text } = Typography;
 
 const Sidebar = () => {
-  const { user } = useUser();
+  const { user, logout } = useUser();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [messageApi, contextHolder] = message.useMessage();
   const selectedKey = location.pathname.split("/")[2];
 
   const name = user?.name || "Tên Owner";
   const email = user?.email || "Owner@gmail.com";
 
+  const handleLogout = async () => {
+    await messageApi.success("Logout successfully", 2);
+    logout();
+    navigate("/homepage");
+  };
+
   return (
     <div className="owner-sidebar">
+      {contextHolder}
       <div className="owner-info">
         <Avatar
           size={64}
@@ -61,17 +69,14 @@ const Sidebar = () => {
         <Menu.Item key="accommodation" icon={<HomeOutlined />}>
           <Link to="/owner/accommodation">Manage Accommodation</Link>
         </Menu.Item>
-        <Menu.Item key="cancellation" icon={<WarningOutlined />}>
-          <Link to="/owner/cancellation">Cancellation</Link>
-        </Menu.Item>
         <Menu.Item key="rating" icon={<StarOutlined />}>
           <Link to="/owner/rating">Rating</Link>
         </Menu.Item>
         <Menu.Item key="membership" icon={<CreditCardOutlined />}>
           <Link to="/owner/membership">Membership</Link>
         </Menu.Item>
-        <Menu.Item key="logout" icon={<LogoutOutlined />}>
-          <Link to="/logout">Log Out</Link>
+        <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
+          Log Out
         </Menu.Item>
       </Menu>
     </div>

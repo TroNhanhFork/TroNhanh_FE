@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
+import dayjs from "dayjs";
 import {
   Row,
   Col,
@@ -45,6 +46,12 @@ const CheckoutPage = () => {
   const { user } = useUser();
   const [paymentMethod, setPaymentMethod] = useState(null);
 
+  // Function to disable past dates
+  const disabledDate = (current) => {
+    // Can not select days before today
+    return current && current < dayjs().startOf('day');
+  };
+
   // handle payment result after redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -84,6 +91,15 @@ const CheckoutPage = () => {
 
     if (!startDate || !leaseDuration || !guests) {
       notification.warning({ message: "Please fill in all booking details" });
+      return;
+    }
+
+    // Validate that start date is not in the past
+    if (startDate && startDate.isBefore(dayjs().startOf('day'))) {
+      notification.error({ 
+        message: "Invalid Date", 
+        description: "Start date cannot be in the past. Please select today or a future date." 
+      });
       return;
     }
 
@@ -193,6 +209,7 @@ const CheckoutPage = () => {
               suffixIcon={<CalendarOutlined />}
               value={startDate}
               onChange={setStartDate}
+              disabledDate={disabledDate}
               style={{ width: "100%", marginBottom: 12 }}
             />
             <Select
