@@ -8,7 +8,7 @@ const UserSearch = ({
   filters,
   setFilters,
   roleOptions = [],
-  genderOptions = ["Male", "Female", "Other"],
+  genderOptions = ["male", "female", "other"],
 }) => {
   const handleInputChange = useCallback((field, value) => {
     const newFilters = { ...filters, [field]: value };

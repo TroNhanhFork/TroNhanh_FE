@@ -134,7 +134,7 @@ const BookingHistory = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Tag color={getStatusColor(status)}>
+        <Tag color={getStatusColor(status)} className="booking-history-tag">
           {getStatusText(status)}
         </Tag>
       ),
@@ -154,6 +154,7 @@ const BookingHistory = () => {
           icon={<EyeOutlined />}
           onClick={() => handleViewDetails(record)}
           size="small"
+          className="booking-history-details-btn"
         >
           Details
         </Button>
@@ -179,6 +180,7 @@ const BookingHistory = () => {
             dataSource={bookings}
             rowKey="_id"
             loading={loading}
+            className="booking-history-table"
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
@@ -197,6 +199,7 @@ const BookingHistory = () => {
           onCancel={() => setIsModalVisible(false)}
           footer={null}
           width={800}
+          className="booking-history-modal"
         >
           {selectedBooking && (
             <div className="booking-detail-modal">
