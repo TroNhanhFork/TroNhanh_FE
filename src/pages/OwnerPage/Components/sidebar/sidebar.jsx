@@ -9,6 +9,7 @@ import {
   CreditCardOutlined,
   LogoutOutlined,
   WarningOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 import { Link, useLocation } from "react-router-dom";
 import "./sidebar.css";
@@ -48,6 +49,9 @@ const Sidebar = () => {
       </div>
 
       <Menu mode="inline" selectedKeys={[selectedKey]} className="owner-menu">
+        <Menu.Item key="statistics" icon={<BarChartOutlined />}>
+          <Link to="/owner/statistics">Statistics</Link>
+        </Menu.Item>
         <Menu.Item key="report" icon={<FileTextOutlined />}>
           <Link to="/owner/report">Report</Link>
         </Menu.Item>

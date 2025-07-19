@@ -23,6 +23,8 @@ const HeaderComponent = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const { user, logout, loading } = useUser();
 
+  // Debug user info
+  console.log("HeaderComponent user:", user);
 
   if (loading) return null;
 
@@ -34,6 +36,7 @@ const HeaderComponent = () => {
 
   const getUserMenuItems = (role) => {
     const items = [];
+    console.log("getUserMenuItems role:", role);
 
     if (role === "customer") {
       items.push(
@@ -41,13 +44,19 @@ const HeaderComponent = () => {
           key: "my-room",
           label: "My Room",
           icon: <HomeOutlined />,
-          onClick: () => navigate("/customer/my-room"),
+          onClick: () => {
+            console.log("Navigate: /customer/my-room");
+            navigate("/customer/my-room");
+          },
         },
         {
           key: "favourite",
           label: "Favourite",
           icon: <HeartOutlined />,
-          onClick: () => navigate("/customer/favourite"),
+          onClick: () => {
+            console.log("Navigate: /customer/favourite");
+            navigate("/customer/favourite");
+          },
         }
       );
     }
@@ -58,13 +67,19 @@ const HeaderComponent = () => {
           key: "manage-room",
           label: "Manage Room",
           icon: <SettingOutlined />,
-          onClick: () => navigate("/owner/accommodation"),
+          onClick: () => {
+            console.log("Navigate: /owner/accommodation");
+            navigate("/owner/accommodation");
+          },
         },
         {
           key: "transaction",
           label: "Transaction",
           icon: <TransactionOutlined />,
-          onClick: () => navigate("/owner/transaction"),
+          onClick: () => {
+            console.log("Navigate: /owner/transaction");
+            navigate("/owner/transaction");
+          },
         }
       );
     }
@@ -74,7 +89,10 @@ const HeaderComponent = () => {
         key: "dashboard",
         label: "Dashboard",
         icon: <DashboardOutlined />,
-        onClick: () => navigate("/admin/dashboard"),
+        onClick: () => {
+          console.log("Navigate: /admin/dashboard");
+          navigate("/admin/dashboard");
+        },
       });
     }
 
@@ -85,6 +103,7 @@ const HeaderComponent = () => {
         label: "Profile",
         icon: <UserOutlined />,
         onClick: () => {
+          console.log("Profile click, role:", role);
           if (role === "customer") navigate("/customer/profile/personal-info");
           else if (role === "owner") navigate("/customer/profile/personal-info");
           else navigate("/profile");
@@ -94,13 +113,19 @@ const HeaderComponent = () => {
         key: "contact",
         label: "Contact & Reports",
         icon: <MailOutlined />,
-        onClick: () => navigate("/customer/reports"),
+        onClick: () => {
+          console.log("Navigate: /customer/reports");
+          navigate("/customer/reports");
+        },
       },
       {
         key: "chat",
         label: "Chat",
         icon: <MessageOutlined />,
-        onClick: () => navigate("/chat"),
+        onClick: () => {
+          console.log("Navigate: /chat");
+          navigate("/chat");
+        },
       },
       {
         key: "logout",
@@ -125,13 +150,15 @@ const HeaderComponent = () => {
 
         <Menu mode="horizontal" className="nav-menu">
           <Menu.Item key="about">
-            <Link to="/about">About Us</Link>
+            <Link to="/about" onClick={() => console.log("Menu: /about")}>About Us</Link>
           </Menu.Item>
-
           {user?.role === "customer" && (
             <>
+              <Menu.Item key="chat">
+                <Link to="/customer/chat" onClick={() => console.log("Menu: /customer/chat")}>Chat</Link>
+              </Menu.Item>
               <Menu.Item key="profile">
-                <Link to="/customer/profile/personal-info">Profile</Link>
+                <Link to="/customer/profile/personal-info" onClick={() => console.log("Menu: /customer/profile/personal-info")}>Profile</Link>
               </Menu.Item>
             </>
           )}
@@ -139,22 +166,22 @@ const HeaderComponent = () => {
           {user?.role === "owner" && (
             <>
               <Menu.Item key="manage-room">
-                <Link to="/owner/accommodation">Manage Room</Link>
+                <Link to="/owner/accommodation" onClick={() => console.log("Menu: /owner/accommodation")}>Manage Room</Link>
               </Menu.Item>
             </>
           )}
 
           {user?.role === "admin" && (
             <Menu.Item key="admin-page">
-              <Link to="/admin/dashboard">Dashboard</Link>
+              <Link to="/admin/dashboard" onClick={() => console.log("Menu: /admin/dashboard")}>Dashboard</Link>
             </Menu.Item>
           )}
 
           <Menu.Item key="contact">
-            <Link to="/customer/reports">Contact & Reports</Link>
+            <Link to="/customer/reports" onClick={() => console.log("Menu: /customer/reports")}>Contact & Reports</Link>
           </Menu.Item>
           <Menu.Item key="room">
-            <Link to="/customer/search">Room</Link>
+            <Link to="/customer/search" onClick={() => console.log("Menu: /customer/search")}>Room</Link>
           </Menu.Item>
         </Menu>
 
@@ -188,12 +215,10 @@ const HeaderComponent = () => {
               </Link>
             </div>
           )}
-
         </div>
       </Header>
     </>
   );
 };
-
 
 export default HeaderComponent;

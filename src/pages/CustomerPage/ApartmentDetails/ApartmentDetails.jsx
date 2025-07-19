@@ -10,6 +10,7 @@ import {
   Card,
   Avatar,
   Select,
+  Tag
 } from "antd";
 import {
   UserOutlined,
@@ -18,6 +19,7 @@ import {
   HeartFilled,
   LeftOutlined,
   RightOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 import {
@@ -36,6 +38,7 @@ import RoommatePostModal from "./RoommatePostModal";
 import { getRoommatePosts } from "../../../services/roommateAPI";
 import Slider from "react-slick";
 import { getValidAccessToken } from "../../../services/authService";
+import { getUserBookingForAccommodation } from "../../../services/bookingService";
 
 const { Option } = Select;
 
@@ -43,6 +46,7 @@ const PropertyDetails = () => {
   const { id } = useParams();
   const [accommodation, setAccommodation] = useState();
   const [isFavorite, setIsFavorite] = useState(false);
+  const [userBooking, setUserBooking] = useState(null);
   const { user } = useUser();
   const [showModal, setShowModal] = useState(false);
   const [roommatePosts, setRoommatePosts] = useState([]);
@@ -54,10 +58,6 @@ const PropertyDetails = () => {
   const [editedReviewContent, setEditedReviewContent] = useState("");
   const [editedReviewRating, setEditedReviewRating] = useState(null);
   const [editedReviewPurpose, setEditedReviewPurpose] = useState("");
-  const socket = useSocket();
-  const [chatId, setChatId] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
   const [token, setToken] = useState('');
   useEffect(() => {
     const fetchData = async () => {
@@ -95,6 +95,24 @@ const PropertyDetails = () => {
     fetchIsFavorite();
   }, [user, accommodation?._id]);
 
+  useEffect(() => {
+    const fetchUserBooking = async () => {
+      if (!user || !accommodation?._id) {
+        return;
+      }
+
+      try {
+        const booking = await getUserBookingForAccommodation(user._id, accommodation._id);
+        setUserBooking(booking);
+      } catch (error) {
+        console.error("Error fetching user booking:", error);
+        setUserBooking(null);
+      }
+    };
+
+    fetchUserBooking();
+  }, [user, accommodation?._id]);
+
   const fetchRoommates = async () => {
     if (accommodation?._id) {
       try {
@@ -109,47 +127,6 @@ const PropertyDetails = () => {
   useEffect(() => {
     fetchRoommates();
   }, [accommodation?._id]);
-
-  // useEffect(() => {
-  //   const initChat = async () => {
-  //     const res = await axios.post(
-  //       "http://localhost:5000/api/chats/get-or-create",
-  //       {
-  //         userId: user._id,
-  //         ownerId: accommodation.ownerId, // adjust to match your accommodation schema
-  //       }
-  //     );
-  //     setChatId(res.data._id);
-  //     console.log("Socket: ", socket)
-  //     socket.emit("joinRoom", { chatId: res.data._id });
-
-  //     const msgRes = await axios.get(
-  //       `http://localhost:5000/api/chats/${res.data._id}/messages`
-  //     );
-  //     setMessages(msgRes.data);
-  //   };
-  //   if (user && accommodation?.ownerId) initChat();
-  // }, [user, accommodation]);
-
-  // useEffect(() => {
-  //   socket?.on("newMessage", (message) => {
-  //     setMessages((prev) => [...prev, message]);
-  //   });
-
-  //   return () => socket?.off("newMessage");
-  // }, [socket]);
-
-  // const sendMessage = async () => {
-  //   const message = {
-  //     chatId,
-  //     senderId: user._id,
-  //     content: newMessage,
-  //   };
-
-  //   await axios.post("http://localhost:5000/api/chats/send", message);
-  //   socket.emit("sendMessage", message);
-  //   setNewMessage("");
-  // };
 
   const navigate = useNavigate();
 
@@ -186,6 +163,189 @@ const PropertyDetails = () => {
       return;
     }
     navigate("/customer/checkout", { state: { accommodationId: accommodation._id } });
+  };
+
+  const handleContactOwner = () => {
+    console.log("Click: ", accommodation)
+    if (!accommodation || !accommodation.ownerId) return;
+    navigate(`/customer/chat/${accommodation.ownerId._id}`)
+  };
+
+  const handleContactPoster = () => {
+    if (!roommatePosts || !roommatePosts.user) return;
+
+    navigate(`/customer/chat/${roommatePosts.user._id}`);
+  };
+
+  // Render booking card hoặc booking info
+  const renderBookingSection = () => {
+    // Kiểm tra xem accommodation có status "Booked" không
+    const isBooked = accommodation.status === "Booked";
+
+    if (userBooking) {
+      // User đã có booking, hiển thị thông tin booking
+      return (
+        <div className="booking-card">
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+            <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 20, marginRight: 8 }} />
+            <h2 style={{ margin: 0, color: '#52c41a' }}>You've Booked This Place!</h2>
+          </div>
+
+          <Tag color={userBooking.status === 'paid' ? 'green' : 'orange'} style={{ marginBottom: 16 }}>
+            Status: {userBooking.status.toUpperCase()}
+          </Tag>
+
+          <Divider />
+
+          <div className="booking-info">
+            <div className="info-row">
+              <span><strong>Guest Name:</strong></span>
+              <span>{userBooking.guestInfo.firstName} {userBooking.guestInfo.lastName}</span>
+            </div>
+            <div className="info-row">
+              <span><strong>Email:</strong></span>
+              <span>{userBooking.guestInfo.email}</span>
+            </div>
+            <div className="info-row">
+              <span><strong>Phone:</strong></span>
+              <span>{userBooking.guestInfo.phone}</span>
+            </div>
+            <div className="info-row">
+              <span><strong>Purpose:</strong></span>
+              <span>{userBooking.guestInfo.purpose}</span>
+            </div>
+            <div className="info-row">
+              <span><strong>Start Date:</strong></span>
+              <span>{new Date(userBooking.guestInfo.startDate).toLocaleDateString('vi-VN')}</span>
+            </div >
+            <div className="info-row">
+              <span><strong>Lease Duration:</strong></span>
+              <span>{userBooking.guestInfo.leaseDuration} months</span>
+            </div>
+            <div className="info-row">
+              <span><strong>Guests:</strong></span>
+              <span>{userBooking.guestInfo.guests} person(s)</span>
+            </div>
+
+            {
+              userBooking.status === 'paid' && userBooking.paymentInfo && (
+                <>
+                  <Divider />
+                  <div className="payment-info">
+                    <h3 style={{ color: '#52c41a' }}>Payment Information</h3>
+                    <div className="info-row">
+                      <span><strong>Amount Paid:</strong></span>
+                      <span>{new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      }).format(userBooking.paymentInfo.amount)}</span>
+                    </div>
+                    <div className="info-row">
+                      <span><strong>Transaction ID:</strong></span>
+                      <span>{userBooking.paymentInfo.vnpayTransactionId}</span>
+                    </div>
+                    <div className="info-row">
+                      <span><strong>Paid At:</strong></span>
+                      <span>{new Date(userBooking.paymentInfo.paidAt).toLocaleString('vi-VN')}</span>
+                    </div>
+                  </div>
+                </>
+              )
+            }
+          </div >
+
+          <div style={{ marginTop: 16 }}>
+            <p style={{ fontSize: 12, color: '#666' }}>
+              Booking ID: {userBooking._id}
+            </p>
+            <p style={{ fontSize: 12, color: '#666' }}>
+              Booked on: {new Date(userBooking.createdAt).toLocaleString('vi-VN')}
+            </p>
+          </div>
+        </div >
+      );
+    } else if (isBooked) {
+      // Accommodation đã được book bởi user khác
+      return (
+        <div className="booking-card">
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+            <div className="unavailable-icon">✕</div>
+            <h2 style={{ margin: 0, color: '#ff4d4f' }}>Đã hết phòng</h2>
+          </div>
+
+          <Tag color="red" style={{ marginBottom: 16 }}>
+            KHÔNG CÒN TRỐNG
+          </Tag>
+
+          <Divider />
+
+          <div className="unavailable-message">
+            <p>Rất tiếc, căn phòng này đã được đặt bởi khách hàng khác.</p>
+            <p>Hãy tìm kiếm các căn phòng khác phù hợp với bạn!</p>
+
+            <Button
+              type="primary"
+              className="find-other-btn"
+              onClick={() => navigate('/customer')}
+            >
+              Tìm phòng khác
+            </Button>
+          </div>
+
+          <p className="booking-date-info">
+            Accommodation đã được đặt vào {accommodation.updatedAt && new Date(accommodation.updatedAt).toLocaleDateString('vi-VN')}
+          </p>
+        </div>
+      );
+    } else {
+      // User chưa có booking và accommodation chưa được book, hiển thị booking card
+      return (
+        <div className="booking-card">
+          <h2 className="booking-price">{accommodation.price}đ/ Month</h2>
+
+          <p>All utilities are included</p>
+          <Divider />
+
+          <div className="booking-costs">
+            <div className="cost-row">
+              <span>Average monthly rent</span>
+              <span>
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(accommodation.price * 0.93)}
+              </span>
+            </div>
+            <div className="cost-row">
+              <span>Pay upon booking</span>
+              <span>
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(accommodation.price * 0.9998)}
+              </span>
+            </div>
+            <div className="cost-row total-cost">
+              <span>Total costs</span>
+              <span>
+                {new Intl.NumberFormat("vi-VN", {
+                  style: "currency",
+                  currency: "VND",
+                }).format(accommodation.price * 1.003)}
+              </span>
+            </div>
+          </div>
+
+          <Button className="booking-button" onClick={handleContinueBooking}>
+            Continue booking
+          </Button>
+          <p className="booking-note">
+            When you book this apartment, your reservation will be confirmed
+            instantly.
+          </p>
+        </div>
+      );
+    }
   };
 
   const sliderSettings = {
@@ -399,54 +559,14 @@ const PropertyDetails = () => {
         </Col>
 
         <Col xs={24} md={8}>
-          <div className="booking-card">
-            <h2 className="booking-price">{accommodation.price}đ/ Month</h2>
-
-            <p>All utilities are included</p>
-            <Divider />
-
-            <div className="booking-costs">
-              <div className="cost-row">
-                <span>Average monthly rent</span>
-                <span>
-                  {new Intl.NumberFormat("vi-VN", {
-                    style: "currency",
-                    currency: "VND",
-                  }).format(accommodation.price * 0.93)}
-                </span>
-              </div>
-              <div className="cost-row">
-                <span>Pay upon booking</span>
-                <span>
-                  {new Intl.NumberFormat("vi-VN", {
-                    style: "currency",
-                    currency: "VND",
-                  }).format(accommodation.price * 0.9998)}
-                </span>
-              </div>
-              <div className="cost-row total-cost">
-                <span>Total costs</span>
-                <span>
-                  {new Intl.NumberFormat("vi-VN", {
-                    style: "currency",
-                    currency: "VND",
-                  }).format(accommodation.price * 1.003)}
-                </span>
-              </div>
-            </div>
-
-            <Button className="booking-button" onClick={handleContinueBooking}>
-              Continue booking
-            </Button>
-            <p className="booking-note">
-              When you book this apartment, your reservation will be confirmed
-              instantly.
-            </p>
-          </div>
+          {renderBookingSection()}
         </Col>
       </Row>
       <Divider />
       <h1 className="text-heading">Amenities</h1>
+      <Button className="booking-button" onClick={handleContactOwner}>
+        Contact with Owner
+      </Button>
       <Row gutter={[24, 24]} className="accommodation-amenities">
         {accommodation.amenities?.map((item, index) => (
           <Col xs={12} sm={8} md={6} key={index} className="amenity-item">
@@ -514,7 +634,7 @@ const PropertyDetails = () => {
           <Slider {...sliderSettings} ref={sliderRef}>
             {roommatePosts.map((post) => (
               <div key={post._id} style={{ padding: "0 10px" }}>
-                <Card className="roommate-card" hoverable>
+                <Card className="roommate-card" hoverable onClick={handleContactPoster}>
                   <div
                     style={{
                       display: "flex",

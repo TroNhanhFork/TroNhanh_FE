@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import OwnerLayout from "../../pages/OwnerPage/Components/Layout/OwnerLayout";
 import ProfilePage from "../../pages/CommonPage/Cus_Profile/Profile";
 import Accommodation from "../../pages/OwnerPage/Accommodation/accommodation";
+import Statistics from "../../pages/OwnerPage/Statistics/Statistics";
 import Report from "../../pages/OwnerPage/Report/report";
 import Rating from "../../pages/OwnerPage/Rating/rating";
 import DetailRating from "../../pages/OwnerPage/Rating/DetailRating";
@@ -16,7 +17,8 @@ const RoutesOw = () => {
     return (
         <Routes>
             <Route element={<OwnerLayout />}>
-                <Route index element={<ProfilePage />} />
+                <Route index element={<Statistics />} />
+                <Route path="statistics" element={<Statistics />} />
                 <Route path="user-profile" element={<ProfilePage />} />
                 <Route path="accommodation" element={<Accommodation />} />
                 <Route path="report" element={<Report />} />

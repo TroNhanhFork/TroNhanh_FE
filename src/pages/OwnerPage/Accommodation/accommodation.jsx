@@ -2,14 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Table, Button, Tag, Modal, Carousel } from "antd";
+import { Table, Button, Tag, Modal, Carousel, message } from "antd";
 import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
+import { UserOutlined } from "@ant-design/icons";
 import { geocodeWithOpenCage } from "../../../services/OpenCage";
 import "./accommodation.css";
 import { getValidAccessToken } from "../../../services/authService";
 import useUser from "../../../contexts/UserContext";
 
 const Accommodation = () => {
+  const [messageApi, contextHolder] = message.useMessage();
 
   const districtOptions = [
     "Hải Châu",
@@ -73,12 +75,28 @@ const Accommodation = () => {
 
   const handleRemove = async (id) => {
     try {
+      // Tìm accommodation trong data để kiểm tra status
+      const accommodationToDelete = data.find(item => item._id === id);
+      
+      if (accommodationToDelete && accommodationToDelete.status === "Booked") {
+        messageApi.error("Không thể xóa accommodation này vì đang có khách hàng đặt phòng!");
+        return;
+      }
+
       if (window.confirm("Bạn có chắc chắn muốn xóa chỗ ở này?")) {
         await axios.delete(`http://localhost:5000/api/accommodation/${id}`);
         setData(data.filter((item) => item._id !== id));
+        messageApi.success("Xóa accommodation thành công!");
       }
     } catch (error) {
       console.error("Error deleting accommodation:", error);
+      
+      // Xử lý lỗi từ backend
+      if (error.response && error.response.status === 400) {
+        messageApi.error(error.response.data.message);
+      } else {
+        messageApi.error("Có lỗi xảy ra khi xóa accommodation!");
+      }
     }
   };
 
@@ -133,47 +151,49 @@ const Accommodation = () => {
   ];
 
   return (
-    <div className="accommodation-wrapper">
-      <div className="header-row">
-        <h2>Manage Accommodation</h2>
-        <Button
-          className="add-btn"
-          onClick={async () => {
-            
-            if (!user || !user._id) {
-              alert("Vui lòng đăng nhập lại.");
-              return;
-            }
-
-            try {
-              const res = await axios.get(`http://localhost:5000/api/payment/current/${user._id}`);
-              const pkg = res.data.package;
-
-              if (!pkg) {
-                alert("❌ Bạn chưa mua gói membership nào. Vui lòng mua để sử dụng tính năng này.");
+    <>
+      {contextHolder}
+      <div className="accommodation-wrapper">
+        <div className="header-row">
+          <h2>Manage Accommodation</h2>
+          <Button
+            className="add-btn"
+            onClick={async () => {
+              
+              if (!user || !user._id) {
+                messageApi.warning("Vui lòng đăng nhập lại.");
                 return;
               }
 
-              const expiredAt = new Date(res.data.expiredAt);
-              const now = new Date();
+              try {
+                const res = await axios.get(`http://localhost:5000/api/payment/current/${user._id}`);
+                const pkg = res.data.package;
 
-              if (now > expiredAt) {
-                alert("❌ Gói membership của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục.");
-                return;
+                if (!pkg) {
+                  messageApi.error("Bạn chưa mua gói membership nào. Vui lòng mua để sử dụng tính năng này.");
+                  return;
+                }
+
+                const expiredAt = new Date(res.data.expiredAt);
+                const now = new Date();
+
+                if (now > expiredAt) {
+                  messageApi.error("Gói membership của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục.");
+                  return;
+                }
+
+                // ✅ Nếu membership còn hạn → mở modal
+                setIsAddModalVisible(true);
+              } catch (err) {
+                console.error("❌ Lỗi khi kiểm tra membership:", err);
+                messageApi.error("Không thể kiểm tra trạng thái membership. Vui lòng thử lại.");
               }
+            }}
+          >
+            ADD
+          </Button>
 
-              // ✅ Nếu membership còn hạn → mở modal
-              setIsAddModalVisible(true);
-            } catch (err) {
-              console.error("❌ Lỗi khi kiểm tra membership:", err);
-              alert("Không thể kiểm tra trạng thái membership. Vui lòng thử lại.");
-            }
-          }}
-        >
-          ADD
-        </Button>
-
-      </div>
+        </div>
 
       <Table
         className="accommodation-table"
@@ -192,7 +212,7 @@ const Accommodation = () => {
             
             const token = await getValidAccessToken();
             if (!user || !user._id || !token) {
-              return alert("Bạn chưa đăng nhập. Hãy đăng nhập lại!");
+              return messageApi.error("Bạn chưa đăng nhập. Hãy đăng nhập lại!");
             }
 
             const coords = await geocodeWithOpenCage(
@@ -200,7 +220,7 @@ const Accommodation = () => {
             );
 
             if (!coords) {
-              return alert("Không thể lấy tọa độ từ địa chỉ đã nhập.");
+              return messageApi.error("Không thể lấy tọa độ từ địa chỉ đã nhập.");
             }
 
             const locationFull = {
@@ -248,9 +268,10 @@ const Accommodation = () => {
               files: [],
             });
 
-            alert("Accommodation added successfully!");
+            messageApi.success("Accommodation added successfully!");
           } catch (error) {
             console.error("Error adding accommodation:", error);
+            messageApi.error("Có lỗi xảy ra khi thêm accommodation!");
           }
         }}
 
@@ -411,6 +432,31 @@ const Accommodation = () => {
             <p><strong>Longitude:</strong> {selectedRow.location?.longitude}</p>
             <p><strong>Price:</strong> {selectedRow.price.toLocaleString()} VND</p>
             <p><strong>Status:</strong> {selectedRow.status}</p>
+            {selectedRow.status === "Booked" && selectedRow.customerId && (
+              <div style={{ 
+                backgroundColor: "#f0f0f0", 
+                padding: "10px", 
+                borderRadius: "8px", 
+                marginTop: "10px",
+                border: "1px solid #d9d9d9"
+              }}>
+                <p style={{ margin: "5px 0", fontWeight: "bold", color: "#004d40" }}>
+                  <UserOutlined style={{ marginRight: "8px", fontSize: "16px" }} />
+                  Thông tin khách hàng đã đặt:
+                </p>
+                <p style={{ margin: "5px 0" }}>
+                  <strong>Tên:</strong> {selectedRow.customerId.name}
+                </p>
+                <p style={{ margin: "5px 0" }}>
+                  <strong>Email:</strong> {selectedRow.customerId.email}
+                </p>
+                {selectedRow.customerId.phone && (
+                  <p style={{ margin: "5px 0" }}>
+                    <strong>Số điện thoại:</strong> {selectedRow.customerId.phone}
+                  </p>
+                )}
+              </div>
+            )}
             <p><strong>Description:</strong> {selectedRow.description}</p>
           </div>
         )}
@@ -432,7 +478,7 @@ const Accommodation = () => {
             const coords = await geocodeWithOpenCage(fullAddress);
 
             if (!coords) {
-              return alert("Không thể lấy tọa độ từ địa chỉ đã nhập.");
+              return messageApi.error("Không thể lấy tọa độ từ địa chỉ đã nhập.");
             }
 
             const updatedLocation = {
@@ -469,10 +515,11 @@ const Accommodation = () => {
             );
             setData(updatedList);
             setIsUpdateModalVisible(false);
-            // thông báo thành công bằng alert
-            alert("Accommodation updated successfully!");
+            // thông báo thành công bằng message
+            messageApi.success("Accommodation updated successfully!");
           } catch (error) {
             console.error("Error updating accommodation:", error);
+            messageApi.error("Có lỗi xảy ra khi cập nhật accommodation!");
           }
         }}
         okText="Save"
@@ -583,7 +630,8 @@ const Accommodation = () => {
       </Modal>
 
 
-    </div>
+      </div>
+    </>
   );
 };
 

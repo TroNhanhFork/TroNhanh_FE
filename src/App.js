@@ -12,12 +12,14 @@ import RegisterPage from './pages/CustomerPage/Auth/RegisterPage';
 import { initAutoLogout, stopAutoLogout } from './services/autoLogout';
 import useUser, { UserProvider } from './contexts/UserContext';
 import { setupInterceptors } from './services/api';
+import AboutUs from "./pages/CommonPage/HomePage/AboutUs";
 import VerifyOtpPage from './pages/CustomerPage/Auth/VerifyOTP';
 import ForgotPasswordPage from './pages/CustomerPage/Auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/CustomerPage/Auth/ResetPasswordPage';
 import ScrollToTop from './pages/CommonPage/ScrollToTop/ScrollToTop';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
+import { SocketProvider } from './contexts/SocketContext';
 
 function AppRoutes() {
   const location = useLocation();
@@ -43,7 +45,7 @@ function AppRoutes() {
 
   if (loading) return <p>Loading...</p>;
 
-const hideLayout = ["/login", "/register","/verify-otp","/forgot-password","/reset-password"].some(path => location.pathname.startsWith(path));
+  const hideLayout = ["/login", "/register", "/verify-otp", "/forgot-password", "/reset-password"].some(path => location.pathname.startsWith(path));
 
   return (
     <>
@@ -51,12 +53,14 @@ const hideLayout = ["/login", "/register","/verify-otp","/forgot-password","/res
 
       <main className="main-container" style={{ marginTop: hideLayout ? '0px' : '80px' }}>
         <Routes>
-            <Route index element={<Navigate to="/homepage" replace />} />
+          <Route index element={<Navigate to="/homepage" replace />} />
+          <Route path="/about" element={<AboutUs />} />
+
           {/* Auth routes */}
 
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/verify-otp" element={<VerifyOtpPage/>}/>
+          <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           {/* App routes */}
@@ -80,8 +84,10 @@ function AppWrapper() {
   return (
     <BrowserRouter>
       <UserProvider>
-        <ScrollToTop />
-        <AppRoutes />
+        <SocketProvider>
+          <ScrollToTop />
+          <AppRoutes />
+        </SocketProvider>
       </UserProvider>
     </BrowserRouter>
   );

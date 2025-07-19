@@ -115,30 +115,50 @@ const PostDetailModal = ({ post, onClose }) => {
               {detailData && (
                 <>
                   <div>
-                    <h4>Photos</h4>
+                    <h4>Photos ({detailData.photos?.length || 0})</h4>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                      <Image
-                        width={120}
-                        height={120}
-                        src={
-                          detailData.photos && detailData.photos.length > 0
-                            ? `http://localhost:5000${detailData.photos[0]}`
-                            : "/image/default-image.jpg"
-                        }
-                        style={{ objectFit: "cover", borderRadius: 4 }}
-                        placeholder={
-                          <div style={{
-                            width: 120,
-                            height: 120,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: "#f0f0f0"
-                          }}>
-                            Loading...
-                          </div>
-                        }
-                      />
+                      {detailData.photos && detailData.photos.length > 0 ? (
+                        detailData.photos.map((photo, index) => (
+                          <Image
+                            key={index}
+                            width={120}
+                            height={120}
+                            src={`http://localhost:5000${photo}`}
+                            style={{ objectFit: "cover", borderRadius: 4 }}
+                            placeholder={
+                              <div style={{
+                                width: 120,
+                                height: 120,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                background: "#f0f0f0"
+                              }}>
+                                Loading...
+                              </div>
+                            }
+                          />
+                        ))
+                      ) : (
+                        <Image
+                          width={120}
+                          height={120}
+                          src="/image/default-image.jpg"
+                          style={{ objectFit: "cover", borderRadius: 4 }}
+                          placeholder={
+                            <div style={{
+                              width: 120,
+                              height: 120,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              background: "#f0f0f0"
+                            }}>
+                              No Image
+                            </div>
+                          }
+                        />
+                      )}
                     </div>
                   </div>
                 </>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu } from 'antd';
-import { UserOutlined, HeartOutlined, MessageOutlined, WarningOutlined } from '@ant-design/icons';
+import { UserOutlined, HeartOutlined, MessageOutlined, WarningOutlined, HistoryOutlined } from '@ant-design/icons';
 
 const Sidebar = ({ selectedKey, onSelect }) => {
   return (
@@ -15,6 +15,9 @@ const Sidebar = ({ selectedKey, onSelect }) => {
       </Menu.Item>
       <Menu.Item key="/customer/profile/favorites" icon={<HeartOutlined />}>
         Favorites
+      </Menu.Item>
+      <Menu.Item key="/customer/profile/booking-history" icon={<HistoryOutlined />}>
+        Booking History
       </Menu.Item>
        <Menu.Item key="/customer/profile/my-reports" icon={<WarningOutlined/>}>
         Reports

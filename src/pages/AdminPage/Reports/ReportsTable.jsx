@@ -1,53 +1,182 @@
 import React from "react";
-import { Table, Tag, Button, Space, Alert } from "antd";
+import { Table, Tag, Alert, Typography, Button, Space } from "antd";
+import { EyeOutlined, CheckOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
+
+const { Text } = Typography;
 
 const statusColors = {
-  Pending: "orange",
-  Resolved: "green",
-  Rejected: "red",
-  Forwarded: "blue",
+  pending: "orange",
+  approved: "green",
+  rejected: "red",
 };
 
-const ReportsTable = ({ data, onView, onResolve }) => {
+const statusLabels = {  
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected",
+
+};
+
+const ReportsTable = ({ 
+  data, 
+  loading, 
+  pagination, 
+  onChange,
+  onView,
+  onResolve
+}) => {
   const columns = [
-    { title: "ID", dataIndex: "id", key: "id", width: 60 },
-    { title: "User", dataIndex: "user", key: "user", render: (_, r) => `${r.user} (${r.userId})` },
-    { title: "Date", dataIndex: "date", key: "date" },
-    { title: "Type", dataIndex: "type", key: "type" },
+    { 
+      title: "ID", 
+      dataIndex: "_id", 
+      key: "_id", 
+      width: 100,
+      render: (id) => (
+        <Text copyable={{ text: id }} style={{ fontSize: '12px' }}>
+          {id?.slice(-8) || 'N/A'}
+        </Text>
+      )
+    },
+    { 
+      title: "Reporter", 
+      key: "reporter", 
+      width: 200,
+      render: (_, record) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div>
+            <div style={{ fontWeight: 500 }}>
+              {record.reporter?.name || 'No name'}
+            </div>
+            <div style={{ fontSize: '12px', color: '#999' }}>
+              {record.reporter?.email || 'No email'}
+            </div>
+          </div>
+        </div>
+      )
+    },
+    { 
+      title: "Reported User", 
+      key: "reportedUser", 
+      width: 200,
+      render: (_, record) => {
+        if (!record.reportedUser) {
+          return <Text type="secondary">No reported user</Text>;
+        }
+        return (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div>
+              <div style={{ fontWeight: 500 }}>
+                {record.reportedUser?.name || 'No name'}
+              </div>
+              <div style={{ fontSize: '12px', color: '#999' }}>
+                {record.reportedUser?.email || 'No email'}
+              </div>
+            </div>
+          </div>
+        );
+      }
+    },
+    { 
+      title: "Date Created", 
+      dataIndex: "createAt", 
+      key: "createAt",
+      width: 140,
+      render: (date) => dayjs(date).format('DD/MM/YYYY HH:mm')
+    },
+    { 
+      title: "Type", 
+      dataIndex: "type", 
+      key: "type",
+      width: 120,
+      render: (type) => (
+        <Tag color="blue">{type || 'Other'}</Tag>
+      )
+    },
+    { 
+      title: "Category", 
+      dataIndex: "category", 
+      key: "category",
+      width: 150,
+      render: (category) => {
+        const categoryLabels = {
+          customer_report_owner: "Customer Report",
+          owner_report_customer: "Owner Report",
+          general: "General Report",
+          other: "Other"
+        };
+        const categoryColors = {
+          customer_report_owner: "orange",
+          owner_report_customer: "purple",
+          general: "cyan",
+          other: "default"
+        };
+        return (
+          <Tag color={categoryColors[category] || 'default'}>
+            {categoryLabels[category] || category || 'Unknown'}
+          </Tag>
+        );
+      }
+    },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: status => <Tag color={statusColors[status]}>{status}</Tag>,
+      width: 120,
+      render: (status) => (
+        <Tag color={statusColors[status?.toLowerCase()] || 'default'}>
+          {statusLabels[status?.toLowerCase()] || status || 'Unknown'}
+        </Tag>
+      ),
     },
     {
-      title: "Action",
-      key: "action",
+      title: "Actions",
+      key: "actions",
+      width: 180,
       render: (_, record) => (
         <Space>
           <Button 
-          size="small" 
-          onClick={() => onView(record)}>View</Button>
-          {record.status === "Pending" && (
-            <Button 
             size="small" 
             style={{ border: 'none', display: 'inline-block' }}
-            type="primary" onClick={() => onResolve(record)}>
-              Resolve
+            icon={<EyeOutlined />}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent row click
+              onView && onView(record);
+            }}
+          >
+          </Button>
+          {record.status?.toLowerCase() === 'pending' && (
+            <Button 
+              size="small" 
+              style={{ border: 'none', display: 'inline-block' }}
+              icon={<CheckOutlined />}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent row click
+                onResolve && onResolve(record);
+              }}
+            >
             </Button>
           )}
         </Space>
-      ),
-    },
+      )
+    }
   ];
+
   return (
     <Table
       columns={columns}
       dataSource={data}
-      rowKey="id"
-      pagination={{ pageSize: 10 }}
+      loading={loading}
+      rowKey="_id"
+      pagination={pagination}
+      onChange={onChange}
+      scroll={{ x: 1200 }}
+      onRow={(record) => ({
+        onClick: () => onView && onView(record),
+        style: { cursor: 'pointer' }
+      })}
       locale={{
-        emptyText: <Alert message="No complaints available." type="info" showIcon />,
+        emptyText: <Alert message="No reports available." type="info" showIcon />,
       }}
     />
   );

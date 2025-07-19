@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams } from "react-router-dom";
 import { Input, Button, List, Typography } from "antd";
+import { useLocation, useParams } from "react-router-dom";
 import { useSocket } from "../../../contexts/SocketContext";
 import useUser from "../../../contexts/UserContext";
-
+import { getUserById } from "../../../services/userService";
 const { TextArea } = Input;
 
 const Communication = () => {
-  const { id: customerId } = useParams();
-  const { user: owner } = useUser(); // ✅ Use logged-in owner from context
+  const { id: userId } = useParams();
+  const { user } = useUser(); // ✅ Use logged-in owner from context
   const socket = useSocket();
 
   const [chatId, setChatId] = useState(null);
@@ -19,36 +19,51 @@ const Communication = () => {
   useEffect(() => {
     const fetchChat = async () => {
       try {
-        const res = await axios.post(
-          "http://localhost:5000/api/chats/get-or-create",
-          {
-            userId: customerId,
-            ownerId: owner._id,
-          }
-        );
+        const res = await axios.post("http://localhost:5000/api/chats/get-or-create", {
+          user1Id: user._id,
+          user2Id: userId,
+        });
+        console.log("👤 Res from URL:", res);
+
         const chat = res.data;
         setChatId(chat._id);
+        if (socket) {
+          socket.emit("joinRoom", chat._id);
+        }
+        console.log("ChatID: ", chat._id)
+        const msgRes = await axios.get(`http://localhost:5000/api/chats/${chat._id}/messages`);
+        const rawMessages = msgRes.data;
 
-        socket.emit("joinRoom", { chatId: chat._id });
-
-        const msgRes = await axios.get(
-          `http://localhost:5000/api/chats/${chat._id}/messages`
+        // Enrich sender info
+        const enrichedMessages = await Promise.all(
+          rawMessages.map(async (msg) => {
+            if (!msg.senderId.name) {
+              const user = await getUserById(msg.senderId); // senderId is just ID
+              return { ...msg, senderId: user };
+            }
+            return msg;
+          })
         );
-        setMessages(msgRes.data);
+
+        setMessages(enrichedMessages);
       } catch (error) {
         console.error("Error fetching chat:", error);
       }
     };
-
-    if (customerId && owner?._id && socket) {
+    if (userId && user?._id && socket) {
       fetchChat();
     }
-  }, [customerId, owner, socket]);
+  }, [userId, user, socket]);
+
 
   useEffect(() => {
     if (!socket) return;
 
-    const handleIncoming = (message) => {
+    const handleIncoming = async (message) => {
+      if (!message.senderId.name) {
+        const user = await getUserById(message.senderId);
+        message.senderId = user;
+      }
       setMessages((prev) => [...prev, message]);
     };
 
@@ -56,12 +71,13 @@ const Communication = () => {
     return () => socket.off("newMessage", handleIncoming);
   }, [socket]);
 
+
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
 
     const message = {
       chatId,
-      senderId: owner._id,
+      senderId: user._id,
       content: newMessage,
     };
 
@@ -72,7 +88,7 @@ const Communication = () => {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: 20 }}>
-      <h2>💬 Owner Chat</h2>
+      <h2>💬 Chat</h2>
 
       <List
         bordered
@@ -80,9 +96,7 @@ const Communication = () => {
         renderItem={(item) => (
           <List.Item>
             <Typography.Text strong>
-              {item.senderId._id === owner._id
-                ? "You"
-                : item.senderId.name || "Customer"}
+              {item.senderId._id === user._id ? "You" : item.senderId.name}
             </Typography.Text>
             : {item.content}
           </List.Item>
