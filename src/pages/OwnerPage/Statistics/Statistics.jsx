@@ -353,7 +353,7 @@ const Statistics = () => {
 
     return (
       <div className="custom-column-chart">
-        <div className="chart-container">
+        <div className="statisic-chart-container">
           {/* Grid lines */}
           <div className="grid-lines">
             <div className="grid-line" style={{ bottom: '25px' }}></div>

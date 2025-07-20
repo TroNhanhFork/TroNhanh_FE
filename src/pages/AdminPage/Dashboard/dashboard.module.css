@@ -17,7 +17,7 @@
 }
 
 /* Chart Container Styles */
-.chart-container {
+.dashborad-chart-container {
   height: 360px;
   display: flex;
   flex-direction: column;

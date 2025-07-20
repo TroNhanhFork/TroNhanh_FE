@@ -12,7 +12,8 @@
   border-right: 1px solid #ddd;
   display: flex;
   flex-direction: column;
-    height: 100%; /* ← Đảm bảo có chiều cao */
+  height: 100%;
+  /* ← Đảm bảo có chiều cao */
 
 }
 
@@ -65,7 +66,8 @@
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  background-color: #cce5d4; /* fallback màu nền */
+  background-color: #cce5d4;
+  /* fallback màu nền */
 }
 
 .chat-avatar img {
@@ -79,9 +81,12 @@
 .chat-list {
   flex-grow: 1;
   overflow-y: auto;
-    max-height: calc(87vh - 0px); /* ← có thể chỉnh lại nếu thêm header bên trên */
-      scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* Internet Explorer / Edge */
+  max-height: calc(87vh - 0px);
+  /* ← có thể chỉnh lại nếu thêm header bên trên */
+  scrollbar-width: none;
+  /* Firefox */
+  -ms-overflow-style: none;
+  /* Internet Explorer / Edge */
 }
 
 .chat-list::-webkit-scrollbar {
@@ -231,4 +236,66 @@
   font-size: 13px;
   color: #444;
   margin-top: 4px;
+}
+
+.container {
+  display: flex;
+  height: 90vh;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  border-right: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebarHeader {
+  padding: 10px;
+  font-weight: bold;
+  background-color: #fafafa;
+  border-bottom: 1px solid #eee;
+}
+
+.userList {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.userItem {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.userItem:hover {
+  background-color: #f0f0f0;
+}
+
+.active {
+  background-color: #e6f7ff;
+}
+
+.chatArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.messageList {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+.messageItem {
+  margin-bottom: 8px;
+}
+
+.you {
+  text-align: right;
+  color: #1890ff;
 }

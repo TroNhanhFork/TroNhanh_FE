@@ -9,6 +9,10 @@ const userAPI = axios.create({
         'Content-Type': 'application/json',
     },
 });
+// axios instance
+const chatAPI = axios.create({
+  baseURL: "http://localhost:5000/api/chats"
+});
 
 // Add token to requests
 userAPI.interceptors.request.use(
@@ -267,6 +271,18 @@ export const getUserById = async (userId) => {
     }
 };
 
+
+// Get User Chat By ID
+export const getUserChatById = async (userId) => {
+  try {
+    const response = await chatAPI.get(`/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user chat:", error);
+    throw error;
+  }
+};
+
 // Get Audit Logs
 export const getAuditLogs = async (params = {}) => {
     try {
@@ -323,6 +339,7 @@ const userService = {
     editUserInfo,
     deleteUser,
     getUserById,
+    getUserChatById,
     getAuditLogs,
     isAuthenticated,
     getCurrentUser,
