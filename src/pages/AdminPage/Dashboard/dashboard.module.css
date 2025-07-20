@@ -27,20 +27,20 @@
   flex-direction: column;
 }
 
-.chart-container .ant-card-head {
+.chart-container-admin .ant-card-head {
   flex: 0 0 auto;
   min-height: 48px;
   padding: 16px 16px 0;
   border-bottom: none;
 }
 
-.chart-container .ant-card-head-title {
+.chart-container-admin .ant-card-head-title {
   padding: 0 0 8px;
   font-size: 1.125rem;
   font-weight: 600;
 }
 
-.chart-container .ant-card-body {
+.chart-container-admin .ant-card-body {
   
   flex: 1;
   padding: 0 16px 16px;
@@ -69,7 +69,7 @@
 }
 
 /* Chart Styles */
-.chart-container .recharts-responsive-container {
+.chart-container-admin .recharts-responsive-container {
   flex: 1;
   min-height: 200px;
 }
@@ -183,7 +183,7 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .chart-container {
+  .chart-container-admin {
     height: 340px;
   }
   

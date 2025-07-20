@@ -238,14 +238,6 @@
   margin-top: 4px;
 }
 
-.container {
-  display: flex;
-  height: 90vh;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
 .sidebar {
   width: 250px;
   border-right: 1px solid #eee;

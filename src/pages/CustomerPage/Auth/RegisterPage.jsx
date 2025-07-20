@@ -51,7 +51,7 @@ const RegisterPage = () => {
   return (
     <div className={styles.registerPageWrapper}>
       {contextHolder} 
-      <div className={styles.container}>
+      <div className={`${styles.register_container} ${styles.container}`}>
         <Title level={2} className={styles.title}>
           Register
         </Title>
