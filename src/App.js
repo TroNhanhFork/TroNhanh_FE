@@ -16,6 +16,7 @@ import VerifyOtpPage from './pages/CustomerPage/Auth/VerifyOTP';
 import ForgotPasswordPage from './pages/CustomerPage/Auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/CustomerPage/Auth/ResetPasswordPage';
 import ScrollToTop from './pages/CommonPage/ScrollToTop/ScrollToTop';
+import LogoutWarningModal from './components/LogoutWarningModal';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -69,7 +70,7 @@ const hideLayout = ["/login", "/register","/verify-otp","/forgot-password","/res
           <Route path="*" element={<ExceptionRoutes />} />
         </Routes>
       </main>
-
+<LogoutWarningModal />
       {!hideLayout && <FooterComponent />}
     </>
   );

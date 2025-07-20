@@ -1,15 +1,32 @@
+// file autoLogout.js
 let logoutTimer;
-let resetTimer;
+let warningTimer;
 
-export function initAutoLogout(logout, delay = 15 * 60 * 1000) {
+export function initAutoLogout(logout,  delay = 10 * 1000, warningBefore = 3 * 1000) {
   clearTimeout(logoutTimer);
+  clearTimeout(warningTimer);
 
-  resetTimer = () => {
+  const startTimers = () => {
     clearTimeout(logoutTimer);
+    clearTimeout(warningTimer);
+
+    // Cảnh báo trước khi logout
+    warningTimer = setTimeout(() => {
+      const event = new CustomEvent('show-logout-warning');
+      window.dispatchEvent(event);
+    }, delay - warningBefore);
+
+    // Logout thực sự
     logoutTimer = setTimeout(() => {
-      console.log("Logged out by inactivity")
+      localStorage.removeItem('accessToken');
       logout();
+      window.location.href = '/login';
+
     }, delay);
+  };
+
+  const resetTimer = () => {
+    startTimers();
   };
 
   const events = ['click', 'mousemove', 'keydown', 'scroll'];
@@ -17,15 +34,15 @@ export function initAutoLogout(logout, delay = 15 * 60 * 1000) {
     window.addEventListener(event, resetTimer);
   }
 
-  resetTimer(); // Start timer ngay từ đầu
+  startTimers();
 }
 
 export function stopAutoLogout() {
   clearTimeout(logoutTimer);
+  clearTimeout(warningTimer);
+
   const events = ['click', 'mousemove', 'keydown', 'scroll'];
-  if (resetTimer) {
-    for (const event of events) {
-      window.removeEventListener(event, resetTimer);
-    }
+  for (const event of events) {
+    window.removeEventListener(event, stopAutoLogout); 
   }
 }
