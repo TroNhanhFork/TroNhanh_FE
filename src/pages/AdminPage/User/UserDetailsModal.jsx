@@ -26,7 +26,7 @@ const UserDetailsModal = ({ user }) => {
       }}>
         <div>
           <h4 className="mb-2">Personal Information</h4>
-          <p><strong>Full Name:</strong> {user.fullName}</p>
+          <p><strong>Full Name:</strong> {user.name}</p>
           <p><strong>Email:</strong> {user.email}</p>
           <p><strong>Phone:</strong> {user.phoneNumber || 'N/A'}</p>
           <p><strong>Date of Birth:</strong> {user.dob || 'N/A'}</p>

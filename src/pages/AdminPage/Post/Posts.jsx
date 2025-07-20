@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { message } from "antd";
 import PostFilterBar from "./PostFilterBar";
 import PostTable from "./PostTable";
@@ -10,9 +10,15 @@ import { getAdminAccommodations, approveAccommodationAdmin, deleteAccommodationA
 const Posts = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const [posts, setPosts] = useState([]);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0
+  });
   const [filters, setFilters] = useState({
     owner: undefined,
-    status: undefined,
+    approvedStatus: undefined,
     dateRange: [],
     search: "",
   });
@@ -21,49 +27,87 @@ const Posts = () => {
   const [loading, setLoading] = useState(false);
 
   // Fetch accommodations from API
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const params = {
-          page: 1,
-          limit: 20,
-          owner: filters.owner,
-          status: filters.approvedStatus,
-          fromDate: filters.dateRange?.[0]?.format?.("YYYY-MM-DD"),
-          toDate: filters.dateRange?.[1]?.format?.("YYYY-MM-DD"),
-          search: filters.search,
-        };
-        const data = await getAdminAccommodations(params);
-        setPosts(data.accommodations || []);
-        
-      } catch (err) {
-        messageApi.open({
-          type: 'error',
-          content: 'Không thể tải dữ liệu. Vui lòng thử lại!',
-          duration: 4,
-        });
-        console.error('Error fetching accommodations:', err);
-      } finally {
-        setLoading(false);
+  const fetchData = useCallback(async (customParams = {}) => {
+    setLoading(true);
+    try {
+      const params = {
+        page: customParams.page || 1,
+        limit: customParams.limit || 10,
+        ...customParams
+      };
+
+      // Only add filters if they have values
+      if (filters.owner) {
+        params.owner = filters.owner;
       }
-    };
-    fetchData();
+      if (filters.approvedStatus) {
+        params.approvedStatus = filters.approvedStatus;
+      }
+      if (filters.search?.trim()) {
+        params.search = filters.search.trim();
+      }
+      if (filters.dateRange?.[0] && filters.dateRange?.[1]) {
+        params.fromDate = filters.dateRange[0].format("YYYY-MM-DD");
+        params.toDate = filters.dateRange[1].format("YYYY-MM-DD");
+      }
+      
+      const data = await getAdminAccommodations(params);
+      
+      // Client-side filtering since backend doesn't support it yet
+      let filteredPosts = data.accommodations || [];
+      if (filters.approvedStatus) {
+        filteredPosts = filteredPosts.filter(post => {
+          const postStatus = post.approvedStatus || (post.isApproved ? 'approved' : 'pending');
+          return postStatus === filters.approvedStatus;
+        });
+        console.log('🔍 After client-side filter:', filteredPosts.length, 'posts');
+      }
+      
+      setPosts(filteredPosts);
+      setPagination(prev => ({ 
+        ...prev, 
+        total: filters.approvedStatus ? filteredPosts.length : (data.total || 0),
+        page: params.page,
+        limit: params.limit,
+        totalPages: filters.approvedStatus ? Math.ceil(filteredPosts.length / params.limit) : (data.totalPages || 0)
+      }));
+      
+    } catch (err) {
+      messageApi.open({
+        type: 'error',
+        content: 'Không thể tải dữ liệu. Vui lòng thử lại!',
+        duration: 4,
+      });
+      console.error('Error fetching accommodations:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [filters, messageApi]);
+
+  // Initial load
+  useEffect(() => {
+    fetchData();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    if (filters.owner || filters.approvedStatus || filters.search || filters.dateRange?.length > 0) {
+      setPagination(prev => ({ ...prev, page: 1 }));
+      fetchData({ page: 1 });
+    }
+  }, [filters.owner, filters.approvedStatus, filters.search, filters.dateRange]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refresh data helper function
   const refreshData = async () => {
-    const params = {
-      page: 1,
-      limit: 20,
-      owner: filters.owner,
-      status: filters.approvedStatus,
-      fromDate: filters.dateRange?.[0]?.format?.("YYYY-MM-DD"),
-      toDate: filters.dateRange?.[1]?.format?.("YYYY-MM-DD"),
-      search: filters.search,
-    };
-    const data = await getAdminAccommodations(params);
-    setPosts(data.accommodations || []);
+    await fetchData({ page: pagination.page, limit: pagination.limit });
+  };
+
+  // Handle pagination change
+  const handleTableChange = (newPagination) => {
+    const newPage = newPagination.current;
+    const newLimit = newPagination.pageSize;
+    setPagination(prev => ({ ...prev, page: newPage, limit: newLimit }));
+    fetchData({ page: newPage, limit: newLimit });
   };
 
   // Handle approve post
@@ -179,7 +223,7 @@ const Posts = () => {
     id: post._id,
     title: post.title,
     owner: post.owner?.name || "N/A",
-    status: post.approvedStatus || post.status || "unknown",
+    approvedStatus: post.approvedStatus || "unknown",
     createdAt: post.createdAt,
     raw: post, // for detail modal
   }));
@@ -193,6 +237,15 @@ const Posts = () => {
         <PostTable
           data={tableData}
           loading={loading}
+          pagination={{
+            current: pagination.page,
+            pageSize: pagination.limit,
+            total: pagination.total,
+            showQuickJumper: true,
+            showTotal: (total, range) => 
+              `${range[0]}-${range[1]} of ${total} posts`,
+          }}
+          onChange={handleTableChange}
           onView={(row) => setViewPost(row.raw)}
           onApprove={handleApprove}
           onReject={handleReject}

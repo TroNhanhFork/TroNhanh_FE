@@ -45,7 +45,7 @@ const UserEditModal = ({ user, onClose, onSave }) => {
       const userRole = user.roles && user.roles.length > 0 ? user.roles[0].name : '';
       
       form.setFieldsValue({
-        fullName: user.fullName,
+        name: user.name,
         email: user.email,
         phoneNumber: user.phoneNumber,
         dob: user.dob ? moment(user.dob, "YYYY-MM-DD") : null,
@@ -66,7 +66,7 @@ const UserEditModal = ({ user, onClose, onSave }) => {
       // Transform the data for the API
       const updatedUser = {
         ...user,
-        fullName: values.fullName,
+        name: values.name,
         email: values.email,
         phoneNumber: values.phoneNumber,
         gender: values.gender,
@@ -137,7 +137,7 @@ const UserEditModal = ({ user, onClose, onSave }) => {
             requiredMark="optional"
           >
             <Form.Item
-              name="fullName"
+              name="name"
               label="Full Name"
               rules={[{ required: true, message: 'Please enter the full name' }]}
             >
@@ -178,19 +178,6 @@ const UserEditModal = ({ user, onClose, onSave }) => {
             </Row>
 
             <Row gutter={16}>
-              <Col xs={24} sm={12}>
-                <Form.Item
-                  name="dob"
-                  label="Date of Birth"
-                >
-                  <DatePicker
-                    style={{ width: '100%' }}
-                    format="YYYY-MM-DD"
-                    placeholder="Select date"
-                    suffixIcon={<CalendarOutlined />}
-                  />
-                </Form.Item>
-              </Col>
               <Col xs={24} sm={12}>
                 <Form.Item
                   name="gender"

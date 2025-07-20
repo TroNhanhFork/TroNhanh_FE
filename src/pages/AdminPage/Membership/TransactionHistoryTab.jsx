@@ -146,7 +146,7 @@ const TransactionHistoryTab = () => {
       width: 150
     },
     { 
-      title: "Sender", 
+      title: "Buyer", 
       dataIndex: "sender", 
       key: "sender",
       render: (sender) => sender?.name || sender,

@@ -12,11 +12,13 @@ const statusColors = {
 
 const PostTable = ({
     data,
+    loading,
+    pagination,
+    onChange,
     onView,
     onApprove,
     onReject,
     onDelete,
-    onDropdownAction,
 }) => {
     // State for modals
     const [rejectModal, setRejectModal] = useState({ open: false, record: null, reason: "" });
@@ -81,27 +83,13 @@ const PostTable = ({
         },
         {
             title: "Status",
-            dataIndex: "status",
-            key: "status",
-            render: (status, record) => (
+            dataIndex: "approvedStatus",
+            key: "approvedStatus",
+            render: (approvedStatus, record) => (
                 <Space>
-                    <Tag color={statusColors[status]} style={{ minWidth: 90, textAlign: "center" }}>
-                        {status ? status.charAt(0).toUpperCase() + status.slice(1) : "Unknown"}
+                    <Tag color={statusColors[approvedStatus]} style={{ minWidth: 90, textAlign: "center" }}>
+                        {approvedStatus ? approvedStatus.charAt(0).toUpperCase() + approvedStatus.slice(1) : "Unknown"}
                     </Tag>
-                    {status === "reported" && record.reported && (
-                        <Badge
-                            count={record.reported}
-                            overflowCount={99}
-                            style={{ backgroundColor: "#f5222d" }}
-                            offset={[0, 0]}
-                        >
-                            {record.reported > 5 && (
-                                <Tooltip title="Priority: Reported > 5 times">
-                                    <WarningOutlined style={{ color: "#faad14", marginLeft: 4 }} />
-                                </Tooltip>
-                            )}
-                        </Badge>
-                    )}
                 </Space>
             ),
         },
@@ -126,7 +114,7 @@ const PostTable = ({
                                 size="small"
                             />
                         </Tooltip>
-                        {record.status === "pending" && (
+                        {record.approvedStatus === "pending" && (
                             <>
                                 <Tooltip title="Approve post">
                                     <Popconfirm
@@ -154,7 +142,7 @@ const PostTable = ({
                                 </Tooltip>
                             </>
                         )}
-                        {record.status !== "deleted" && (
+                        {record.approvedStatus !== "deleted" && (
                             <Tooltip title="Delete post">
                                 <Button
                                     style={{ border: 'none', display: 'inline-block' }}
@@ -177,7 +165,9 @@ const PostTable = ({
                 columns={columns}
                 dataSource={data}
                 rowKey="id"
-                pagination={{ pageSize: 20 }}
+                loading={loading}
+                pagination={pagination}
+                onChange={onChange}
                 locale={{ emptyText: "No posts found" }}
                 bordered
                 size="middle"

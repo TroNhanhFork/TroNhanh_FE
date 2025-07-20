@@ -22,8 +22,8 @@ const AdminSidebar = () => {
     { label: "Posts", key: "/admin/posts", icon: <FileTextOutlined /> },
     { label: "Membership", key: "/admin/membership", icon: <ShoppingOutlined /> },
     { label: "Reports", key: "/admin/reports", icon: <CommentOutlined /> },
-    { label: "Comunication", key: "/admin/communication", icon: <TeamOutlined /> },
-    { label: "Logout", key: "/admin/logout", icon: <LogoutOutlined />, },
+    // { label: "Comunication", key: "/admin/communication", icon: <TeamOutlined /> },
+    // { label: "Logout", key: "/admin/logout", icon: <LogoutOutlined />, },
   ]
 
   const handleMenuClick = (e) => {
