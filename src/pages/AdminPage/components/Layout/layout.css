@@ -1,6 +1,5 @@
 .profile-wrapper-admin {
     width: 100%;
-    min-height: 100vh;
     background: #f5f7fa;
 }
 
@@ -13,9 +12,10 @@
 }
 
 .profile-sidebar-admin {
+    margin-top: 50px;
+    height: 300px;
     width: 280px;
     min-width: 280px;
-    height: 100vh;
     position: sticky;
     top: 0;
     background: #fff;
@@ -23,6 +23,7 @@
     padding: 16px 0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     transition: all 0.3s ease;
+    border-radius: 10px;
 }
 
 .profile-content-admin {

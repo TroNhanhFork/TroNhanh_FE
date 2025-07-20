@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { message, Modal } from 'antd';
 import './membership.css';
 import useUser from '../../../contexts/UserContext';
 
@@ -10,15 +11,18 @@ import useUser from '../../../contexts/UserContext';
 const Membership = () => {
   const [packages, setPackages] = useState([]);
   const [currentPackageId, setCurrentPackageId] = useState(null);
-  const { user } = useUser()
+  const { user } = useUser();
+  const [messageApi, contextHolder] = message.useMessage();
 
   // ⚠️ Kiểm tra đăng nhập ngay khi vào trang
   useEffect(() => {
     if (!user || !user._id) {
-      alert("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
-      window.location.href = "/login";
+      messageApi.error("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 2000);
     }
-  }, []);
+  }, [messageApi]);
 
   // Lấy danh sách gói membership
   const fetchMembershipPackages = async () => {
@@ -57,34 +61,52 @@ const Membership = () => {
     const success = query.get("success");
 
     if (success === "false") {
-      alert("❌ Thanh toán thất bại hoặc chữ ký không hợp lệ.");
+      messageApi.error("❌ Thanh toán thất bại hoặc chữ ký không hợp lệ.");
     }
-  }, []);
+  }, [messageApi]);
 
   // Xử lý khi click Subscribe
-
   const handleSubscribe = async (pkg) => {
     try {
       const userId = user?._id;
 
       if (!userId) {
-        alert("Bạn chưa đăng nhập!");
+        messageApi.warning("Bạn chưa đăng nhập!");
         return;
       }
 
       // ✅ Nếu đang dùng đúng gói này → cảnh báo
       if (String(currentPackageId) === String(pkg._id)) {
-        alert("Bạn đã mua gói thành viên này rồi.");
+        messageApi.info("Bạn đã mua gói thành viên này rồi.");
         return;
       }
 
-      // ✅ Nếu đang dùng gói khác → chặn
+      // ✅ Nếu đang dùng gói khác → hiện confirmation để upgrade
       if (currentPackageId && String(currentPackageId) !== String(pkg._id)) {
         const currentPkg = packages.find(p => String(p._id) === String(currentPackageId));
-        alert(`Bạn đã mua gói thành viên "${currentPkg?.packageName}" rồi. Chỉ khi gói đó hết hạn thì bạn mới có thể mua gói "${pkg.packageName}".`);
-        return;
+        
+        const confirmUpgrade = window.confirm(
+          `Bạn đang sử dụng gói "${currentPkg?.packageName}".\n\n` +
+          `Bạn có muốn hủy gói hiện tại và nâng cấp lên gói "${pkg.packageName}" không?\n\n` +
+          `⚠️ Lưu ý: Gói cũ sẽ bị hủy ngay lập tức và bạn sẽ chuyển sang gói mới.`
+        );
+        
+        if (!confirmUpgrade) {
+          return; // User từ chối upgrade
+        }
       }
 
+      // ✅ Nếu chưa có gói nào → subscribe trực tiếp
+      await processPayment(pkg, userId);
+    } catch (err) {
+      console.error("❌ Error creating VNPay URL:", err);
+      messageApi.error("Đã có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.");
+    }
+  };
+
+  // Hàm xử lý thanh toán riêng
+  const processPayment = async (pkg, userId) => {
+    try {
       console.log("💡 Subscribing with userId:", userId);
       console.log("📦 Package:", pkg.packageName, "—", pkg.price);
 
@@ -98,12 +120,13 @@ const Membership = () => {
       window.location.href = res.data.url;
     } catch (err) {
       console.error("❌ Error creating VNPay URL:", err);
-      alert("Đã có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.");
+      messageApi.error("Đã có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.");
     }
   };
 
   return (
     <div className="membership-container">
+      {contextHolder}
       <div className="membership-header">
         <div className="header-left">
           <h2>Membership Plans</h2>
@@ -136,7 +159,12 @@ const Membership = () => {
               className="subscribe-btn"
               onClick={() => handleSubscribe(pkg)}
             >
-              Subscribe
+              {String(currentPackageId) === String(pkg._id) 
+                ? "Current Plan" 
+                : currentPackageId && String(currentPackageId) !== String(pkg._id)
+                ? "Upgrade" 
+                : "Subscribe"
+              }
             </button>
 
             <ul className="plan-features">

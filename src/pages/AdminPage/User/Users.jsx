@@ -17,7 +17,7 @@ const Users = () => {
     total: 0,
   });
   const [filters, setFilters] = useState({
-    fullName: "",
+    name: "",
     email: "",
     gender: undefined,
     role: undefined,
@@ -84,7 +84,7 @@ const Users = () => {
 
         return {
           id: user._id || user.id,
-          fullName: user.name || user.fullName,
+          name: user.name || user.fullName,
           email: user.email,
           phoneNumber: user.phone || user.phoneNumber,
           gender: user.gender?.toLowerCase() || 'unknown',
@@ -155,6 +155,17 @@ const Users = () => {
     initializeComponent();
   }, [messageApi]);
 
+  // Auto search when filters change with debounce
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchUsers(1, pagination.pageSize, filters);
+      // Reset pagination to page 1 when filters change
+      setPagination(prev => ({ ...prev, current: 1 }));
+    }, 500); // 500ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [filters, pagination.pageSize]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Handle pagination change
   const handleTableChange = (pagination) => {
     fetchUsers(pagination.current, pagination.pageSize, filters);
@@ -163,7 +174,7 @@ const Users = () => {
   // Handle search/filter
   const handleSearch = (searchFilters) => {
     setFilters(searchFilters);
-    fetchUsers(1, pagination.pageSize, searchFilters);
+    // fetchUsers will be called automatically by useEffect
   };
 
   // Handle view user details
@@ -363,8 +374,8 @@ const Users = () => {
     },
     {
       title: 'Full Name',
-      dataIndex: 'fullName',
-      key: 'fullName',
+      dataIndex: 'name',
+      key: 'name',
     },
     {
       title: 'Email',
@@ -593,7 +604,7 @@ const Users = () => {
               <strong>Warning:</strong> This action cannot be undone. This will permanently delete the user account and all associated data.
             </p>
             <p style={{ marginBottom: 16, color: '#262626' }}>
-              <strong>User to delete:</strong> {userToDelete?.fullName} ({userToDelete?.email})
+              <strong>User to delete:</strong> {userToDelete?.name} ({userToDelete?.email})
             </p>
             <p style={{ marginBottom: 8, color: '#262626' }}>
               Please type <strong style={{ color: '#ff4d4f' }}>DELETE</strong> to confirm:

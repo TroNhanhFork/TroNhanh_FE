@@ -11,7 +11,7 @@ const PostFilterBar = ({ filters, setFilters, ownerOptions }) => (
       onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
       style={{ width: 180 }}
     />
-    <Select
+    {/* <Select
       placeholder="Filter by owner"
       allowClear
       style={{ width: 160 }}
@@ -23,17 +23,17 @@ const PostFilterBar = ({ filters, setFilters, ownerOptions }) => (
           {owner}
         </Option>
       ))}
-    </Select>
+    </Select> */}
     <Select
       placeholder="Status"
       allowClear
       style={{ width: 140 }}
-      value={filters.status}
-      onChange={(value) => setFilters((f) => ({ ...f, status: value }))}
+      value={filters.approvedStatus}
+      onChange={(value) => setFilters((f) => ({ ...f, approvedStatus: value }))}
     >
       <Option value="pending">Pending</Option>
       <Option value="approved">Approved</Option>
-      <Option value="reported">Reported</Option>
+      <Option value="rejected">Rejected</Option>
       <Option value="deleted">Deleted</Option>
     </Select>
     <RangePicker
@@ -43,7 +43,7 @@ const PostFilterBar = ({ filters, setFilters, ownerOptions }) => (
     />
     <Button
       onClick={() =>
-        setFilters({ owner: undefined, status: undefined, dateRange: [], search: "" })
+        setFilters({ owner: undefined, approvedStatus: undefined, dateRange: [], search: "" })
       }
     >
       Reset

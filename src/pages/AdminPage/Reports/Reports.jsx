@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { message, Tabs, Spin, Form } from "antd";
 import ReportsFilterBar from "./ReportsFilterBar";
 import ReportsTable from "./ReportsTable";
-import ReportDetailModal from "./ReportsDetailModal";
+import ReportDetailModal from "./ReportDetailModal";
 import ReportsResolveModal from "./ReportsResolveModal";
 import { getAllReports, getReportsByCategory, getReportById, resolveReport } from "../../../services/reportServiceAdmin";
 
@@ -13,7 +13,7 @@ const Reports = () => {
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
-    limit: 20,
+    limit: 10,
     totalPages: 0
   });
   const [statistics, setStatistics] = useState({});
@@ -42,7 +42,7 @@ const Reports = () => {
     try {
       let apiParams = {
         page: customParams.page || 1,
-        limit: customParams.limit || 20,
+        limit: customParams.limit || 10,
         ...customParams
       };
 
@@ -58,12 +58,6 @@ const Reports = () => {
         apiParams.toDate = filters.dateRange[1].format('YYYY-MM-DD');
       }
 
-      // Apply tab-specific filters
-      if (activeTab === 'customer_reports') {
-        apiParams.reportType = 'customer_report_owner';
-      } else if (activeTab === 'owner_reports') {
-        apiParams.reportType = 'owner_report_customer';
-      }
 
       let response;
       if (activeTab === 'all') {
@@ -204,7 +198,6 @@ const Reports = () => {
               current: pagination.page,
               pageSize: pagination.limit,
               total: pagination.total,
-              showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total, range) => 
                 `${range[0]}-${range[1]} of ${total} reports`,
@@ -216,60 +209,10 @@ const Reports = () => {
         </>
       ),
     },
-    {
-      key: "customer_reports",
-      label: `Customer Reports (${statistics.customerReports || 0})`,
-      children: (
-        <>
-          <ReportsFilterBar filters={filters} setFilters={setFilters} />
-          <ReportsTable
-            data={reports}
-            loading={loading}
-            pagination={{
-              current: pagination.page,
-              pageSize: pagination.limit,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) => 
-                `${range[0]}-${range[1]} of ${total} customer reports`,
-            }}
-            onChange={handleTableChange}
-            onView={handleViewReport}
-            onResolve={handleResolveReport}
-          />
-        </>
-      ),
-    },
-    {
-      key: "owner_reports",
-      label: `Owner Reports (${statistics.ownerReports || 0})`,
-      children: (
-        <>
-          <ReportsFilterBar filters={filters} setFilters={setFilters} />
-          <ReportsTable
-            data={reports}
-            loading={loading}
-            pagination={{
-              current: pagination.page,
-              pageSize: pagination.limit,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) => 
-                `${range[0]}-${range[1]} of ${total} owner reports`,
-            }}
-            onChange={handleTableChange}
-            onView={handleViewReport}
-            onResolve={handleResolveReport}
-          />
-        </>
-      ),
-    },
   ];
 
   return (
-    <div className="page-container">
+    <div className="page-container" style={{ maxWidth: 1100, margin: "0 auto" }}>
       {contextHolder}
       <h1>Reports Management</h1>
       <Spin spinning={loading}>
