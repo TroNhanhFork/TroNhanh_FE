@@ -57,7 +57,17 @@ const HeaderComponent = () => {
             console.log("Navigate: /customer/favourite");
             navigate("/customer/favourite");
           },
-        }
+        },
+        {
+          key: "contact",
+          label: "Contact & Reports",
+          icon: <MailOutlined />,
+          onClick: () => {
+            console.log("Navigate: /customer/reports");
+            navigate("/customer/reports");
+          },
+        },
+
       );
     }
 
@@ -107,24 +117,6 @@ const HeaderComponent = () => {
         },
       },
       {
-        key: "contact",
-        label: "Contact & Reports",
-        icon: <MailOutlined />,
-        onClick: () => {
-          console.log("Navigate: /customer/reports");
-          navigate("/customer/reports");
-        },
-      },
-      {
-        key: "chat",
-        label: "Chat",
-        icon: <MessageOutlined />,
-        onClick: () => {
-          console.log("Navigate: /chat");
-          navigate("/chat");
-        },
-      },
-      {
         key: "logout",
         label: "Logout",
         icon: <LogoutOutlined />,
@@ -154,8 +146,8 @@ const HeaderComponent = () => {
               <Menu.Item key="chat">
                 <Link to="/customer/chat" onClick={() => console.log("Menu: /customer/chat")}>Chat</Link>
               </Menu.Item>
-              <Menu.Item key="profile">
-                <Link to="/customer/profile/personal-info" onClick={() => console.log("Menu: /customer/profile/personal-info")}>Profile</Link>
+              <Menu.Item key="contact">
+                <Link to="/customer/reports" onClick={() => console.log("Menu: /customer/reports")}>Contact & Reports</Link>
               </Menu.Item>
             </>
           )}
@@ -173,9 +165,8 @@ const HeaderComponent = () => {
               <Link to="/admin/dashboard" onClick={() => console.log("Menu: /admin/dashboard")}>Dashboard</Link>
             </Menu.Item>
           )}
-
-          <Menu.Item key="contact">
-            <Link to="/customer/reports" onClick={() => console.log("Menu: /customer/reports")}>Contact & Reports</Link>
+          <Menu.Item key="profile">
+            <Link to="/customer/profile/personal-info" onClick={() => console.log("Menu: /customer/profile/personal-info")}>Profile</Link>
           </Menu.Item>
           <Menu.Item key="room">
             <Link to="/customer/search" onClick={() => console.log("Menu: /customer/search")}>Room</Link>

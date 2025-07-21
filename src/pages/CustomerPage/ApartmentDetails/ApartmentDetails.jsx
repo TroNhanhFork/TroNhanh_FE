@@ -245,6 +245,24 @@ const PropertyDetails = ({ accommodationId, ownerId }) => {
     // Kiểm tra xem accommodation có status "Booked" không
     const isBooked = accommodation.status === "Booked";
 
+    if (userBooking && userBooking.status === 'pending') {
+      return (
+        <div className="booking-card">
+          <h2 className="booking-price">{accommodation.price}đ/ Month</h2>
+          <p>This booking is waiting for payment.</p>
+          {/* phần hiển thị giá tương tự như bạn đang làm */}
+          <Divider />
+          <div className="booking-costs">
+            ...
+          </div>
+
+          <Button className="booking-button" onClick={handleContinueBooking}>
+            Continue to Payment
+          </Button>
+        </div>
+      );
+    }
+
     if (userBooking) {
       // User đã có booking, hiển thị thông tin booking
       return (

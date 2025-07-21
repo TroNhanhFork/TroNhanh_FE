@@ -1,36 +1,47 @@
-
 let logoutTimer;
-const TIMEOUT = 60 * 30 * 1000;
+let warningTimer;
 
-let externalLogout = null;
-
-const resetTimer = () => {
-  console.log('🕐 Reset timer do user activity');
+export function initAutoLogout(logout,  delay = 600 * 1000, warningBefore = 3 * 1000) {
   clearTimeout(logoutTimer);
- logoutTimer = setTimeout(() => {
-  console.log("😴 Không hoạt động → auto logout");
-  alert("Phiên đăng nhập đã hết hạn vì không hoạt động.");
-  if (externalLogout) {
-    externalLogout("idle timeout");
-    window.location.href = "/login";
-  }
-}, TIMEOUT);
+  clearTimeout(warningTimer);
 
+  const startTimers = () => {
+    clearTimeout(logoutTimer);
+    clearTimeout(warningTimer);
 
-};
+    // Cảnh báo trước khi logout
+    warningTimer = setTimeout(() => {
+      const event = new CustomEvent('show-logout-warning');
+      window.dispatchEvent(event);
+    }, delay - warningBefore);
 
-export const initAutoLogout = (onLogout) => {
-  externalLogout = onLogout;
-  ['click', 'mousemove', 'keydown', 'scroll'].forEach((event) => {
+    // Logout thực sự
+    logoutTimer = setTimeout(() => {
+      localStorage.removeItem('accessToken');
+      logout();
+      window.location.href = '/login';
+
+    }, delay);
+  };
+
+  const resetTimer = () => {
+    startTimers();
+  };
+
+  const events = ['click', 'mousemove', 'keydown', 'scroll'];
+  for (const event of events) {
     window.addEventListener(event, resetTimer);
-  });
-  resetTimer();
-};
+  }
 
-export const stopAutoLogout = () => {
-  ['click', 'mousemove', 'keydown', 'scroll'].forEach((event) => {
-    window.removeEventListener(event, resetTimer);
-  });
+  startTimers();
+}
+
+export function stopAutoLogout() {
   clearTimeout(logoutTimer);
-  externalLogout = null;
-};
+  clearTimeout(warningTimer);
+
+  const events = ['click', 'mousemove', 'keydown', 'scroll'];
+  for (const event of events) {
+    window.removeEventListener(event, stopAutoLogout); 
+  }
+}
