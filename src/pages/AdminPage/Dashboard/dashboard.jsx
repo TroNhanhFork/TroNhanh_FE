@@ -7,7 +7,7 @@ import { Table, Col, Row, Radio, Card, Spin, message, Button } from "antd";
 import { DownloadOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 import dashboardService from "../../../services/dashboardService";
-import "./dashboard.module.css";
+import "./dashboard.css";
 
 // Data and constants - keeping revenue data for the bar chart
 // const revenueData = [

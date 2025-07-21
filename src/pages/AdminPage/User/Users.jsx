@@ -531,7 +531,7 @@ const Users = () => {
             loading={loading}
             pagination={{
               ...pagination,
-              showSizeChanger: true,
+              showSizeChanger: false,
               showQuickJumper: true,
               showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} users`,
               style: { padding: '16px 24px' }

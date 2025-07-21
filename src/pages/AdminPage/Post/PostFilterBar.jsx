@@ -43,8 +43,14 @@ const PostFilterBar = ({ filters, setFilters, ownerOptions }) => (
     />
     <Button
       onClick={() =>
-        setFilters({ owner: undefined, approvedStatus: undefined, dateRange: [], search: "" })
+        setFilters({ 
+          owner: undefined, 
+          approvedStatus: undefined, 
+          dateRange: [], 
+          search: "" 
+        })
       }
+      type="default"
     >
       Reset
     </Button>
