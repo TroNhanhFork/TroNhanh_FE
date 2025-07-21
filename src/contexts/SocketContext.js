@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { io } from "socket.io-client";
-
+import useUser from "./UserContext";
 const SocketContext = createContext(null);
 export const useSocket = () => useContext(SocketContext);
 
@@ -122,36 +122,36 @@ export const SocketProvider = ({ children }) => {
     });
   }, [socket, isConnected, user, connectionAttempts]);
 
-  return (
-    <SocketContext.Provider value={socket}>
-      {children}
-      {/* Enhanced debug indicator */}
-      {process.env.NODE_ENV === "development" && (
-        <div
-          style={{
-            position: "fixed",
-            top: 10,
-            right: 10,
-            background: isConnected
-              ? "green"
-              : connectionAttempts > 0
-              ? "orange"
-              : "red",
-            color: "white",
-            padding: "5px 10px",
-            borderRadius: "5px",
-            fontSize: "12px",
-            zIndex: 9999,
-          }}
-        >
-          Socket:{" "}
-          {isConnected
-            ? "Connected"
-            : connectionAttempts > 0
-            ? `Reconnecting (${connectionAttempts})`
-            : "Disconnected"}
-        </div>
-      )}
-    </SocketContext.Provider>
-  );
+  // return (
+  //   <SocketContext.Provider value={socket}>
+  //     {children}
+  //     {/* Enhanced debug indicator */}
+  //     {process.env.NODE_ENV === "development" && (
+  //       <div
+  //         style={{
+  //           position: "fixed",
+  //           top: 10,
+  //           right: 10,
+  //           background: isConnected
+  //             ? "green"
+  //             : connectionAttempts > 0
+  //             ? "orange"
+  //             : "red",
+  //           color: "white",
+  //           padding: "5px 10px",
+  //           borderRadius: "5px",
+  //           fontSize: "12px",
+  //           zIndex: 9999,
+  //         }}
+  //       >
+  //         Socket:{" "}
+  //         {isConnected
+  //           ? "Connected"
+  //           : connectionAttempts > 0
+  //           ? `Reconnecting (${connectionAttempts})`
+  //           : "Disconnected"}
+  //       </div>
+  //     )}
+  //   </SocketContext.Provider>
+  // );
 };

@@ -17,15 +17,14 @@ const RoutesOw = () => {
   return (
     <Routes>
       <Route element={<OwnerLayout />}>
-        <Route index element={<Profile />} />
-        <Route path="user-profile" element={<Profile />} />
+        <Route index element={<ProfilePage />} />
+        <Route path="user-profile" element={<ProfilePage />} />
         <Route path="accommodation" element={<Accommodation />} />
         <Route path="report" element={<Report />} />
         <Route path="rating" element={<Rating />} />
         <Route path="rating/:id" element={<DetailRating />} />
         <Route path="communication" element={<OwnerInbox />} />
         <Route path="membership" element={<Membership />} />
-        <Route path="cancellation" element={<Cancellation />} />
       </Route>
     </Routes>
   );

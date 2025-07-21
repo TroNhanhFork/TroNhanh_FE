@@ -42,7 +42,6 @@ import useUser from "../../../contexts/UserContext";
 import RoommatePostModal from "./RoommatePostModal";
 import { getRoommatePosts } from "../../../services/roommateAPI";
 // riel-time messaging
-import axios from "axios";
 import { useSocket } from "../../../contexts/SocketContext";
 
 import Slider from "react-slick";
