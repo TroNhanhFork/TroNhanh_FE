@@ -854,11 +854,11 @@ const PropertyDetails = ({ accommodationId, ownerId }) => {
           </div>
         </Col>
       </Row>
-      <Divider />
-      <h1 className="text-heading">Amenities</h1>
+      {/* <Divider /> */}
+      {/* <h1 className="text-heading">Amenities</h1>
       <Button className="booking-button" onClick={handleContactOwner}>
         Contact with Owner
-      </Button>
+      </Button> */}
       <Row gutter={[24, 24]} className="accommodation-amenities">
         {accommodation.amenities?.map((item, index) => (
           <Col xs={12} sm={8} md={6} key={index} className="amenity-item">

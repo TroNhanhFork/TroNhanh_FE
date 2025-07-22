@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import HeaderComponent from './components/header/header';
 import FooterComponent from './components/footer/footer';
@@ -19,7 +19,6 @@ import ResetPasswordPage from './pages/CustomerPage/Auth/ResetPasswordPage';
 import ScrollToTop from './pages/CommonPage/ScrollToTop/ScrollToTop';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
-import { SocketProvider } from './contexts/SocketContext';
 
 function AppRoutes() {
   const location = useLocation();
@@ -84,10 +83,8 @@ function AppWrapper() {
   return (
     <BrowserRouter>
       <UserProvider>
-        <SocketProvider>
           <ScrollToTop />
           <AppRoutes />
-        </SocketProvider>
       </UserProvider>
     </BrowserRouter>
   );
