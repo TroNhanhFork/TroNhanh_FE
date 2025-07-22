@@ -151,7 +151,7 @@ export const SocketProvider = ({ children }) => {
   //           ? `Reconnecting (${connectionAttempts})`
   //           : "Disconnected"}
   //       </div>
-  //     )}
+      )}
   </SocketContext.Provider>
   );
 };
