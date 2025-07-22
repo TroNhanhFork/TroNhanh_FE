@@ -89,13 +89,12 @@ const Posts = () => {
     fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reset pagination when filters change
+  // Reload data when filters change (including reset)
   useEffect(() => {
-    if (filters.owner || filters.approvedStatus || filters.search || filters.dateRange?.length > 0) {
-      setPagination(prev => ({ ...prev, page: 1 }));
-      fetchData({ page: 1 });
-    }
-  }, [filters.owner, filters.approvedStatus, filters.search, filters.dateRange]); // eslint-disable-line react-hooks/exhaustive-deps
+    console.log('🔍 Filters changed:', filters);
+    setPagination(prev => ({ ...prev, page: 1 }));
+    fetchData({ page: 1 });
+  }, [filters]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refresh data helper function
   const refreshData = async () => {

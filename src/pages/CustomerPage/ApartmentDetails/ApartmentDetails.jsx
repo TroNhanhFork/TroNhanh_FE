@@ -12,6 +12,8 @@ import {
   Select,
   Tag,
   message,
+  Modal,
+  List,
 } from "antd";
 import {
   UserOutlined,
@@ -21,8 +23,10 @@ import {
   LeftOutlined,
   RightOutlined,
   CheckCircleOutlined,
+  MessageOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
+import "bootstrap-icons/font/bootstrap-icons.css";
 import {
   getAccommodationById,
   addToFavorite,
@@ -37,12 +41,17 @@ import { useEffect, useState, useRef } from "react";
 import useUser from "../../../contexts/UserContext";
 import RoommatePostModal from "./RoommatePostModal";
 import { getRoommatePosts } from "../../../services/roommateAPI";
+// riel-time messaging
+import { useSocket } from "../../../contexts/SocketContext";
+
 import Slider from "react-slick";
 import { getValidAccessToken } from "../../../services/authService";
 
 const { Option } = Select;
 
-const PropertyDetails = () => {
+const { TextArea } = Input;
+
+const PropertyDetails = ({ accommodationId, ownerId }) => {
   const { id } = useParams();
   const [accommodation, setAccommodation] = useState();
   const [isFavorite, setIsFavorite] = useState(false);
@@ -76,6 +85,11 @@ const PropertyDetails = () => {
       console.log("No Accommodation found!");
     }
   };
+
+  // riel-time messaging
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [inputValue, setInputValue] = useState("");
 
   useEffect(() => {
     fetchAccommodationData();
@@ -151,6 +165,27 @@ const PropertyDetails = () => {
     fetchUserBooking();
   }, [user, accommodation?._id]);
 
+  // DEBUG
+  useEffect(() => {
+    console.log("[DEBUG] Accommodation fetched:", accommodation);
+    console.log("[DEBUG] Owner ID:", accommodation?.ownerId?._id);
+  }, [accommodation]);
+
+  useEffect(() => {
+    if (!accommodationId) {
+      console.log("[WARN] accommodationId is NOT ready");
+      return;
+    } else {
+      console.log("[DEBUG] Accommodation ID:", accommodation?._id);
+    }
+
+    if (!user) {
+      console.log("[WARN] User is NOT logged in");
+      return;
+    } else {
+      console.log("[DEBUG] User ID:", user._id);
+    }
+  }, [accommodationId, user]);
 
   const navigate = useNavigate();
 
@@ -209,6 +244,24 @@ const PropertyDetails = () => {
   const renderBookingSection = () => {
     // Kiểm tra xem accommodation có status "Booked" không
     const isBooked = accommodation.status === "Booked";
+
+    if (userBooking && userBooking.status === 'pending') {
+      return (
+        <div className="booking-card">
+          <h2 className="booking-price">{accommodation.price}đ/ Month</h2>
+          <p>This booking is waiting for payment.</p>
+          {/* phần hiển thị giá tương tự như bạn đang làm */}
+          <Divider />
+          <div className="booking-costs">
+            ...
+          </div>
+
+          <Button className="booking-button" onClick={handleContinueBooking}>
+            Continue to Payment
+          </Button>
+        </div>
+      );
+    }
 
     if (userBooking) {
       // User đã có booking, hiển thị thông tin booking
@@ -545,6 +598,65 @@ const PropertyDetails = () => {
     }
   };
 
+  // riel-time messaging section
+  const handleOpen = () => {
+    if (!user) {
+      return Modal.warning({ title: "Please login to message the owner." });
+    }
+    setIsModalOpen(true);
+    fetchMessages(); // Load existing chat
+  };
+
+  const handleSend = async () => {
+    if (!inputValue.trim()) return;
+    const messageData = {
+      senderId: user._id,
+      receiverId: accommodation.ownerId,
+      accommodationId: accommodation._id,
+      text: inputValue,
+    };
+    try {
+      await axios.post(
+        process.env.REACT_APP_API_URL + "/messages/send",
+        messageData,
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+      setMessages((prev) => [
+        ...prev,
+        { ...messageData, createdAt: new Date() },
+      ]);
+      setInputValue("");
+    } catch (err) {
+      console.error("Message send failed", err);
+    }
+  };
+
+  const fetchMessages = async () => {
+    const accommodationId = accommodation?._id;
+
+    try {
+      console.log(
+        "[DEBUG] GET messages for:",
+        `/api/messages/${accommodationId}`
+      );
+
+      console.log("[DEBUG] accommodationId length:", accommodationId.length);
+
+      const res = await axios.get(process.env.REACT_APP_API_URL + `/messages/${accommodationId}`, {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      });
+      setMessages(res.data);
+    } catch (err) {
+      console.error("Fetch messages failed", err);
+    }
+  };
+
   return (
     <div>
       {contextHolder}
@@ -610,7 +722,136 @@ const PropertyDetails = () => {
         </Col>
 
         <Col xs={24} md={8}>
-          {renderBookingSection()}
+          <div className="booking-card">
+            <h2 className="booking-price">£{accommodation.price} / Month</h2>
+
+            <div className="booking-dates">
+              <DatePicker
+                placeholder="Move in"
+                suffixIcon={<CalendarOutlined />}
+              />
+              <DatePicker
+                placeholder="Move out"
+                suffixIcon={<CalendarOutlined />}
+              />
+            </div>
+
+            <div className="booking-guests">
+              <UserOutlined />
+              <Input type="number" placeholder="Guests" defaultValue={1} />
+            </div>
+
+            <p>All utilities are included</p>
+
+            {/* riel-time messaging section */}
+            <>
+              <Button
+                type="primary"
+                icon={<MessageOutlined />}
+                onClick={handleOpen}
+                style={{ marginTop: 16 }}
+              >
+                Message Owner
+              </Button>
+
+              <Modal
+                title="Chat with Owner"
+                open={isModalOpen}
+                onCancel={() => setIsModalOpen(false)}
+                footer={null}
+                width={600}
+              >
+                <div
+                  style={{
+                    maxHeight: "300px",
+                    overflowY: "auto",
+                    marginBottom: "1rem",
+                  }}
+                >
+                  <List
+                    dataSource={messages}
+                    renderItem={(msg) => (
+                      <List.Item
+                        style={{
+                          textAlign:
+                            msg.senderId === user._id ? "right" : "left",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "inline-block",
+                            backgroundColor:
+                              msg.senderId === user._id ? "#d3f0ff" : "#f0f0f0",
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            maxWidth: "75%",
+                          }}
+                        >
+                          {msg.text}
+                        </div>
+                      </List.Item>
+                    )}
+                  />
+                </div>
+                <TextArea
+                  rows={2}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onPressEnter={(e) => {
+                    e.preventDefault();
+                    handleSend();
+                  }}
+                  placeholder="Type your message..."
+                />
+                <Button
+                  type="primary"
+                  onClick={handleSend}
+                  style={{ marginTop: "10px", float: "right" }}
+                >
+                  Send
+                </Button>
+              </Modal>
+            </>
+            <Divider />
+
+            <div className="booking-costs">
+              <div className="cost-row">
+                <span>Average monthly rent</span>
+                <span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(accommodation.price * 0.93)}
+                </span>
+              </div>
+              <div className="cost-row">
+                <span>Pay upon booking</span>
+                <span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(accommodation.price * 0.9998)}
+                </span>
+              </div>
+              <div className="cost-row total-cost">
+                <span>Total costs</span>
+                <span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(accommodation.price * 1.003)}
+                </span>
+              </div>
+            </div>
+
+            <Button className="booking-button" onClick={handleContinueBooking}>
+              Continue booking
+            </Button>
+            <p className="booking-note">
+              When you book this apartment, your reservation will be confirmed
+              instantly.
+            </p>
+          </div>
         </Col>
       </Row>
       <Divider />

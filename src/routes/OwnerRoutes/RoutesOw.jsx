@@ -9,27 +9,25 @@ import Report from "../../pages/OwnerPage/Report/report";
 import Rating from "../../pages/OwnerPage/Rating/rating";
 import DetailRating from "../../pages/OwnerPage/Rating/DetailRating";
 import Communication from "../../pages/OwnerPage/Communication/communication";
+import OwnerInbox from "../../pages/OwnerPage/Communication/OwnerInbox";
 import Membership from "../../pages/OwnerPage/MemberShip/membership";
 import PaymentResult from "../../pages/OwnerPage/MemberShip/PaymentResult";
 import AboutUs from "../../pages/CommonPage/HomePage/AboutUs";
 const RoutesOw = () => {
-    return (
-        <Routes>
-            <Route element={<OwnerLayout />}>
-                <Route index element={<Statistics />} />
-                <Route path="statistics" element={<Statistics />} />
-                <Route path="user-profile" element={<ProfilePage />} />
-                <Route path="accommodation" element={<Accommodation />} />
-                <Route path="report" element={<Report />} />
-                <Route path="rating" element={<Rating />} />
-                <Route path="rating/:id" element={<DetailRating />} />
-                <Route path="communication" element={<Communication />} />
-                <Route path="membership" element={<Membership />} />
-                <Route path="membership-result" element={<PaymentResult />} />
-                <Route path="about" element={<AboutUs />} />
-            </Route>
-        </Routes>
-    );
+  return (
+    <Routes>
+      <Route element={<OwnerLayout />}>
+        <Route index element={<ProfilePage />} />
+        <Route path="user-profile" element={<ProfilePage />} />
+        <Route path="accommodation" element={<Accommodation />} />
+        <Route path="report" element={<Report />} />
+        <Route path="rating" element={<Rating />} />
+        <Route path="rating/:id" element={<DetailRating />} />
+        <Route path="communication" element={<OwnerInbox />} />
+        <Route path="membership" element={<Membership />} />
+      </Route>
+    </Routes>
+  );
 };
 
 export default RoutesOw;

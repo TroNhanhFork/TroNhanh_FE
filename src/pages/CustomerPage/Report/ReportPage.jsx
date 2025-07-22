@@ -10,10 +10,9 @@ import {
   Card,
   Alert,
 } from "antd";
-import { createReport } from "../../../services/reportService";
+import { createReport, getOwner, checkBookingHistory } from "../../../services/reportService";
 import useUser from "../../../contexts/UserContext";
 import { ExclamationCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
-import { getOwner } from "../../../services/reportService"; 
 
 const { Title, Paragraph } = Typography;
 const { TextArea } = Input;
@@ -25,27 +24,48 @@ const ReportPage = () => {
   const [messageApi, contextHolder] = antMessage.useMessage();
   const [submitting, setSubmitting] = useState(false);
   const [users, setUsers] = useState([]);
+  const [isEligible, setIsEligible] = useState(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchUsersAndCheck = async () => {
       try {
-        const res = await getOwner(); 
-        setUsers(res.data.filter((u) => u._id !== user?._id));
+        const res = await getOwner();
+        const otherUsers = res.data.filter((u) => u._id !== user?._id);
+        setUsers(otherUsers);
+
+        if (otherUsers.length > 0) {
+          const firstUserId = otherUsers[0]._id;
+          form.setFieldsValue({ reportedUserId: firstUserId });
+
+          const historyRes = await checkBookingHistory(firstUserId);
+          setIsEligible(historyRes.data?.hasHistory);
+        } else {
+          setIsEligible(false);
+        }
       } catch (error) {
-        console.error("❌ Failed to fetch users", error);
+        console.error("❌ Failed to fetch users or check history", error);
+        setIsEligible(false);
       }
     };
-    if (user) fetchUsers();
-  }, [user]);
+
+    if (user) fetchUsersAndCheck();
+  }, [user, form]);
+
+  const handleReportedUserChange = async (value) => {
+    form.setFieldsValue({ reportedUserId: value });
+    try {
+      const res = await checkBookingHistory(value);
+      setIsEligible(res.data?.hasHistory);
+    } catch (err) {
+      console.error("❌ Failed to check booking history", err);
+      setIsEligible(false);
+    }
+  };
 
   const onFinish = async (values) => {
     try {
       setSubmitting(true);
-      const payload = {
-        ...values,
-        reporterId: user?._id,
-      };
-
+      const payload = { ...values };
       console.log("✔️ Payload sent:", payload);
       await createReport(payload);
       messageApi.open({
@@ -54,6 +74,7 @@ const ReportPage = () => {
         icon: <CheckCircleOutlined style={{ color: "#52c41a" }} />,
       });
       form.resetFields();
+      setIsEligible(null);
     } catch (error) {
       console.error("❌ Report submission failed:", error);
       messageApi.error(error?.response?.data?.message || "Failed to submit report.");
@@ -105,53 +126,75 @@ const ReportPage = () => {
         <Form form={form} layout="vertical" onFinish={onFinish}>
           {/* NGƯỜI BỊ BÁO CÁO */}
           <Form.Item
-  label="Reported User"
-  name="reportedUserId"
-  rules={[{ required: true, message: "Please select a user to report." }]}
->
-  <Select
-    showSearch
-    placeholder="Select user to report"
-    filterOption={(input, option) =>
-      option.children.toLowerCase().includes(input.toLowerCase())
-    }
-  >
-    {users.map((u) => (
-      <Option key={u._id} value={u._id}>
-        {u.name || u.email}
-      </Option>
-    ))}
-  </Select>
-</Form.Item>
-
-          {/* LOẠI BÁO CÁO */}
-          <Form.Item
-            label="Report Category"
-            name="type"
-            rules={[{ required: true, message: "Please select a report category." }]}
+            label="Reported User"
+            name="reportedUserId"
+            rules={[{ required: true, message: "Please select a user to report." }]}
           >
-            <Select placeholder="Select report category">
-              <Option value="Landlord Complaint">Landlord Complaint</Option>
-              <Option value="Fake Listing">Fake Listing</Option>
-              <Option value="Scam Behavior">Scam Behavior</Option>
-              <Option value="Other">Other</Option>
+            <Select
+              showSearch
+              placeholder="Select user to report"
+              onChange={handleReportedUserChange}
+              filterOption={(input, option) =>
+                option.children.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {users.map((u) => (
+                <Option key={u._id} value={u._id}>
+                  {u.name || u.email}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 
-          {/* NỘI DUNG */}
-          <Form.Item
-            label="Report Details"
-            name="content"
-            rules={[{ required: true, message: "Please enter your report details." }]}
-          >
-            <TextArea rows={4} placeholder="Describe the issue you encountered..." />
-          </Form.Item>
+          {/* CẢNH BÁO KHÔNG ĐỦ ĐIỀU KIỆN */}
+          {isEligible === false && (
+            <Alert
+              type="warning"
+              showIcon
+              message="You cannot submit a report because you have no booking history with this landlord."
+              description="Only users with whom you have booking history (paid or approved) can be reported."
+              style={{ marginBottom: 24 }}
+            />
+          )}
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit" block loading={submitting}>
-              {submitting ? "Submitting..." : "Submit Report"}
-            </Button>
-          </Form.Item>
+          {/* CHỈ HIỆN FORM KHI ĐỦ ĐIỀU KIỆN */}
+          {isEligible && (
+            <>
+              {/* LOẠI BÁO CÁO */}
+              <Form.Item
+                label="Report Category"
+                name="type"
+                rules={[{ required: true, message: "Please select a report category." }]}
+              >
+                <Select placeholder="Select report category">
+                  <Option value="Landlord Complaint">Landlord Complaint</Option>
+                  <Option value="Fake Listing">Fake Listing</Option>
+                  <Option value="Scam Behavior">Scam Behavior</Option>
+                  <Option value="Other">Other</Option>
+                </Select>
+              </Form.Item>
+
+              {/* NỘI DUNG */}
+              <Form.Item
+                label="Report Details"
+                name="content"
+                rules={[{ required: true, message: "Please enter your report details." }]}
+              >
+                <TextArea rows={4} placeholder="Describe the issue you encountered..." />
+              </Form.Item>
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  loading={submitting}
+                >
+                  {submitting ? "Submitting..." : "Submit Report"}
+                </Button>
+              </Form.Item>
+            </>
+          )}
         </Form>
       </Card>
     </div>
