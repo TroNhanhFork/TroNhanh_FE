@@ -135,8 +135,8 @@ export const SocketProvider = ({ children }) => {
             background: isConnected
               ? "green"
               : connectionAttempts > 0
-              ? "orange"
-              : "red",
+                ? "orange"
+                : "red",
             color: "white",
             padding: "5px 10px",
             borderRadius: "5px",
@@ -148,8 +148,8 @@ export const SocketProvider = ({ children }) => {
           {isConnected
             ? "Connected"
             : connectionAttempts > 0
-            ? `Reconnecting (${connectionAttempts})`
-            : "Disconnected"}
+              ? `Reconnecting (${connectionAttempts})`
+              : "Disconnected"}
         </div>
       )} */}
     </SocketContext.Provider>
