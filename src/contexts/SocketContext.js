@@ -122,9 +122,9 @@ export const SocketProvider = ({ children }) => {
     });
   }, [socket, isConnected, user, connectionAttempts]);
 
-  // return (
-  //   <SocketContext.Provider value={socket}>
-  //     {children}
+  return (
+    <SocketContext.Provider value={socket}>
+    {children}
   //     {/* Enhanced debug indicator */}
   //     {process.env.NODE_ENV === "development" && (
   //       <div
@@ -152,6 +152,6 @@ export const SocketProvider = ({ children }) => {
   //           : "Disconnected"}
   //       </div>
   //     )}
-  //   </SocketContext.Provider>
-  // );
+  </SocketContext.Provider>
+  );
 };
