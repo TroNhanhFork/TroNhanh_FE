@@ -52,20 +52,30 @@ const { user, setUser, fetchUser } = useUser();
     setFieldValues((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = async (field) => {
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append(field, fieldValues[field]);
-      await updateUserInfo(formData);
-      await fetchUser(); 
-      messageApi.success("Cập nhật thành công");
-      setEditingField('');
-    } catch {
+const handleSave = async (field) => {
+  setLoading(true);
+  try {
+    const formData = new FormData();
+    formData.append(field, fieldValues[field]);
+    await updateUserInfo(formData);
+    await fetchUser();
+    messageApi.success("Cập nhật thành công");
+    setEditingField('');
+  } catch (err) {
+    console.error(err);
+    const res = err.response;
+    if (res?.status === 400 && Array.isArray(res.data?.errors)) {
+      res.data.errors.forEach((e) => {
+        messageApi.error(` ${e.msg}`);
+      });
+    } else {
       messageApi.error("Cập nhật thất bại");
     }
+  } finally {
     setLoading(false);
-  };
+  }
+};
+
 
    const handleAvatarChange = async ({ file }) => {
     const formData = new FormData();

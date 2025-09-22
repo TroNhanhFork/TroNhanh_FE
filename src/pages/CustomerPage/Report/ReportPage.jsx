@@ -25,23 +25,22 @@ const ReportPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [users, setUsers] = useState([]);
   const [isEligible, setIsEligible] = useState(null);
-
+const [bookings, setBookings] = useState([]);
   useEffect(() => {
     const fetchUsersAndCheck = async () => {
       try {
         const res = await getOwner();
         const otherUsers = res.data.filter((u) => u._id !== user?._id);
         setUsers(otherUsers);
+if (otherUsers.length > 0) {
+  const firstUserId = otherUsers[0]._id;
+  form.setFieldsValue({ reportedUserId: firstUserId });
 
-        if (otherUsers.length > 0) {
-          const firstUserId = otherUsers[0]._id;
-          form.setFieldsValue({ reportedUserId: firstUserId });
+  await handleReportedUserChange(firstUserId);
+} else {
+  setIsEligible(false);
+}
 
-          const historyRes = await checkBookingHistory(firstUserId);
-          setIsEligible(historyRes.data?.hasHistory);
-        } else {
-          setIsEligible(false);
-        }
       } catch (error) {
         console.error("❌ Failed to fetch users or check history", error);
         setIsEligible(false);
@@ -51,17 +50,32 @@ const ReportPage = () => {
     if (user) fetchUsersAndCheck();
   }, [user, form]);
 
-  const handleReportedUserChange = async (value) => {
-    form.setFieldsValue({ reportedUserId: value });
-    try {
-      const res = await checkBookingHistory(value);
-      setIsEligible(res.data?.hasHistory);
-    } catch (err) {
-      console.error("❌ Failed to check booking history", err);
-      setIsEligible(false);
-    }
-  };
+const handleReportedUserChange = async (value) => {
+  form.setFieldsValue({ reportedUserId: value });
+  try {
+    const res = await checkBookingHistory(value);
+    setIsEligible(res.data?.hasHistory);
 
+  
+    if (res.data?.hasHistory) {
+      const bookingList = res.data?.bookings || []; 
+      setBookings(bookingList);
+
+      if (bookingList.length > 0) {
+        form.setFieldsValue({
+          bookingId: bookingList[0]._id,
+          accommodationId: bookingList[0].propertyId,
+        });
+      }
+    } else {
+      setBookings([]);
+    }
+  } catch (err) {
+    console.error("❌ Failed to check booking history", err);
+    setIsEligible(false);
+    setBookings([]);
+  }
+};
   const onFinish = async (values) => {
     try {
       setSubmitting(true);
@@ -145,6 +159,43 @@ const ReportPage = () => {
               ))}
             </Select>
           </Form.Item>
+<Form.Item
+  label="Related Booking"
+  name="bookingId"
+  rules={[{ required: true, message: "Please select the related booking." }]}
+>
+  <Select
+    placeholder="Select related booking"
+    onChange={(bookingId) => {
+      const selected = bookings.find(b => b._id === bookingId);
+      form.setFieldsValue({ accommodationId: selected?.propertyId });
+    }}
+  >
+{bookings.map((b) => {
+  const property = b.propertyId;
+  const title = property?.title || "Unknown";
+  const location = property?.location;
+
+  const addressStr = location
+    ? `${location?.street || ""}, ${location?.district || ""}`
+    : "";
+
+  return (
+    <Option key={b._id} value={b._id}>
+      {`${title} - ${addressStr}`}
+    </Option>
+  );
+})}
+
+
+
+
+  </Select>
+</Form.Item>
+
+<Form.Item name="accommodationId" hidden>
+  <Input />
+</Form.Item>
 
           {/* CẢNH BÁO KHÔNG ĐỦ ĐIỀU KIỆN */}
           {isEligible === false && (

@@ -17,6 +17,8 @@ import ForgotPasswordPage from './pages/CustomerPage/Auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/CustomerPage/Auth/ResetPasswordPage';
 import ScrollToTop from './pages/CommonPage/ScrollToTop/ScrollToTop';
 import LogoutWarningModal from './components/LogoutWarningModal';
+import AIAssistant from './utils/AIAssistant';
+import { GoogleOAuthProvider } from '@react-oauth/google'; 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -79,13 +81,17 @@ const hideLayout = ["/login", "/register","/verify-otp","/forgot-password","/res
 
 function AppWrapper() {
   return (
-    <BrowserRouter>
-      <UserProvider>
-        <ScrollToTop />
-        <AppRoutes />
-      </UserProvider>
-    </BrowserRouter>
+    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>  
+      <BrowserRouter>
+        <UserProvider>
+          <ScrollToTop />
+          <AppRoutes />
+          <AIAssistant />
+        </UserProvider>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 }
+
 
 export default AppWrapper;

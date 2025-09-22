@@ -2,7 +2,7 @@
 let logoutTimer;
 let warningTimer;
 
-export function initAutoLogout(logout,  delay = 10 * 1000, warningBefore = 3 * 1000) {
+export function initAutoLogout(logout,  delay = 100 * 1000, warningBefore = 3 * 1000) {
   clearTimeout(logoutTimer);
   clearTimeout(warningTimer);
 

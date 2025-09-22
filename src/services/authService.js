@@ -88,3 +88,9 @@ export const refreshAccessToken = async () => {
 export const resetLoggedOut = () => {
   loggedOut = false;
 };
+export const loginGoogle = (googleToken) => {
+  return api.post('/auth/google-login', { token: googleToken });
+};
+export const assignRole = (data) => {
+  return api.post("/auth/setRole", data);
+};
