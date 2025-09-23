@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Typography, message as antMessage, Modal, Select } from 'antd';
+import { Form, Input, Button, Typography, message as antMessage, Modal, Select,Divider } from 'antd';
 import { UserOutlined, LockOutlined, LoginOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { login, saveAccessToken, loginGoogle, assignRole } from '../../../services/authService'; 
@@ -137,13 +137,17 @@ const LoginPage = () => {
               Login
             </Button>
           </Form.Item>
+<Divider plain>OR</Divider>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+  <GoogleLogin
+    onSuccess={handleGoogleLogin}
+    onError={() => messageApi.error("Google login failed")}
+    useOneTap={false}
+    width="250"   
+  />
+</div>
 
-          <GoogleLogin
-            onSuccess={handleGoogleLogin}
-            onError={() => messageApi.error("Google login failed")}
-          />
-
-          <Form.Item style={{ textAlign: 'center', marginTop: -10 }}>
+          <Form.Item style={{ textAlign: 'center', marginTop: 10 }}>
             <Button type="link" size="small" href="/forgot-password">
               Forgot password?
             </Button>
