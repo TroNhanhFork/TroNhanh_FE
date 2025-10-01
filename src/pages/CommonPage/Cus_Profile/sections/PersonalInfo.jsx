@@ -8,7 +8,7 @@ import {
   Upload,
   Modal,
   Divider,
-  message as antMessage 
+  message as antMessage
 } from 'antd';
 import {
   EditOutlined,
@@ -26,22 +26,22 @@ const capitalize = (str) => str && typeof str === 'string'
 const { Title, Text } = Typography;
 
 const PersonalInfo = () => {
-const { user, setUser, fetchUser } = useUser();
+  const { user, setUser, fetchUser } = useUser();
   const [editingField, setEditingField] = useState('');
   const [fieldValues, setFieldValues] = useState({});
   const [avatarPreview, setAvatarPreview] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
- const [messageApi, contextHolder] = antMessage.useMessage();
+  const [messageApi, contextHolder] = antMessage.useMessage();
   useEffect(() => {
-    
+
     if (user) {
       setFieldValues({
         name: user.name,
         phone: user.phone,
       });
-        console.log('User avatar after update:', user?.avatar);
+      console.log('User avatar after update:', user?.avatar);
       setAvatarPreview(user.avatar);
     }
   }, [user]);
@@ -58,7 +58,7 @@ const { user, setUser, fetchUser } = useUser();
       const formData = new FormData();
       formData.append(field, fieldValues[field]);
       await updateUserInfo(formData);
-      await fetchUser(); 
+      await fetchUser();
       messageApi.success("Cập nhật thành công");
       setEditingField('');
     } catch {
@@ -67,12 +67,12 @@ const { user, setUser, fetchUser } = useUser();
     setLoading(false);
   };
 
-   const handleAvatarChange = async ({ file }) => {
+  const handleAvatarChange = async ({ file }) => {
     const formData = new FormData();
     formData.append("avatar", file);
     try {
       await updateUserInfo(formData);
-      await fetchUser(); 
+      await fetchUser();
       messageApi.success("Cập nhật ảnh đại diện thành công");
     } catch {
       messageApi.error("Không thể cập nhật ảnh đại diện");
@@ -87,16 +87,25 @@ const { user, setUser, fetchUser } = useUser();
 
   return (
     <div className="personal-info-container">
-       {contextHolder}
+      {contextHolder}
       <Card className="personal-info-card" bodyStyle={{ padding: 0 }}>
         {/* Avatar */}
         <div className="avatar-container">
           <Avatar
-            src={avatarPreview}
             size={120}
-            className="avatar-style"
+            src={user?.avatar || null}
             onClick={handleAvatarClick}
-          />
+            className="avatar-style"
+            style={{
+              fontSize: 28,
+              color: 'white',
+              background: user?.avatar ? 'transparent' : 'linear-gradient(to right, #064749, #c4f7d8)',
+              border: user?.avatar ? '2px solid #eee' : '2px solid white',
+              boxShadow: '0 2px 5px rgba(0, 0, 0, 0.1)'
+            }}
+          >
+            {!user?.avatar && user.name?.charAt(0)}
+          </Avatar>
           <Upload
             showUploadList={false}
             accept="image/*"

@@ -63,9 +63,6 @@ const Sidebar = () => {
         <Menu.Item key="report" icon={<FileTextOutlined />}>
           <Link to="/owner/report">Report</Link>
         </Menu.Item>
-        <Menu.Item icon={<UserOutlined />}>
-          <Link to="/customer/profile/personal-info">Profile</Link>
-        </Menu.Item>
         <Menu.Item key="accommodation" icon={<HomeOutlined />}>
           <Link to="/owner/accommodation">Manage Accommodation</Link>
         </Menu.Item>
