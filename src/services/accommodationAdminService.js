@@ -1,26 +1,43 @@
 import axios from "axios";
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
-export const getAdminAccommodations = async (params = {}) => {
+/**
+ * Lấy danh sách nhà trọ cho admin xem xét.
+ * @param {object} params - Các tham số filter (ví dụ: status, page, limit).
+ */
+export const getAdminBoardingHouses = async (params = {}) => {
   const token = localStorage.getItem("token");
-  const response = await axios.get(`${API_BASE_URL}/admin/accommodations`, {
+  // Endpoint đã được cập nhật
+  const response = await axios.get(`${API_BASE_URL}/admin/boarding-houses`, {
     params,
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;
 };
 
-export const getAccommodationDetailAdmin = async (id) => {
+/**
+ * Lấy chi tiết một nhà trọ (bao gồm các phòng) cho admin.
+ * @param {string} id - ID của nhà trọ.
+ */
+export const getBoardingHouseDetailAdmin = async (id) => {
   const token = localStorage.getItem("token");
-  const response = await axios.get(`${API_BASE_URL}/admin/accommodations/${id}`, {
+  // Endpoint đã được cập nhật
+  const response = await axios.get(`${API_BASE_URL}/admin/boarding-houses/${id}`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;
 };
 
-export const approveAccommodationAdmin = async (id, approvedStatus, rejectedReason = '') => {
+/**
+ * Duyệt (chấp thuận/từ chối) một bài đăng nhà trọ.
+ * @param {string} id - ID của nhà trọ.
+ * @param {string} approvedStatus - Trạng thái mới ('approved' hoặc 'rejected').
+ * @param {string} rejectedReason - Lý do từ chối (nếu có).
+ */
+export const approveBoardingHouseAdmin = async (id, approvedStatus, rejectedReason = '') => {
   const token = localStorage.getItem("token");
-  const response = await axios.put(`${API_BASE_URL}/admin/accommodations/${id}/approve`, {
+  // Endpoint đã được cập nhật
+  const response = await axios.put(`${API_BASE_URL}/admin/boarding-houses/${id}/approve`, {
     approvedStatus,
     rejectedReason
   }, {
@@ -29,9 +46,15 @@ export const approveAccommodationAdmin = async (id, approvedStatus, rejectedReas
   return response.data;
 };
 
-export const deleteAccommodationAdmin = async (id, reason) => {
+/**
+ * "Xóa mềm" một nhà trọ (chuyển trạng thái sang 'deleted').
+ * @param {string} id - ID của nhà trọ.
+ * @param {string} reason - Lý do xóa.
+ */
+export const deleteBoardingHouseAdmin = async (id, reason) => {
   const token = localStorage.getItem("token");
-  const response = await axios.put(`${API_BASE_URL}/admin/accommodations/${id}/delete`, {
+  // Endpoint đã được cập nhật
+  const response = await axios.put(`${API_BASE_URL}/admin/boarding-houses/${id}/delete`, {
     reason
   }, {
     headers: { Authorization: `Bearer ${token}` }
@@ -39,11 +62,11 @@ export const deleteAccommodationAdmin = async (id, reason) => {
   return response.data;
 };
 
-const accommodationAdminService = {
-  getAdminAccommodations,
-  getAccommodationDetailAdmin,
-  approveAccommodationAdmin,
-  deleteAccommodationAdmin
+const boardingHouseAdminService = {
+  getAdminBoardingHouses,
+  getBoardingHouseDetailAdmin,
+  approveBoardingHouseAdmin,
+  deleteBoardingHouseAdmin
 };
 
-export default accommodationAdminService;
+export default boardingHouseAdminService;

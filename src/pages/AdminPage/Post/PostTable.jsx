@@ -72,7 +72,7 @@ const PostTable = ({
                     onClick={() => onView(record)}
                     style={{ padding: 0, fontWeight: 500, border: 'none', display: 'inline-block' }}
                 >
-                    {record.title || "No title"}
+                    {record.name || "No title"}
                 </Button>
             ),
         },

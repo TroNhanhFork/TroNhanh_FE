@@ -3,7 +3,7 @@ import { Table, Card, Tag, Button, Modal, message, Carousel } from 'antd';
 import { EyeOutlined, CalendarOutlined, HomeOutlined, DollarOutlined } from '@ant-design/icons';
 import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import { getUserBookingHistory } from '../../../../services/bookingService';
-import { getAccommodationById } from '../../../../services/accommodationAPI';
+import { getBoardingHouseById } from '../../../../services/boardingHouseAPI';
 import useUser from '../../../../contexts/UserContext';
 import './BookingHistory.css';
 
@@ -51,7 +51,7 @@ const BookingHistory = () => {
       }
       
       // Fetch chi tiết accommodation
-      const accommodationData = await getAccommodationById(propertyId);
+      const accommodationData = await getBoardingHouseById(propertyId);
       setSelectedBooking({
         ...booking,
         accommodation: accommodationData

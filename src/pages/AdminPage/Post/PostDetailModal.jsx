@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Modal, Tag, Space, Image, Spin, message } from "antd";
 import { UserOutlined, EnvironmentOutlined, DollarOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
-import { getAccommodationDetailAdmin } from "../../../services/accommodationAdminService";
+import { getBoardingHouseDetailAdmin } from "../../../services/accommodationAdminService";
 
 const statusColors = {
   pending: "blue",
@@ -21,7 +21,7 @@ const PostDetailModal = ({ post, onClose }) => {
 
     setLoading(true);
     try {
-      const data = await getAccommodationDetailAdmin(post._id);
+      const data = await getBoardingHouseDetailAdmin(post._id);
       setDetailData(data);
     } catch (error) {
       message.error("Failed to fetch accommodation details");

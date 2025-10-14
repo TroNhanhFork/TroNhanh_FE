@@ -23,8 +23,6 @@ const HeaderComponent = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const { user, logout, loading } = useUser();
 
-  // Debug user info
-  console.log("HeaderComponent user:", user);
 
   if (loading) return null;
 
@@ -36,7 +34,6 @@ const HeaderComponent = () => {
 
   const getUserMenuItems = (role) => {
     const items = [];
-    console.log("getUserMenuItems role:", role);
 
     if (role === "customer") {
       items.push(
@@ -45,7 +42,6 @@ const HeaderComponent = () => {
           label: "My Room",
           icon: <HomeOutlined />,
           onClick: () => {
-            console.log("Navigate: /customer/my-room");
             navigate("/customer/my-room");
           },
         },
@@ -54,7 +50,6 @@ const HeaderComponent = () => {
           label: "Favourite",
           icon: <HeartOutlined />,
           onClick: () => {
-            console.log("Navigate: /customer/favourite");
             navigate("/customer/favourite");
           },
         },
@@ -63,7 +58,6 @@ const HeaderComponent = () => {
           label: "Contact & Reports",
           icon: <MailOutlined />,
           onClick: () => {
-            console.log("Navigate: /customer/reports");
             navigate("/customer/reports");
           },
         },
@@ -78,7 +72,6 @@ const HeaderComponent = () => {
           label: "Manage Room",
           icon: <SettingOutlined />,
           onClick: () => {
-            console.log("Navigate: /owner/accommodation");
             navigate("/owner/accommodation");
           },
         },
@@ -97,7 +90,6 @@ const HeaderComponent = () => {
         label: "Dashboard",
         icon: <DashboardOutlined />,
         onClick: () => {
-          console.log("Navigate: /admin/dashboard");
           navigate("/admin/dashboard");
         },
       });
@@ -110,7 +102,6 @@ const HeaderComponent = () => {
         label: "Profile",
         icon: <UserOutlined />,
         onClick: () => {
-          console.log("Profile click, role:", role);
           if (role === "customer") navigate("/customer/profile/personal-info");
           else if (role === "owner") navigate("/customer/profile/personal-info");
           else navigate("/profile");

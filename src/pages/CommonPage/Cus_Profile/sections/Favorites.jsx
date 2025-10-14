@@ -86,7 +86,7 @@ const Favorites = () => {
 
             <Col xs={24} sm={10} md={8} key={fav._id}>
               <Card
-                title={acc?.title || "No title"}
+                title={acc?.name || "No title"}
                 style={{
                   marginBottom: "16px",
                   height: "600px",

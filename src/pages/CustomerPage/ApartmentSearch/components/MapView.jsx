@@ -30,7 +30,7 @@ const MapView = ({ properties = [] }) => {
               <Popup>
                 <strong>{property.title}</strong>
                 <br />
-                {property.price.toLocaleString()} VND / tháng
+                {property.price?.toLocaleString()} VND / tháng
               </Popup>
             </Marker>
           ) : null

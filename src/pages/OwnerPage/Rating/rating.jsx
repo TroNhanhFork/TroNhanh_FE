@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import "./rating.css";
 import { Button, Table, Tag, Spin, message } from "antd";
 import { Rate } from "antd";
-import { getOwnerRatings } from "../../../services/accommodationAPI";
+import { getOwnerRatings } from "../../../services/boardingHouseAPI";
 
 const Rating = () => {
   const navigate = useNavigate();

@@ -5,7 +5,7 @@ import Filters from "./components/Filters";
 import PropertyList from "./components/PropertyList";
 import MapView from "./components/MapView";
 import FAQ from "./components/FAQ";
-import { searchAccommodations, getAllAccommodations } from "../../../services/accommodationAPI";
+import { searchBoardingHouses, getAllBoardingHouses } from "../../../services/boardingHouseAPI";
 
 const ApartmentSearch = () => {
   const [filteredData, setFilteredData] = useState([]);
@@ -30,14 +30,14 @@ const ApartmentSearch = () => {
   useEffect(() => {
     if (location.state) {
       const filters = location.state;
-      fetchAndMap(() => searchAccommodations(filters));
+      fetchAndMap(() => searchBoardingHouses(filters));
     } else {
-      fetchAndMap(getAllAccommodations);
+      fetchAndMap(getAllBoardingHouses);
     }
   }, [location.state]);
 
   const handleSearch = async (filters) => {
-    fetchAndMap(() => searchAccommodations(filters));
+    fetchAndMap(() => searchBoardingHouses(filters));
   };
 
   return (

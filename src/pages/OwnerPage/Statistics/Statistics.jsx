@@ -16,10 +16,10 @@ import useUser from '../../../contexts/UserContext';
 import {
   getOwnerStatistics,
   getOwnerRecentBookings,
-  getOwnerTopAccommodations,
+  getOwnerTopBoardingHouses,
   getOwnerMonthlyRevenue,
   getOwnerCurrentMembership
-} from '../../../services/accommodationAPI';
+} from '../../../services/boardingHouseAPI';
 import './Statistics.css';
 
 const Statistics = () => {
@@ -124,7 +124,7 @@ const Statistics = () => {
 
   const fetchTopAccommodations = async () => {
     try {
-      const topAccommodationsRes = await getOwnerTopAccommodations(5); // Lấy top 5
+      const topAccommodationsRes = await getOwnerTopBoardingHouses(5); // Lấy top 5
       
       if (topAccommodationsRes.success) {
         setTopAccommodations(topAccommodationsRes.accommodations);

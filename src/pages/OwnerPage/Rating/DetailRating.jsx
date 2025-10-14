@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import "./detailRating.css";
 import { Rate, message, Spin } from "antd";
 import { useNavigate } from "react-router-dom";
-import { getAccommodationRatings } from "../../../services/accommodationAPI";
+import { getBoardingHouseRatings } from "../../../services/boardingHouseAPI";
 
 const DetailRating = () => {
   const { id } = useParams();
@@ -22,7 +22,7 @@ const DetailRating = () => {
     try {
       setLoading(true);
       console.log('🔍 [DEBUG DetailRating] Fetching ratings for accommodation ID:', id);
-      const response = await getAccommodationRatings(id);
+      const response = await getBoardingHouseRatings(id);
       console.log('📝 [DEBUG DetailRating] API Response:', response);
       
       if (response.success) {

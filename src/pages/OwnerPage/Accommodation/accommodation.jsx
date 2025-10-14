@@ -1,734 +1,469 @@
-// file TroNhanh_FE/src/pages/OwnerPage/Accommodation/accommodation.jsx
+// file TroNhanh_FE/src/pages/OwnerPage/Accommodation/ManageBoardingHouses.jsx
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { Table, Button, Tag, Modal, Carousel, message } from "antd";
+// ✅ Import thêm Upload
+import { Table, Button, Tag, Modal, Carousel, message, Input, InputNumber, Form, Space, Upload } from "antd";
 import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
-import { UserOutlined } from "@ant-design/icons";
+import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import { geocodeWithOpenCage } from "../../../services/OpenCage";
 import "./accommodation.css";
-import { getValidAccessToken } from "../../../services/authService";
-import { getOwnerMembershipInfo } from "../../../services/accommodationAPI";
+import {
+    getOwnerBoardingHouses,
+    getOwnerMembershipInfo,
+    createBoardingHouse,
+    deleteBoardingHouse,
+    updateBoardingHouse,
+    getBoardingHouseById,
+} from "../../../services/boardingHouseAPI";
 import useUser from "../../../contexts/UserContext";
 
-const Accommodation = () => {
-  const [messageApi, contextHolder] = message.useMessage();
-
-  const districtOptions = [
-    "Hải Châu",
-    "Thanh Khê",
-    "Sơn Trà",
-    "Ngũ Hành Sơn",
-    "Liên Chiểu",
-    "Cẩm Lệ",
-    "Hoà Vang",
-  ];
-
-  const { user } = useUser();
-  const [data, setData] = useState([]);
-  const [membershipInfo, setMembershipInfo] = useState(null);
-  const [selectedRow, setSelectedRow] = useState(null);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
-  const [editingRow, setEditingRow] = useState(null);
-  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-  const [newAccommodation, setNewAccommodation] = useState({
-    title: "",
-    location: {
-      street: "",
-      district: "",
-      addressDetail: "",
-      latitude: null,
-      longitude: null
-    },
-    price: "",
-    description: "",
-    photos: [],
-    status: "Available",
-    files: [],
-  });
-
-
-  useEffect(() => {
-    fetchAccommodations();
-    fetchMembershipInfo();
-  }, []);
-
-  const fetchMembershipInfo = async () => {
-    try {
-      const response = await getOwnerMembershipInfo();
-      setMembershipInfo(response.data);
-    } catch (error) {
-      console.error("Error fetching membership info:", error);
+// ✅ Hàm trợ giúp để lấy fileList từ event của Upload component
+const normFile = (e) => {
+    if (Array.isArray(e)) {
+        return e;
     }
-  };
-
-  const fetchAccommodations = async () => {
-    try {
-
-      if (!user || !user._id) return;
-
-      const res = await axios.get(`http://localhost:5000/api/accommodation?ownerId=${user._id}`);
-      const fetchedData = res.data.map((item) => ({
-        ...item,
-        key: item._id,
-      }));
-      setData(fetchedData);
-    } catch (error) {
-      console.error("Error fetching accommodations:", error);
-    }
-  };
-
-
-  const handleView = (record) => {
-    setSelectedRow(record);
-    setIsModalVisible(true);
-  };
-
-  const handleRemove = async (id) => {
-    try {
-      // Tìm accommodation trong data để kiểm tra status
-      const accommodationToDelete = data.find(item => item._id === id);
-
-      if (accommodationToDelete && accommodationToDelete.status === "Booked") {
-        messageApi.error("Không thể xóa accommodation này vì đang có khách hàng đặt phòng!");
-        return;
-      }
-
-      if (window.confirm("Bạn có chắc chắn muốn xóa chỗ ở này?")) {
-        await axios.delete(`http://localhost:5000/api/accommodation/${id}`);
-        setData(data.filter((item) => item._id !== id));
-
-        // Refresh membership info to update current post count
-        fetchMembershipInfo();
-
-        messageApi.success("Xóa accommodation thành công!");
-      }
-    } catch (error) {
-      console.error("Error deleting accommodation:", error);
-
-      // Xử lý lỗi từ backend
-      if (error.response && error.response.status === 400) {
-        messageApi.error(error.response.data.message);
-      } else {
-        messageApi.error("Có lỗi xảy ra khi xóa accommodation!");
-      }
-    }
-  };
-
-  const handleUpdate = (record) => {
-    setEditingRow({ ...record, files: [] });
-    setIsUpdateModalVisible(true);
-  };
-
-  const columns = [
-    { title: "Title", dataIndex: "title" },
-    {
-      title: "Street",
-      dataIndex: "location",
-      render: (loc) => loc?.street || "N/A",
-    },
-    {
-      title: "District",
-      dataIndex: "location",
-      render: (loc) => loc?.district || "N/A",
-    },
-    {
-      title: "Price (VND)",
-      dataIndex: "price",
-      render: (text) => text.toLocaleString(),
-    },
-    {
-      title: "Approval Status",
-      dataIndex: "approvedStatus",
-      render: (status) => {
-        let color = "default";
-
-        switch (status) {
-          case "approved":
-            color = "green";
-            break;
-          case "pending":
-            color = "blue";
-            break;
-          case "rejected":
-            color = "red";
-            break;
-          case "deleted":
-            color = "orange";
-            break;
-          default:
-            color = "default";
-        }
-
-        return <Tag color={color}>{status.toUpperCase()}</Tag>;
-      },
-    },
-    {
-      title: "Actions",
-      render: (_, record) => (
-        <div className="action-buttons">
-          <Button onClick={() => handleView(record)} className="view-btn">
-            View
-          </Button>
-          {record.status !== "Booked" && (
-            <Button className="update-btn" onClick={() => handleUpdate(record)}>
-              Update
-            </Button>
-          )}
-          <Button
-            className="remove-btn"
-            onClick={() => handleRemove(record._id)}
-          >
-            Remove
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
-  return (
-    <>
-      {contextHolder}
-      <div className="accommodation-wrapper">
-        <div className="header-row">
-          <h2>Manage Accommodation</h2>
-          <Button
-            className="add-btn"
-            onClick={async () => {
-
-              if (!user || !user._id) {
-                messageApi.warning("Vui lòng đăng nhập lại.");
-                return;
-              }
-
-              try {
-                const res = await axios.get(`http://localhost:5000/api/payment/current/${user._id}`);
-                const pkg = res.data.package;
-
-                if (!pkg) {
-                  messageApi.error("Bạn chưa mua gói membership nào. Vui lòng mua để sử dụng tính năng này.");
-                  return;
-                }
-
-                const expiredAt = new Date(res.data.expiredAt);
-                const now = new Date();
-
-                if (now > expiredAt) {
-                  messageApi.error("Gói membership của bạn đã hết hạn. Vui lòng gia hạn để tiếp tục.");
-                  return;
-                }
-
-                // ✅ Nếu membership còn hạn → mở modal
-                setIsAddModalVisible(true);
-              } catch (err) {
-                console.error("❌ Lỗi khi kiểm tra membership:", err);
-                messageApi.error("Không thể kiểm tra trạng thái membership. Vui lòng thử lại.");
-              }
-            }}
-          >
-            ADD
-          </Button>
-
-        </div>
-
-        {/* Membership Info Display */}
-        {membershipInfo && (
-          <div className="membership-info-card">
-            <div className="membership-info-content">
-              <h3>Membership Information</h3>
-              <div className="membership-details">
-                <div className="membership-item">
-                  <span className="label">Plan:</span>
-                  <span className="value">{membershipInfo.membership?.name || 'Free'}</span>
-                </div>
-                <div className="membership-item">
-                  <span className="label">Posts Usage:</span>
-                  <span className="value">
-                    {membershipInfo.currentPosts} / {membershipInfo.maxPosts} Active Posts
-                  </span>
-                </div>
-                <div className="membership-progress">
-                  <div
-                    className="progress-bar"
-                    style={{
-                      width: `${(membershipInfo.currentPosts / membershipInfo.maxPosts) * 100}%`,
-                      backgroundColor: membershipInfo.currentPosts >= membershipInfo.maxPosts ? '#ff4d4f' : '#52c41a'
-                    }}
-                  ></div>
-                </div>
-                {membershipInfo.currentPosts >= membershipInfo.maxPosts && (
-                  <div className="membership-warning">
-                    ⚠️ You have reached the maximum number of posts for your current plan.
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <Table
-          className="accommodation-table"
-          columns={columns}
-          dataSource={data}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: false,
-          }}
-        />
-
-        {/* ADD MODAL */}
-        <Modal
-          title="Add New Accommodation"
-          open={isAddModalVisible}
-          onCancel={() => setIsAddModalVisible(false)}
-          onOk={async () => {
-            try {
-
-              const token = await getValidAccessToken();
-              if (!user || !user._id || !token) {
-                return messageApi.error("Bạn chưa đăng nhập. Hãy đăng nhập lại!");
-              }
-
-              const coords = await geocodeWithOpenCage(
-                `${newAccommodation.location.street}, ${newAccommodation.location.district}, Đà Nẵng, Việt Nam`
-              );
-
-              if (!coords) {
-                return messageApi.error("Không thể lấy tọa độ từ địa chỉ đã nhập.");
-              }
-
-              const locationFull = {
-                ...newAccommodation.location,
-                latitude: coords.latitude,
-                longitude: coords.longitude,
-              };
-
-              const formData = new FormData();
-              formData.append("title", newAccommodation.title);
-              formData.append("description", newAccommodation.description);
-              formData.append("price", newAccommodation.price);
-              formData.append("status", newAccommodation.status);
-              formData.append("ownerId", user._id);
-              formData.append("location", JSON.stringify(locationFull));
-
-              newAccommodation.files.forEach((file) => {
-                formData.append("photos", file);
-              });
-
-              const res = await axios.post("http://localhost:5000/api/accommodation", formData, {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                  "Content-Type": "multipart/form-data",
-                },
-              });
-
-              setData([...data, { ...res.data.data, key: res.data.data._id }]);
-              setIsAddModalVisible(false);
-
-              // Refresh membership info to update current post count
-              fetchMembershipInfo();
-
-              // 👇 Đừng quên reset lại full location có latitude + longitude
-              setNewAccommodation({
-                title: "",
-                location: {
-                  street: "",
-                  district: "",
-                  addressDetail: "",
-                  latitude: null,
-                  longitude: null,
-                },
-                price: "",
-                description: "",
-                photos: [],
-                status: "Available",
-                files: [],
-              });
-
-              messageApi.success("Accommodation added successfully!");
-            } catch (error) {
-              console.error("Error adding accommodation:", error);
-
-              // Xử lý các loại lỗi khác nhau
-              if (error.response && error.response.status === 403) {
-                const errorData = error.response.data;
-
-                if (errorData.currentCount !== undefined && errorData.allowedCount !== undefined) {
-                  // Lỗi về giới hạn số lượng accommodations
-                  messageApi.error(
-                    `${errorData.message}\n\nHiện tại: ${errorData.currentCount}/${errorData.allowedCount} accommodations`,
-                    5 // Hiển thị lâu hơn để user đọc được
-                  );
-                } else {
-                  // Lỗi membership khác (hết hạn, chưa mua)
-                  messageApi.error(errorData.message || "Bạn cần có membership hợp lệ để đăng accommodation!");
-                }
-              } else {
-                // Lỗi khác
-                messageApi.error("Có lỗi xảy ra khi thêm accommodation!");
-              }
-            }
-          }}
-
-          okText="Add"
-          cancelText="Cancel"
-        >
-          <div className="modal-form">
-            <label>Upload Images:</label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) =>
-                setNewAccommodation({
-                  ...newAccommodation,
-                  files: Array.from(e.target.files),
-                })
-              }
-            />
-
-            <label>Title:</label>
-            <input
-              type="text"
-              value={newAccommodation.title}
-              onChange={(e) =>
-                setNewAccommodation({ ...newAccommodation, title: e.target.value })
-              }
-            />
-
-            <label>District:</label>
-            <select
-              value={newAccommodation.location.district}
-              onChange={(e) =>
-                setNewAccommodation({
-                  ...newAccommodation,
-                  location: {
-                    ...newAccommodation.location,
-                    district: e.target.value,
-                  },
-                })
-              }
-            >
-              <option value="">-- Select District --</option>
-              <option value="Hải Châu">Hải Châu</option>
-              <option value="Thanh Khê">Thanh Khê</option>
-              <option value="Ngũ Hành Sơn">Ngũ Hành Sơn</option>
-              <option value="Sơn Trà">Sơn Trà</option>
-              <option value="Liên Chiểu">Liên Chiểu</option>
-              <option value="Cẩm Lệ">Cẩm Lệ</option>
-              <option value="Hòa Vang">Hòa Vang</option>
-            </select>
-
-            <label>Street:</label>
-            <input
-              type="text"
-              value={newAccommodation.location.street}
-              onChange={(e) =>
-                setNewAccommodation({
-                  ...newAccommodation,
-                  location: {
-                    ...newAccommodation.location,
-                    street: e.target.value,
-                  },
-                })
-              }
-            />
-
-            <label>Address Detail:</label>
-            <input
-              type="text"
-              value={newAccommodation.location.addressDetail}
-              onChange={(e) =>
-                setNewAccommodation({
-                  ...newAccommodation,
-                  location: {
-                    ...newAccommodation.location,
-                    addressDetail: e.target.value,
-                  },
-                })
-              }
-            />
-
-            <label>Price (VND):</label>
-            <input
-              type="number"
-              value={newAccommodation.price}
-              onChange={(e) =>
-                setNewAccommodation({
-                  ...newAccommodation,
-                  price: e.target.value,
-                })
-              }
-            />
-
-            <label>Description:</label>
-            <textarea
-              value={newAccommodation.description}
-              onChange={(e) =>
-                setNewAccommodation({
-                  ...newAccommodation,
-                  description: e.target.value,
-                })
-              }
-            />
-
-            <label>Status:</label>
-            <select
-              value={newAccommodation.status}
-              onChange={(e) =>
-                setNewAccommodation({ ...newAccommodation, status: e.target.value })
-              }
-            >
-              <option value="Available">Available</option>
-              <option value="Unavailable">Unavailable</option>
-            </select>
-          </div>
-        </Modal>
-
-
-
-        {/* VIEW MODAL */}
-        <Modal
-          title="Accommodation Details"
-          open={isModalVisible}
-          onCancel={() => setIsModalVisible(false)}
-          footer={null}
-        >
-          {selectedRow && (
-            <div>
-              {selectedRow.photos && selectedRow.photos.length > 0 && (
-                <Carousel
-                  autoplay
-                  arrows
-                  prevArrow={<AiOutlineLeft className="custom-arrow arrow-left" />}
-                  nextArrow={<AiOutlineRight className="custom-arrow arrow-right" />}
-                >
-                  {selectedRow.photos.map((photo, index) => (
-                    <div key={index}>
-                      <img
-                        src={`http://localhost:5000${photo}`}
-                        alt={`photo-${index}`}
-                        style={{
-                          width: "100%",
-                          maxHeight: "300px",
-                          objectFit: "cover",
-                          borderRadius: "8px"
-                        }}
-                      />
-                    </div>
-                  ))}
-                </Carousel>
-              )}
-              <p><strong>Title:</strong> {selectedRow.title}</p>
-              <p><strong>Street:</strong> {selectedRow.location?.street}</p>
-              <p><strong>District:</strong> {selectedRow.location?.district}</p>
-              <p><strong>Address Detail:</strong> {selectedRow.location?.addressDetail}</p>
-              <p><strong>Latitude:</strong> {selectedRow.location?.latitude}</p>
-              <p><strong>Longitude:</strong> {selectedRow.location?.longitude}</p>
-              <p><strong>Price:</strong> {selectedRow.price.toLocaleString()} VND</p>
-              <p><strong>Status:</strong> {selectedRow.status}</p>
-              {selectedRow.status === "Booked" && selectedRow.customerId && (
-                <div style={{
-                  backgroundColor: "#f0f0f0",
-                  padding: "10px",
-                  borderRadius: "8px",
-                  marginTop: "10px",
-                  border: "1px solid #d9d9d9"
-                }}>
-                  <p style={{ margin: "5px 0", fontWeight: "bold", color: "#004d40" }}>
-                    <UserOutlined style={{ marginRight: "8px", fontSize: "16px" }} />
-                    Thông tin khách hàng đã đặt:
-                  </p>
-                  <p style={{ margin: "5px 0" }}>
-                    <strong>Tên:</strong> {selectedRow.customerId.name}
-                  </p>
-                  <p style={{ margin: "5px 0" }}>
-                    <strong>Email:</strong> {selectedRow.customerId.email}
-                  </p>
-                  {selectedRow.customerId.phone && (
-                    <p style={{ margin: "5px 0" }}>
-                      <strong>Số điện thoại:</strong> {selectedRow.customerId.phone}
-                    </p>
-                  )}
-                </div>
-              )}
-              <p><strong>Description:</strong> {selectedRow.description}</p>
-            </div>
-          )}
-        </Modal>
-
-
-
-        {/* UPDATE MODAL */}
-        <Modal
-          title="Update Accommodation"
-          open={isUpdateModalVisible}
-          onCancel={() => setIsUpdateModalVisible(false)}
-          onOk={async () => {
-            try {
-              const token = await getValidAccessToken();
-
-              // 📍 Gọi OpenCage để cập nhật lại tọa độ nếu user sửa địa chỉ
-              const fullAddress = `${editingRow.location.street}, ${editingRow.location.district}, Đà Nẵng, Việt Nam`;
-              const coords = await geocodeWithOpenCage(fullAddress);
-
-              if (!coords) {
-                return messageApi.error("Không thể lấy tọa độ từ địa chỉ đã nhập.");
-              }
-
-              const updatedLocation = {
-                ...editingRow.location,
-                latitude: coords.latitude,
-                longitude: coords.longitude,
-              };
-
-              const formData = new FormData();
-              formData.append("title", editingRow.title);
-              formData.append("description", editingRow.description);
-              formData.append("price", editingRow.price);
-              formData.append("status", editingRow.status);
-              formData.append("location", JSON.stringify(updatedLocation));
-
-              editingRow.files.forEach((file) => {
-                formData.append("photos", file);
-              });
-
-              const res = await axios.put(
-                `http://localhost:5000/api/accommodation/${editingRow._id}`,
-                formData,
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "multipart/form-data",
-                  },
-                }
-              );
-
-              const updatedItem = res.data.data;
-              const updatedList = data.map((item) =>
-                item._id === updatedItem._id ? { ...updatedItem, key: updatedItem._id } : item
-              );
-              setData(updatedList);
-              setIsUpdateModalVisible(false);
-              // thông báo thành công bằng message
-              messageApi.success("Accommodation updated successfully!");
-            } catch (error) {
-              console.error("Error updating accommodation:", error);
-              messageApi.error("Có lỗi xảy ra khi cập nhật accommodation!");
-            }
-          }}
-          okText="Save"
-          cancelText="Cancel"
-        >
-          {editingRow && (
-            <div className="modal-form">
-              <label>Upload New Images:</label>
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) =>
-                  setEditingRow({
-                    ...editingRow,
-                    files: Array.from(e.target.files),
-                  })
-                }
-              />
-
-              <label>Title:</label>
-              <input
-                type="text"
-                value={editingRow.title}
-                onChange={(e) =>
-                  setEditingRow({ ...editingRow, title: e.target.value })
-                }
-              />
-
-              <label>District:</label>
-              <select
-                value={editingRow.location?.district}
-                onChange={(e) =>
-                  setEditingRow((prev) => ({
-                    ...prev,
-                    location: {
-                      ...prev.location,
-                      district: e.target.value,
-                    },
-                  }))
-                }
-              >
-                <option value="">-- Select District --</option>
-                {districtOptions.map((district) => (
-                  <option key={district} value={district}>{district}</option>
-                ))}
-              </select>
-
-              <label>Street:</label>
-              <input
-                type="text"
-                value={editingRow.location?.street}
-                onChange={(e) =>
-                  setEditingRow((prev) => ({
-                    ...prev,
-                    location: {
-                      ...prev.location,
-                      street: e.target.value,
-                    },
-                  }))
-                }
-              />
-
-              <label>Address Detail:</label>
-              <input
-                type="text"
-                value={editingRow.location?.addressDetail}
-                onChange={(e) =>
-                  setEditingRow((prev) => ({
-                    ...prev,
-                    location: {
-                      ...prev.location,
-                      addressDetail: e.target.value,
-                    },
-                  }))
-                }
-              />
-
-              <label>Price (VND):</label>
-              <input
-                type="number"
-                value={editingRow.price}
-                onChange={(e) =>
-                  setEditingRow({ ...editingRow, price: Number(e.target.value) })
-                }
-              />
-
-              <label>Description:</label>
-              <textarea
-                value={editingRow.description}
-                onChange={(e) =>
-                  setEditingRow({ ...editingRow, description: e.target.value })
-                }
-              />
-
-              <label>Status:</label>
-              <select
-                value={editingRow.status}
-                onChange={(e) =>
-                  setEditingRow({ ...editingRow, status: e.target.value })
-                }
-              >
-                <option value="Available">Available</option>
-                <option value="Unavailable">Unavailable</option>
-              </select>
-            </div>
-          )}
-        </Modal>
-
-
-      </div>
-    </>
-  );
+    return e && e.fileList;
 };
 
-export default Accommodation;
+
+const ManageBoardingHouses = () => {
+    const [messageApi, contextHolder] = message.useMessage();
+    const { user } = useUser();
+    const [form] = Form.useForm();
+
+    const [boardingHouses, setBoardingHouses] = useState([]);
+    const [membershipInfo, setMembershipInfo] = useState(null);
+    const [selectedBoardingHouse, setSelectedBoardingHouse] = useState(null);
+    const [detailedHouse, setDetailedHouse] = useState(null);
+    const [isViewModalVisible, setIsViewModalVisible] = useState(false);
+    const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
+    const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+    const [editingBoardingHouse, setEditingBoardingHouse] = useState(null);
+
+    useEffect(() => {
+        if (user?._id) {
+            fetchBoardingHouses();
+            fetchMembershipInfo();
+        }
+    }, [user]);
+
+    const fetchMembershipInfo = async () => {
+        try {
+            const response = await getOwnerMembershipInfo();
+            setMembershipInfo({
+                name: response.membershipInfo.packageName,
+                currentPosts: response.membershipInfo.currentPostsCount,
+                maxPosts: response.membershipInfo.postsAllowed,
+            });
+        } catch (error) {
+            console.error("Error fetching membership info:", error);
+        }
+    };
+
+    const fetchBoardingHouses = async () => {
+        try {
+            const data = await getOwnerBoardingHouses(user._id);
+            setBoardingHouses(data.map(item => ({ ...item, key: item._id })));
+        } catch (error) {
+            console.error("Error fetching boarding houses:", error);
+            messageApi.error("Không thể tải danh sách nhà trọ.");
+        }
+    };
+
+    const handleView = (record) => {
+        setSelectedBoardingHouse(record);
+        setIsViewModalVisible(true);
+    };
+
+    const handleRemove = async (id) => {
+        if (window.confirm("Bạn có chắc chắn muốn xóa nhà trọ này không? Mọi phòng bên trong cũng sẽ bị xóa.")) {
+            try {
+                await deleteBoardingHouse(id);
+                setBoardingHouses(boardingHouses.filter((item) => item._id !== id));
+                fetchMembershipInfo();
+                messageApi.success("Xóa nhà trọ thành công!");
+            } catch (error) {
+                console.error("Error deleting boarding house:", error);
+                messageApi.error(error.response?.data?.message || "Lỗi khi xóa nhà trọ.");
+            }
+        }
+    };
+
+    const handleUpdate = (record) => {
+        setEditingBoardingHouse({ ...record, files: [] });
+        setIsUpdateModalVisible(true);
+    };
+
+    const handleAddClick = () => {
+        if (membershipInfo && membershipInfo.currentPosts >= membershipInfo.maxPosts) {
+            messageApi.warning("Bạn đã đạt giới hạn bài đăng. Vui lòng nâng cấp gói thành viên.");
+            return;
+        }
+        setIsAddModalVisible(true);
+    };
+
+    const columns = [
+        { title: "Tên nhà trọ", dataIndex: "name" },
+        { title: "Địa chỉ", dataIndex: ["location", "street"] },
+        { title: "Quận", dataIndex: ["location", "district"] },
+        {
+            title: "Giá (VND)",
+            key: "price",
+            render: (_, record) => (
+                <span>
+                    {record.minPrice?.toLocaleString() || 'N/A'} - {record.maxPrice?.toLocaleString() || 'N/A'}
+                </span>
+            ),
+        },
+        {
+            title: "Phòng",
+            key: "rooms",
+            render: (_, record) => (
+                <Tag color="cyan">{`${record.availableRoomsCount}/${record.totalRooms}`} trống</Tag>
+            ),
+        },
+        {
+            title: "Trạng thái duyệt",
+            dataIndex: "approvedStatus",
+            render: (status) => {
+                let color = "default";
+                switch (status) {
+                    case "approved": color = "green"; break;
+                    case "pending": color = "blue"; break;
+                    case "rejected": color = "red"; break;
+                    default: color = "default";
+                }
+                return <Tag color={color}>{status?.toUpperCase()}</Tag>;
+            },
+        },
+        {
+            title: "Hành động",
+            render: (_, record) => (
+                <Space>
+                    <Button onClick={() => handleView(record)}>Xem</Button>
+                    <Button onClick={() => handleUpdate(record)}>Sửa</Button>
+                    <Button danger onClick={() => handleRemove(record._id)}>Xóa</Button>
+                </Space>
+            ),
+        },
+    ];
+
+    const handleAddFormSubmit = async (values) => {
+        try {
+            const { name, description, location, rooms } = values;
+            const fullAddress = `${location.street}, ${location.district}, Đà Nẵng`;
+            const coords = await geocodeWithOpenCage(fullAddress);
+
+            if (!coords) {
+                return messageApi.error("Không thể lấy tọa độ từ địa chỉ.");
+            }
+
+            const formData = new FormData();
+            formData.append("name", name);
+            formData.append("description", description);
+            formData.append("ownerId", user._id);
+            formData.append("location", JSON.stringify({ ...location, ...coords }));
+            formData.append("rooms", JSON.stringify(rooms || [])); // Đảm bảo rooms là mảng
+
+            // ✅ Logic xử lý file ảnh
+            if (values.upload && values.upload.length > 0) {
+                values.upload.forEach(file => {
+                    formData.append('photos', file.originFileObj);
+                });
+            }
+
+            await createBoardingHouse(formData);
+            messageApi.success("Thêm nhà trọ thành công!");
+            setIsAddModalVisible(false);
+            fetchBoardingHouses();
+            fetchMembershipInfo();
+            form.resetFields();
+        } catch (error) {
+            console.error("Error adding boarding house:", error);
+            messageApi.error(error.response?.data?.message || "Lỗi khi thêm nhà trọ.");
+        }
+    };
+
+    const handleUpdateFormSubmit = async (values) => {
+    try {
+        const { name, description, location } = values;
+        const fullAddress = `${location.street}, ${location.district}, Đà Nẵng`;
+        const coords = await geocodeWithOpenCage(fullAddress);
+
+        if (!coords) {
+            return messageApi.error("Không thể lấy tọa độ từ địa chỉ đã nhập.");
+        }
+
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("description", description);
+        formData.append("location", JSON.stringify({ ...location, ...coords }));
+
+        if (values.upload && values.upload.length > 0) {
+            values.upload.forEach(file => {
+                if (file.originFileObj) { // Chỉ thêm các file mới được người dùng chọn
+                    formData.append('photos', file.originFileObj);
+                }
+            });
+        }
+        
+        // Gọi API cập nhật
+        await updateBoardingHouse(editingBoardingHouse._id, formData);
+        
+        messageApi.success("Cập nhật nhà trọ thành công! Bài đăng đã được chuyển sang trạng thái chờ duyệt lại.");
+        setIsUpdateModalVisible(false);
+        
+        // ✅ THAY ĐỔI QUAN TRỌNG: Thay vì cập nhật thủ công, hãy gọi lại hàm fetch
+        fetchBoardingHouses();
+        
+    } catch (error) {
+        console.error("Error updating boarding house:", error);
+        messageApi.error(error.response?.data?.message || "Lỗi khi cập nhật nhà trọ.");
+    }
+};
+
+
+    return (
+        <>
+            {contextHolder}
+            <div className="accommodation-wrapper">
+                <div className="header-row">
+                    <h2>Quản lý nhà trọ</h2>
+                    <Button className="add-btn" onClick={handleAddClick}>THÊM NHÀ TRỌ</Button>
+                </div>
+
+                {membershipInfo && (
+                    <div className="membership-info-card">
+                        <h3>Thông tin gói thành viên</h3>
+                        <p>Gói: {membershipInfo.name}</p>
+                        <p>Số bài đăng: {membershipInfo.currentPosts} / {membershipInfo.maxPosts}</p>
+                    </div>
+                )}
+
+                <Table
+                    className="accommodation-table"
+                    columns={columns}
+                    dataSource={boardingHouses}
+                    pagination={{ pageSize: 10 }}
+                />
+
+                {/* MODAL THÊM NHÀ TRỌ */}
+                <Modal
+                    title="Thêm nhà trọ mới"
+                    open={isAddModalVisible}
+                    onCancel={() => {
+                        setIsAddModalVisible(false);
+                        form.resetFields();
+                    }}
+                    onOk={() => form.submit()}
+                    width={800}
+                    okText="Thêm mới"
+                    cancelText="Hủy"
+                >
+                    <Form form={form} layout="vertical" onFinish={handleAddFormSubmit}>
+                        <Form.Item name="name" label="Tên nhà trọ" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+                        <Form.Item name="description" label="Mô tả chung" rules={[{ required: true }]}>
+                            <Input.TextArea rows={4} />
+                        </Form.Item>
+
+                        {/* ✅ THÊM MỤC UPLOAD ẢNH */}
+                        <Form.Item
+                            name="upload"
+                            label="Hình ảnh nhà trọ (tối đa 10 ảnh)"
+                            valuePropName="fileList"
+                            getValueFromEvent={normFile}
+                        >
+                            <Upload
+                                listType="picture-card"
+                                beforeUpload={() => false} // Quan trọng: Ngăn upload tự động
+                                multiple
+                                maxCount={10}
+                            >
+                                <div>
+                                    <PlusOutlined />
+                                    <div style={{ marginTop: 8 }}>Tải lên</div>
+                                </div>
+                            </Upload>
+                        </Form.Item>
+
+                        <Space>
+                            <Form.Item name={["location", "district"]} label="Quận" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name={["location", "street"]} label="Đường" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                        </Space>
+                        <Form.Item name={["location", "addressDetail"]} label="Địa chỉ chi tiết" rules={[{ required: true }]}>
+                            <Input />
+                        </Form.Item>
+
+                        <hr />
+                        <h4>Danh sách phòng</h4>
+                        <Form.List name="rooms">
+                            {(fields, { add, remove }) => (
+                                <>
+                                    {fields.map(({ key, name, ...restField }) => (
+                                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                                            <Form.Item {...restField} name={[name, 'roomNumber']} rules={[{ required: true, message: 'Nhập số phòng' }]}>
+                                                <Input placeholder="Số phòng" />
+                                            </Form.Item>
+                                            <Form.Item {...restField} name={[name, 'price']} rules={[{ required: true, message: 'Nhập giá' }]}>
+                                                <InputNumber placeholder="Giá (VND)" style={{ width: '100%' }} />
+                                            </Form.Item>
+                                            <Form.Item {...restField} name={[name, 'area']} rules={[{ required: true, message: 'Nhập diện tích' }]}>
+                                                <InputNumber placeholder="Diện tích (m²)" />
+                                            </Form.Item>
+                                            <MinusCircleOutlined onClick={() => remove(name)} />
+                                        </Space>
+                                    ))}
+                                    <Form.Item>
+                                        <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                                            Thêm phòng
+                                        </Button>
+                                    </Form.Item>
+                                </>
+                            )}
+                        </Form.List>
+                    </Form>
+                </Modal>
+
+                {/* MODAL XEM CHI TIẾT */}
+                <Modal
+                    title="Chi tiết nhà trọ"
+                    open={isViewModalVisible}
+                    onCancel={() => {
+                        setIsViewModalVisible(false);
+                        setDetailedHouse(null);
+                    }}
+                    footer={null}
+                    width={700}
+                >
+                    {useEffect(() => {
+                        if (isViewModalVisible && selectedBoardingHouse) {
+                            const fetchDetails = async () => {
+                                try {
+                                    const data = await getBoardingHouseById(selectedBoardingHouse._id);
+                                    setDetailedHouse(data);
+                                } catch (error) {
+                                    messageApi.error("Không thể tải chi tiết nhà trọ.");
+                                }
+                            };
+                            fetchDetails();
+                        }
+                    }, [isViewModalVisible, selectedBoardingHouse, messageApi])}
+
+                    {detailedHouse ? (
+                        <div>
+                            {detailedHouse.photos && detailedHouse.photos.length > 0 && (
+                                <Carousel autoplay>
+                                    {detailedHouse.photos.map((photo, index) => (
+                                        <div key={index}>
+                                            <img src={`http://localhost:5000${photo}`} alt={`photo-${index}`} style={{ width: '100%', maxHeight: '300px', objectFit: 'cover' }} />
+                                        </div>
+                                    ))}
+                                </Carousel>
+                            )}
+                            <h3>{detailedHouse.name}</h3>
+                            <p><strong>Mô tả:</strong> {detailedHouse.description}</p>
+                            <p><strong>Địa chỉ:</strong> {`${detailedHouse.location.addressDetail}, ${detailedHouse.location.street}, ${detailedHouse.location.district}`}</p>
+
+                            <h4>Danh sách phòng:</h4>
+                            <Table
+                                dataSource={detailedHouse.rooms}
+                                rowKey={(record) => record._id}
+                                columns={[
+                                    { title: 'Số phòng', dataIndex: 'roomNumber' },
+                                    { title: 'Giá', dataIndex: 'price', render: price => price.toLocaleString() + ' VND' },
+                                    { title: 'Diện tích', dataIndex: 'area', render: area => `${area} m²` },
+                                    { title: 'Trạng thái', dataIndex: 'status', render: status => <Tag color={status === 'Available' ? 'green' : 'red'}>{status}</Tag> }
+                                ]}
+                                pagination={false}
+                                size="small"
+                            />
+                        </div>
+                    ) : (
+                        <p>Đang tải dữ liệu...</p>
+                    )}
+                </Modal>
+
+                {/* MODAL CẬP NHẬT NHÀ TRỌ */}
+                <Modal
+                    title="Cập nhật thông tin nhà trọ"
+                    open={isUpdateModalVisible}
+                    onCancel={() => {
+                        setIsUpdateModalVisible(false);
+                        setEditingBoardingHouse(null); // Xóa dữ liệu đang sửa khi đóng
+                        form.resetFields(); // Reset form
+                    }}
+                    onOk={() => form.submit()}
+                    width={800}
+                    okText="Lưu thay đổi"
+                    cancelText="Hủy"
+                >
+                    {/* Dùng useEffect để điền dữ liệu vào form khi modal mở */}
+                    {useEffect(() => {
+                        if (editingBoardingHouse) {
+                            form.setFieldsValue({
+                                name: editingBoardingHouse.name,
+                                description: editingBoardingHouse.description,
+                                location: editingBoardingHouse.location,
+                                // Không điền giá trị cho rooms và upload ở đây
+                            });
+                        }
+                    }, [editingBoardingHouse, form])}
+
+                    {editingBoardingHouse && (
+                        <Form form={form} layout="vertical" onFinish={handleUpdateFormSubmit}>
+                            <Form.Item name="name" label="Tên nhà trọ" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+                            <Form.Item name="description" label="Mô tả chung" rules={[{ required: true }]}>
+                                <Input.TextArea rows={4} />
+                            </Form.Item>
+
+                            <Form.Item
+                                label="Hình ảnh (bỏ trống nếu không muốn thay đổi)"
+                            >
+                                {/* Hiển thị ảnh cũ */}
+                                <div>
+                                    {editingBoardingHouse.photos?.map(photo => (
+                                        <img key={photo} src={`http://localhost:5000${photo}`} alt="ảnh cũ" style={{ width: 102, height: 102, objectFit: 'cover', marginRight: 8, marginBottom: 8, border: '1px solid #d9d9d9', borderRadius: 8 }} />
+                                    ))}
+                                </div>
+                                {/* Upload ảnh mới */}
+                                <Form.Item name="upload" valuePropName="fileList" getValueFromEvent={normFile} noStyle>
+                                    <Upload listType="picture-card" beforeUpload={() => false} multiple maxCount={10}>
+                                        <div>
+                                            <PlusOutlined />
+                                            <div style={{ marginTop: 8 }}>Tải ảnh mới</div>
+                                        </div>
+                                    </Upload>
+                                </Form.Item>
+                            </Form.Item>
+
+                            <Space>
+                                <Form.Item name={["location", "district"]} label="Quận" rules={[{ required: true }]}>
+                                    <Input />
+                                </Form.Item>
+                                <Form.Item name={["location", "street"]} label="Đường" rules={[{ required: true }]}>
+                                    <Input />
+                                </Form.Item>
+                            </Space>
+                            <Form.Item name={["location", "addressDetail"]} label="Địa chỉ chi tiết" rules={[{ required: true }]}>
+                                <Input />
+                            </Form.Item>
+
+                            {/* Lưu ý: Việc sửa/xóa/thêm phòng nên được làm ở một giao diện riêng để tránh phức tạp */}
+                            <p style={{ color: '#888' }}>Việc quản lý danh sách phòng sẽ được thực hiện ở một chức năng riêng.</p>
+                        </Form>
+                    )}
+                </Modal>
+            </div>
+        </>
+    );
+};
+
+export default ManageBoardingHouses;

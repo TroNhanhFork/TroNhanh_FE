@@ -20,7 +20,7 @@ import {
   InfoCircleOutlined,
 } from "@ant-design/icons";
 import "./CheckoutPage.css";
-import { getAccommodationById } from "../../../services/accommodationAPI";
+import { getBoardingHouseById } from "../../../services/boardingHouseAPI";
 import useUser from "../../../contexts/UserContext";
 
 const { Option } = Select;
@@ -149,7 +149,7 @@ const CheckoutPage = () => {
   // prefill guest info if available from BE
   useEffect(() => {
     if (propertyId) {
-      getAccommodationById(propertyId).then((data) => {
+      getBoardingHouseById(propertyId).then((data) => {
         setProperty(data);
         setFirstName(data.guestFirstName || "");
         setLastName(data.guestLastName || "");
