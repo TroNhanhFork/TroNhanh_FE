@@ -181,7 +181,6 @@ const Dashboard = () => {
 
     // Extract data from the API response structure
     const apiData = dashboardData.data;
-    console.log('👥 API data:', apiData);
 
     // Map API fields to our display format
     const totalUsers = apiData.totalUsers || 0;

@@ -178,7 +178,8 @@ const PropertyDetails = () => {
       messageApi.warning("Vui lòng đăng nhập để đặt phòng!");
       return;
     }
-    navigate("/customer/checkout", { state: { boardingHouseId: id, roomId } });
+    navigate(`/customer/contract/${id}/${roomId}`);
+    // navigate("/customer/checkout", { state: { boardingHouseId: id, roomId } });
   };
 
   const handleContactOwner = () => {

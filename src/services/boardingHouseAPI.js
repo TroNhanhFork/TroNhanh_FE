@@ -5,6 +5,7 @@ import axiosInstance from './axiosInstance';
 const API_BOARDING_HOUSE_URL = 'http://localhost:5000/api/boarding-houses';
 const API_ROOM_URL = 'http://localhost:5000/api/rooms';
 const API_FAV_URL = 'http://localhost:5000/api/favorites';
+const API_CONTRACT_URL = 'http://localhost:5000/api/contracts';
 
 // ================================================================
 // BOARDING HOUSE APIs (NHÀ TRỌ)
@@ -55,6 +56,7 @@ export const searchBoardingHouses = async (filters) => {
  * Lấy thông tin chi tiết một nhà trọ bằng ID.
  * @param {string} id - ID của nhà trọ.
  */
+
 export const getBoardingHouseById = async (id) => {
     const response = await axiosInstance.get(`${API_BOARDING_HOUSE_URL}/${id}`);
     return response.data;
@@ -81,7 +83,7 @@ export const deleteBoardingHouse = async (id) => {
 
 
 // ================================================================
-// ROOM APIs (PHÒNG TRỌ) - PHẦN MỚI THÊM
+// ROOM APIs (PHÒNG TRỌ)
 // ================================================================
 
 /**
@@ -113,6 +115,25 @@ export const deleteRoom = async (roomId) => {
     return response.data;
 };
 
+// ================================================================
+// CONTRACT APIs (HỢP ĐỒNG)
+// ================================================================
+
+export const getContractTemplateForHouse = async (boardingHouseId) => {
+    const response = await axiosInstance.get(`${API_CONTRACT_URL}/boarding-houses/${boardingHouseId}/contract`);
+        return response.data;
+};
+
+export const getOwnerContractTemplate = async () => {
+    const response = await axiosInstance.get(`/owner/contract-template`);
+    return response.data;
+};
+
+// Tạo hoặc cập nhật mẫu hợp đồng (dùng FormData vì có ảnh)
+export const createOrUpdateContractTemplate = async (payload) => {
+    const response = await axiosInstance.post(`/owner/contract-template`, payload);
+    return response.data;
+};
 
 // ================================================================
 // FAVORITE APIs (YÊU THÍCH)

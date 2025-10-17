@@ -177,12 +177,10 @@ const ChatBox = ({
           });
 
           if (isDuplicate) {
-            console.log(`[CHATBOX] Duplicate message detected, skipping`);
             addDebugInfo(`Duplicate message skipped`);
             return prevMessages;
           }
 
-          console.log(`[CHATBOX] Adding new message to state`);
           addDebugInfo(`Adding new message from socket`);
 
           // FIX 6: Ensure message has all required fields

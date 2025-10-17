@@ -11,15 +11,16 @@ import DetailRating from "../../pages/OwnerPage/Rating/DetailRating";
 import Communication from "../../pages/OwnerPage/Communication/communication";
 import OwnerInbox from "../../pages/OwnerPage/Communication/OwnerInbox";
 import Membership from "../../pages/OwnerPage/MemberShip/membership";
-import PaymentResult from "../../pages/OwnerPage/MemberShip/PaymentResult";
-import AboutUs from "../../pages/CommonPage/HomePage/AboutUs";
+import ContractManagement from "../../pages/OwnerPage/Contract/ContractManagement";
+
 const RoutesOw = () => {
   return (
     <Routes>
       <Route element={<OwnerLayout />}>
         <Route index element={<ProfilePage />} />
         <Route path="user-profile" element={<ProfilePage />} />
-        <Route path="accommodation" element={<Accommodation />} />
+        <Route path="boarding-house" element={<Accommodation />} />
+        <Route path="contract" element={<ContractManagement />} />
         <Route path="report" element={<Report />} />
         <Route path="rating" element={<Rating />} />
         <Route path="rating/:id" element={<DetailRating />} />

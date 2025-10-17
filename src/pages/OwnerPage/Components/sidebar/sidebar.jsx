@@ -63,8 +63,11 @@ const Sidebar = () => {
         <Menu.Item key="report" icon={<FileTextOutlined />}>
           <Link to="/owner/report">Report</Link>
         </Menu.Item>
-        <Menu.Item key="accommodation" icon={<HomeOutlined />}>
-          <Link to="/owner/accommodation">Manage Accommodation</Link>
+        <Menu.Item key="boarding-house" icon={<HomeOutlined />}>
+          <Link to="/owner/boarding-house">BoardingHouse</Link>
+        </Menu.Item>
+        <Menu.Item key="contract" icon={<HomeOutlined />}>
+          <Link to="/owner/contract">Contract</Link>
         </Menu.Item>
         <Menu.Item key="rating" icon={<StarOutlined />}>
           <Link to="/owner/rating">Rating</Link>

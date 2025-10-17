@@ -72,7 +72,7 @@ const HeaderComponent = () => {
           label: "Manage Room",
           icon: <SettingOutlined />,
           onClick: () => {
-            navigate("/owner/accommodation");
+            navigate("/owner/boarding-house");
           },
         },
         {
@@ -146,7 +146,7 @@ const HeaderComponent = () => {
           {user?.role === "owner" && (
             <>
               <Menu.Item key="manage-room">
-                <Link to="/owner/accommodation" onClick={() => console.log("Menu: /owner/accommodation")}>Manage Room</Link>
+                <Link to="/owner/boarding-house" onClick={() => console.log("Menu: /owner/accommodation")}>Manage Room</Link>
               </Menu.Item>
             </>
           )}

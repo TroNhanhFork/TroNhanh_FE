@@ -20,6 +20,8 @@ import ScrollToTop from './pages/CommonPage/ScrollToTop/ScrollToTop';
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet"></link>
+
 function AppRoutes() {
   const location = useLocation();
   const { logout, loading } = useUser();

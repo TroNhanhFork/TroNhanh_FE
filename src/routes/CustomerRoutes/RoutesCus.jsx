@@ -8,6 +8,7 @@ import CheckoutPage from "../../pages/CustomerPage/Checkout/CheckoutPage";
 import BookingResult from "../../pages/CustomerPage/Checkout/BookingResult";
 import ReportPage from "../../pages/CustomerPage/Report/ReportPage";
 import Communication from "../../pages/CustomerPage/Communication/communication";
+import RentalContract from "../../pages/CustomerPage/Contract/RentalContract";
 
 const RoutesCus = () => {
   return (
@@ -16,6 +17,7 @@ const RoutesCus = () => {
         <Route index element={<ApartmentSearch />} />
         <Route path="search" element={<ApartmentSearch />} />
         <Route path="property/:id" element={<ApartmentDetails />} />
+        <Route path="contract/:boardingHouseId/:roomId" element={<RentalContract />} />
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="booking-result" element={<BookingResult />} />
         <Route path="profile/*" element={<ProfilePage />} />
