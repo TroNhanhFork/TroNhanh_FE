@@ -46,10 +46,7 @@ const PaymentResult = () => {
                                 <span>Trạng thái</span>
                                 <h3>{status === "success" ? "Thành công " : "Thất bại "}</h3>
                             </div>
-                            <div className="item">
-                                <span>Mã gói</span>
-                                <h3>{packageId || 'Không xác định'}</h3>
-                            </div>
+                           
                             <div className="item">
                                 <span>Thời gian</span>
                                 <h3>{new Date().toLocaleString('vi-VN')}</h3>

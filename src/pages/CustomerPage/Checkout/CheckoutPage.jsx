@@ -124,19 +124,18 @@ const CheckoutPage = () => {
       );
 
       // 2. Only proceed to payment if booking is created
-      if (paymentMethod === "vnpay" || paymentMethod === "paypal") {
-        const res = await axios.post(
-          "http://localhost:5000/api/payment/create",
-          {
-            amount: Math.round(property.price * 1.003 + 500000),
-            // packageId: property._id,
-            userId: user._id,
-            bookingId: bookingRes.data._id,
-            type: "booking", // PLEASE MAKE SURE THIS IS THE CORRECT TYPE
-          }
-        );
-        window.location.href = res.data.url;
-      } else {
+if (paymentMethod === "payos") {
+  const res = await axios.post("http://localhost:5000/api/payment/create", {
+    amount: Math.round(property.price * 1.003 + 500000),
+    userId: user._id,
+    bookingId: bookingRes.data._id,
+     type: "booking",
+  });
+
+  // redirect sang PayOS checkout page
+  window.location.href = res.data.url;
+}
+ else {
         // Handle other payment methods if needed
       }
     } catch (err) {
@@ -145,20 +144,37 @@ const CheckoutPage = () => {
       });
     }
   };
-
-  // prefill guest info if available from BE
-  useEffect(() => {
-    if (propertyId) {
-      getAccommodationById(propertyId).then((data) => {
-        setProperty(data);
-        setFirstName(data.guestFirstName || "");
-        setLastName(data.guestLastName || "");
-        setEmail(data.guestEmail || "");
-        setPhone(data.guestPhone || "");
-        setPurpose(data.purpose || "");
-      });
+useEffect(() => {
+  // Prefill từ user (nếu có)
+  if (user && Object.keys(user).length > 0) {
+    if (user.name) {
+      const nameParts = user.name.trim().split(" ");
+      const first = nameParts.pop();
+      const last = nameParts.join(" ");
+      setFirstName((prev) => prev || first);
+      setLastName((prev) => prev || last);
+    } else {
+      setFirstName((prev) => prev || user.firstName || "");
+      setLastName((prev) => prev || user.lastName || "");
     }
-  }, [propertyId]);
+    setEmail((prev) => prev || user.email || "");
+    setPhone((prev) => prev || user.phone || "");
+  }
+
+  // Prefill từ accommodation (nếu có)
+  if (propertyId) {
+    getAccommodationById(propertyId).then((data) => {
+      setProperty(data);
+      if (data.guestFirstName) setFirstName(data.guestFirstName);
+      if (data.guestLastName) setLastName(data.guestLastName);
+      if (data.guestEmail) setEmail(data.guestEmail);
+      if (data.guestPhone) setPhone(data.guestPhone);
+      if (data.purpose) setPurpose(data.purpose);
+    });
+  }
+}, [user, propertyId]);
+
+
 
   return (
     <div className="checkout-container">
@@ -266,8 +282,7 @@ const CheckoutPage = () => {
               value={paymentMethod}
               onChange={setPaymentMethod}
             >
-              <Option value="vnpay">VNPay</Option>
-              <Option value="paypal">PayPal</Option>
+              <Option value="payos">PayOS</Option>
             </Select>
 
             <p className="terms-note">

@@ -90,6 +90,7 @@ export const resetLoggedOut = () => {
 };
 export const loginGoogle = (googleToken) => {
   return api.post('/auth/google-login', { token: googleToken });
+  
 };
 export const assignRole = (data) => {
   return api.post("/auth/setRole", data);

@@ -105,24 +105,27 @@ const Membership = () => {
   };
 
   // Hàm xử lý thanh toán riêng
-  const processPayment = async (pkg, userId) => {
-    try {
-      console.log("💡 Subscribing with userId:", userId);
-      console.log("📦 Package:", pkg.packageName, "—", pkg.price);
+// Hàm xử lý thanh toán riêng bằng PayOS
+const processPayment = async (pkg, userId) => {
+  try {
+    console.log("💡 Subscribing with userId:", userId);
+    console.log("📦 Package:", pkg.packageName, "—", pkg.price);
 
-      const res = await axios.post("http://localhost:5000/api/payment/create", {
-        amount: pkg.price,
-        packageId: pkg._id,
-        userId: userId,
-        role: "owner"
-      });
+    // Gọi API backend để tạo PayOS payment
+    const res = await axios.post("http://localhost:5000/api/payment/create", {
+      packageId: pkg._id,
+      userId: userId,
+      type: "membership" // Hoặc "booking" nếu là booking
+    });
 
-      window.location.href = res.data.url;
-    } catch (err) {
-      console.error("❌ Error creating VNPay URL:", err);
-      messageApi.error("Đã có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.");
-    }
-  };
+    // Chuyển hướng người dùng tới trang PayOS
+    window.location.href = res.data.url;
+  } catch (err) {
+    console.error("❌ Error creating PayOS payment URL:", err);
+    messageApi.error("Đã có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.");
+  }
+};
+
 
   return (
     <div className="membership-container">
@@ -156,7 +159,7 @@ const Membership = () => {
             )}
 
             <button
-              className="subscribe-btn"
+              className="subscribe-btn" 
               onClick={() => handleSubscribe(pkg)}
             >
               {String(currentPackageId) === String(pkg._id) 

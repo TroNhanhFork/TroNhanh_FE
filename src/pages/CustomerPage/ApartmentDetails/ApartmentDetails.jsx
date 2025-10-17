@@ -745,6 +745,13 @@ const PropertyDetails = () => {
 
                   <p>{post.intro}</p>
                   <p>
+                       <p>
+        <strong>Gender:</strong> {post.genderPreference || "Not specified"}
+      </p>
+      <p>
+          <strong>Phone:</strong> {post.userId?.phone || "Not provided"}
+        </p>
+
                     <strong>Habits:</strong>{" "}
                     {post.habits?.join(", ") || "Not specified"}
                   </p>
