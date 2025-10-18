@@ -12,7 +12,7 @@ import Communication from "../../pages/OwnerPage/Communication/communication";
 import OwnerInbox from "../../pages/OwnerPage/Communication/OwnerInbox";
 import Membership from "../../pages/OwnerPage/MemberShip/membership";
 import ContractManagement from "../../pages/OwnerPage/Contract/ContractManagement";
-
+import PendingBookings from "../../pages/OwnerPage/PendingBookings/PendingBookings";
 const RoutesOw = () => {
   return (
     <Routes>
@@ -21,6 +21,7 @@ const RoutesOw = () => {
         <Route path="user-profile" element={<ProfilePage />} />
         <Route path="boarding-house" element={<Accommodation />} />
         <Route path="contract" element={<ContractManagement />} />
+        <Route path="pending-bookings" element={<PendingBookings />} />
         <Route path="report" element={<Report />} />
         <Route path="rating" element={<Rating />} />
         <Route path="rating/:id" element={<DetailRating />} />

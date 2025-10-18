@@ -69,6 +69,9 @@ const Sidebar = () => {
         <Menu.Item key="contract" icon={<HomeOutlined />}>
           <Link to="/owner/contract">Contract</Link>
         </Menu.Item>
+        <Menu.Item key="pending-bookings" icon={<HomeOutlined />}>
+          <Link to="/owner/pending-bookings">Pending Bookings</Link>
+        </Menu.Item>
         <Menu.Item key="rating" icon={<StarOutlined />}>
           <Link to="/owner/rating">Rating</Link>
         </Menu.Item>

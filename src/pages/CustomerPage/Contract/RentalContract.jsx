@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Spin, Card, Checkbox, message } from 'antd';
 import { getContractTemplateForHouse, getBoardingHouseById } from '../../../services/boardingHouseAPI';
+import { requestBooking } from '../../../services/bookingService';
 import useUser from '../../../contexts/UserContext';
 import './RentalContract.css';
 
@@ -75,12 +76,22 @@ const RentalContract = () => {
         return content;
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => { // Thêm async
         if (!agreed) {
             messageApi.warning("Bạn phải đồng ý với các điều khoản để tiếp tục.");
             return;
         }
-        navigate("/customer/checkout", { state: { boardingHouseId, roomId } });
+        try {
+            setLoading(true); 
+            await requestBooking({ boardingHouseId, roomId });
+            messageApi.success('Yêu cầu đặt phòng đã được gửi. Vui lòng đợi chủ nhà xác nhận.');
+            navigate('/customer/my-bookings'); 
+        } catch (error) {
+            messageApi.error(error.response?.data?.message || 'Gửi yêu cầu thất bại.');
+            console.error("Error requesting booking:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (loading) {

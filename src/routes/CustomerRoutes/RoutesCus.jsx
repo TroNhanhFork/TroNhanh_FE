@@ -9,7 +9,7 @@ import BookingResult from "../../pages/CustomerPage/Checkout/BookingResult";
 import ReportPage from "../../pages/CustomerPage/Report/ReportPage";
 import Communication from "../../pages/CustomerPage/Communication/communication";
 import RentalContract from "../../pages/CustomerPage/Contract/RentalContract";
-
+import MyBookings from "../../pages/CustomerPage/CustomerBooking/MyBookings";
 const RoutesCus = () => {
   return (
     <Routes>
@@ -18,6 +18,7 @@ const RoutesCus = () => {
         <Route path="search" element={<ApartmentSearch />} />
         <Route path="property/:id" element={<ApartmentDetails />} />
         <Route path="contract/:boardingHouseId/:roomId" element={<RentalContract />} />
+        <Route path="my-bookings" element={<MyBookings />} />
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="booking-result" element={<BookingResult />} />
         <Route path="profile/*" element={<ProfilePage />} />

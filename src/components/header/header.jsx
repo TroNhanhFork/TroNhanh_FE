@@ -39,10 +39,10 @@ const HeaderComponent = () => {
       items.push(
         {
           key: "my-room",
-          label: "My Room",
+          label: "My Booking Request",
           icon: <HomeOutlined />,
           onClick: () => {
-            navigate("/customer/my-room");
+            navigate("/customer/my-bookings");
           },
         },
         {

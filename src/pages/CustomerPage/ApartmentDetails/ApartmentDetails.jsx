@@ -33,7 +33,7 @@ import {
   getUserFavorites,
   removeFromFavorite
 } from "../../../services/boardingHouseAPI";
-import { getUserBookingForAccommodation } from "../../../services/bookingService";
+import { getUserBookingForBoardingHouse } from "../../../services/bookingService";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import "./ApartmentDetails.css";
@@ -125,7 +125,7 @@ const PropertyDetails = () => {
     const checkUserBooking = async () => {
       if (!user || !boardingHouse?._id) return;
       try {
-        const booking = await getUserBookingForAccommodation(user._id, boardingHouse._id);
+        const booking = await getUserBookingForBoardingHouse(user._id, boardingHouse._id);
         setUserHasBooking(!!booking);
       } catch (error) {
         setUserHasBooking(false);
