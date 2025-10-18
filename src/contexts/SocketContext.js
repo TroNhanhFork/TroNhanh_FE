@@ -1,157 +1,94 @@
-// import { createContext, useContext, useEffect, useState } from "react";
-// import { io } from "socket.io-client";
-// import useUser from "./UserContext";
-// const SocketContext = createContext(null);
-// export const useSocket = () => useContext(SocketContext);
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { io } from "socket.io-client";
+import useUser from "./UserContext";
 
-// export const SocketProvider = ({ children }) => {
-//   const { user } = useUser();
-//   const [socket, setSocket] = useState(null);
-//   const [isConnected, setIsConnected] = useState(false);
-//   const [connectionAttempts, setConnectionAttempts] = useState(0);
+const SocketContext = createContext(null);
+export const useSocket = () => useContext(SocketContext);
 
-//   useEffect(() => {
-//     if (user) {
-//       console.log(
-//         " >>>[SOCKET] Attempting connection to:",
-//         process.env.SOCKET_API
-//       );
-//       console.log(" >>>[SOCKET] User object:", user);
-//       console.log(
-//         " >>>[SOCKET] Creating socket connection for user:",
-//         user._id
-//       );
+export const SocketProvider = ({ children }) => {
+    const { user } = useUser();
+    const socketRef = useRef(null);
+    const [isConnected, setIsConnected] = useState(false);
 
-//       // Updated socket configuration
-//       const newSocket = io(process.env.SOCKET_API || "http://localhost:5000", {
-//         transports: ["websocket", "polling"],
-//         upgrade: true,
-//         rememberUpgrade: false,
-//         timeout: 20000,
-//         forceNew: true,
-//         reconnection: true,
-//         reconnectionDelay: 1000,
-//         reconnectionAttempts: 5,
-//         maxReconnectionAttempts: 5,
-//       });
+    // Create the socket once
+    useEffect(() => {
+        const SOCKET_URL =
+            process.env.REACT_APP_SOCKET_URL || "http://localhost:5000";
 
-//       // Connection event handlers
-//       newSocket.on("connect", () => {
-//         // console.log(" >>>[SOCKET] Connected with ID:", newSocket.id);
-//         console.log(`[SOCKET] Connected: ${newSocket.id}`);
+        const s = io(SOCKET_URL, {
+            autoConnect: false, // connect manually when user is ready
+            transports: ["websocket", "polling"],
+            withCredentials: true,
+            reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 1000,
+            timeout: 20000,
+        });
 
-//         setIsConnected(true);
-//         setConnectionAttempts(0);
+        s.on("connect", () => {
+            setIsConnected(true);
+            console.log(`[SOCKET] Connected: ${s.id}`);
+            // Back-compat if server still expects add-user
+            if (user?._id) s.emit("add-user", user._id);
+        });
 
-//         // Wait for connection to stabilize, then add user
-//         setTimeout(() => {
-//           newSocket.emit("add-user", user._id);
-//           console.log(" >>>[SOCKET] Emitted add-user event for:", user._id);
-//         }, 500);
-//       });
+        s.on("disconnect", (reason) => {
+            setIsConnected(false);
+            console.log(" >>>[SOCKET] Disconnected:", reason);
+        });
 
-//       newSocket.on("disconnect", (reason) => {
-//         console.log(" >>>[SOCKET] Disconnected:", reason);
-//         setIsConnected(false);
-//       });
+        s.on("connect_error", (err) => {
+            setIsConnected(false);
+            console.error(" >>>[SOCKET] Connection error:", err?.message || err);
+        });
 
-//       newSocket.on("reconnect", (attemptNumber) => {
-//         console.log(
-//           " >>>[SOCKET] Reconnected after",
-//           attemptNumber,
-//           "attempts"
-//         );
-//         setConnectionAttempts(0);
-//         // Re-add user after reconnection
-//         newSocket.emit("add-user", user._id);
-//       });
+        s.on("user-added", (data) => {
+            console.log(" >>>[SOCKET] User added confirmation:", data);
+        });
 
-//       newSocket.on("reconnect_attempt", (attemptNumber) => {
-//         console.log(" >>>[SOCKET] Reconnection attempt:", attemptNumber);
-//         setConnectionAttempts(attemptNumber);
-//       });
+        socketRef.current = s;
 
-//       newSocket.on("connect_error", (error) => {
-//         console.error(" >>>[SOCKET] Connection error:", error);
-//         setIsConnected(false);
-//       });
+        return () => {
+            s.removeAllListeners();
+            s.disconnect();
+            socketRef.current = null;
+        };
+    }, []); // once
 
-//       // Test event to verify socket is working
-//       newSocket.on("user-added", (data) => {
-//         console.log(" >>>[SOCKET] User added confirmation:", data);
-//       });
+    // Connect/disconnect when user changes (no page refresh needed)
+    useEffect(() => {
+        const s = socketRef.current;
+        if (!s) return;
 
-//       // Add ping/pong for connection health check
-//       newSocket.on("pong", () => {
-//         console.log(" >>>[SOCKET] Pong received");
-//       });
+        if (user?._id) {
+            s.auth = { userId: user._id }; // send in handshake
+            if (!s.connected) s.connect();
+        } else {
+            if (s.connected) s.disconnect();
+            setIsConnected(false);
+        }
+    }, [user?._id]);
 
-//       setSocket(newSocket);
-
-//       // Periodic ping to keep connection alive
-//       const pingInterval = setInterval(() => {
-//         if (newSocket.connected) {
-//           newSocket.emit("ping");
-//         }
-//       }, 25000);
-
-//       return () => {
-//         console.log(" >>>[SOCKET] Cleaning up socket connection");
-//         clearInterval(pingInterval);
-//         newSocket.disconnect();
-//         setSocket(null);
-//         setIsConnected(false);
-//       };
-//     } else {
-//       // Clean up socket when user logs out
-//       if (socket) {
-//         socket.disconnect();
-//         setSocket(null);
-//         setIsConnected(false);
-//       }
-//     }
-//   }, [user]);
-
-//   // Debug logging for socket state
-//   useEffect(() => {
-//     console.log(" >>>[SOCKET] Socket state changed:", {
-//       socket: !!socket,
-//       isConnected,
-//       userId: user?._id,
-//       connectionAttempts,
-//     });
-//   }, [socket, isConnected, user, connectionAttempts]);
-
-//   return (
-//     <SocketContext.Provider value={socket}>
-//       {children}
-//       {/* Enhanced debug indicator */}
-//       {/* {process.env.NODE_ENV === "development" && (
-//         <div
-//           style={{
-//             position: "fixed",
-//             top: 10,
-//             right: 10,
-//             background: isConnected
-//               ? "green"
-//               : connectionAttempts > 0
-//                 ? "orange"
-//                 : "red",
-//             color: "white",
-//             padding: "5px 10px",
-//             borderRadius: "5px",
-//             fontSize: "12px",
-//             zIndex: 9999,
-//           }}
-//         >
-//           Socket:{" "}
-//           {isConnected
-//             ? "Connected"
-//             : connectionAttempts > 0
-//               ? `Reconnecting (${connectionAttempts})`
-//               : "Disconnected"}
-//         </div>
-//       )} */}
-//     </SocketContext.Provider>
-//   );
-// };
+    return (
+        <SocketContext.Provider value={socketRef.current}>
+            {children}
+            {process.env.NODE_ENV === "development" && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 10,
+                        right: 10,
+                        background: isConnected ? "green" : "red",
+                        color: "white",
+                        padding: "5px 10px",
+                        borderRadius: "5px",
+                        fontSize: "12px",
+                        zIndex: 9999,
+                    }}
+                >
+                    Socket: {isConnected ? "Connected" : "Disconnected"}
+                </div>
+            )}
+        </SocketContext.Provider>
+    );
+};
