@@ -37,8 +37,8 @@ const LoginPage = () => {
         await messageApi.success('Login successful!');
         navigate('/admin/dashboard');
       } else if (role === 'owner' || role === 'customer') {
-        await messageApi.success('Login successful!');
-        navigate('/homepage');
+       messageApi.success('Login successful!');
+setTimeout(() => navigate('/homepage'), 500);
       } else {
         messageApi.error('Role không hợp lệ hoặc chưa được phân quyền!');
         return;
@@ -77,8 +77,8 @@ const LoginPage = () => {
       saveAccessToken(res.data.accessToken, 30 * 60 * 1000, res.data.refreshToken);
       await fetchUser();
       initAutoLogout();
-       await messageApi.success("Google login successful!");
-      navigate("/homepage");
+     messageApi.success('Login successful!');
+setTimeout(() => navigate('/homepage'), 500);
     } catch (err) {
       console.error("Google login error:", err);
       messageApi.error("Google login failed");

@@ -20,7 +20,8 @@ import LogoutWarningModal from './components/LogoutWarningModal';
 import AIAssistant from './utils/AIAssistant';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { SocketProvider } from './contexts/SocketContext';
-import { GoogleOAuthProvider } from '@react-oauth/google'; 
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import PaymentCountdown from './pages/CustomerPage/Checkout/PaymentCountdown'; 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -48,7 +49,8 @@ function AppRoutes() {
 
   if (loading) return <p>Loading...</p>;
 
-const hideLayout = ["/login", "/register","/verify-otp","/forgot-password","/reset-password"].some(path => location.pathname.startsWith(path));
+const hideLayout = ["/login", "/register","/verify-otp","/forgot-password","/reset-password","/payment-countdown",
+  "/payment-cancel"].some(path => location.pathname.startsWith(path));
 
   return (
     <>
@@ -69,7 +71,7 @@ const hideLayout = ["/login", "/register","/verify-otp","/forgot-password","/res
           <Route path="/owner/*" element={<RoutesOw />} />
           <Route path="/admin/*" element={<RoutesAd />} />
           <Route path="/customer/*" element={<RoutesCus />} />
-
+               <Route path="/payment-countdown" element={<PaymentCountdown />} />
           {/* Exception route */}
           <Route path="*" element={<ExceptionRoutes />} />
         </Routes>

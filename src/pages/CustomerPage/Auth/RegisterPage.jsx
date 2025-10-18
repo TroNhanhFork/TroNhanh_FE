@@ -27,10 +27,10 @@ const RegisterPage = () => {
  const res =  await register(values);
        const { userId, email } = res.data; 
          await sendOTP({ id: userId, email });
-     await messageApi.success('Registration successful! Check your email for OTP to verify your account.');
-          navigate('/verify-otp', {
-      state: { userId, email }
-    });
+     messageApi.success('Registration successful! Check your email for OTP to verify your account.');
+          setTimeout(() => {
+      navigate("/verify-otp", { state: { userId, email } });
+    }, 800);
     } catch (err) {
       const errors = err.response?.data?.errors;
       if (Array.isArray(errors)) {

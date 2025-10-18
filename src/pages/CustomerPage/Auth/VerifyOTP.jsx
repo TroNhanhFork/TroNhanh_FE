@@ -25,8 +25,10 @@ const VerifyOtpPage = () => {
         userId,
         otp: values.otp
       });
-      await messageApi.success('Email verified successfully. You can now log in!');
-      navigate('/login');
+       messageApi.success('Email verified successfully. You can now log in!');
+      setTimeout(() => {
+      navigate("/login");
+    }, 800);
     } catch (err) {
       console.error(err);
       messageApi.error(

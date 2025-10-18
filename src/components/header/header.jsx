@@ -33,9 +33,11 @@ const {
   if (loading) return null;
 
   const handleLogout = async () => {
-    await messageApi.success("Logout successfully", 2);
+     messageApi.success("Logout successfully");
+  setTimeout(() => {
     logout();
     navigate("/homepage");
+  }, 500);
   };
 
   const getUserMenuItems = (role) => {
