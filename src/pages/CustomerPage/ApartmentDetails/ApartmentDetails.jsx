@@ -40,7 +40,7 @@ import RoommatePostModal from "./RoommatePostModal";
 import { getRoommatePosts } from "../../../services/roommateAPI";
 import Slider from "react-slick";
 import { getValidAccessToken } from "../../../services/authService";
-
+import VisitRequestModal from "./VisitRequestModal";
 const { Option } = Select;
 
 const PropertyDetails = () => {
@@ -65,7 +65,7 @@ const PropertyDetails = () => {
   const [newMessage, setNewMessage] = useState("");
   const [token, setToken] = useState('');
   const [messageApi, contextHolder] = message.useMessage();
-  
+  const [isVisitModalVisible, setIsVisitModalVisible] = useState(false);
   // Tạo function riêng để fetch accommodation data
   const fetchAccommodationData = async () => {
     try {
@@ -218,7 +218,27 @@ const PropertyDetails = () => {
     }
     navigate("/customer/checkout", { state: { accommodationId: accommodation._id } });
   };
+const handleScheduleVisitClick = () => {
+    if (!user) {
+      messageApi.warning("Please log in to schedule a visit.");
+      return;
+    }
 
+    if (user._id === accommodation.ownerId?._id) { 
+    messageApi.info("You cannot schedule a visit for your own accomodation.");
+    return;
+  }
+    setIsVisitModalVisible(true);
+  };
+  
+  const handleVisitModalClose = () => {
+    setIsVisitModalVisible(false);
+  };
+  
+  const handleVisitModalSuccess = () => {
+    setIsVisitModalVisible(false);
+    messageApi.success("Your visit request has been sent to the owner!");
+  };
   // Render booking card hoặc booking info
   const renderBookingSection = () => {
     // Kiểm tra xem accommodation có status "Booked" không
@@ -375,7 +395,14 @@ const PropertyDetails = () => {
               </span>
             </div>
           </div>
-
+<Button 
+            className="schedule-visit-button" 
+            onClick={handleScheduleVisitClick}
+            style={{ marginBottom: '10px' }} 
+            block 
+          >
+            Hẹn lịch xem trọ
+          </Button>
           <Button className="booking-button" onClick={handleContinueBooking}>
             Continue booking
           </Button>
@@ -783,6 +810,13 @@ const PropertyDetails = () => {
         accommodationId={accommodation._id}
         onSuccess={fetchRoommates}
       />
+      <VisitRequestModal
+      visible={isVisitModalVisible}
+      onClose={handleVisitModalClose}
+      onSuccess={handleVisitModalSuccess}
+      accommodationId={accommodation._id}
+     ownerId={accommodation.ownerId?._id}
+  />
       <Divider />
 
       <h1 className="text-heading">Reviews</h1>

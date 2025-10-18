@@ -8,7 +8,7 @@ import Messages from './sections/Messages';
 import BookingHistory from './sections/BookingHistory';
 import { getUserInfo, getUserMessages, getUserFavorites } from '../../../services/profileServices';
 import MyReportsPage from './sections/MyReportPage';
-
+import VisitRequests from './sections/VisitRequests';
 const { Sider, Content } = Layout;
 
 const ProfilePage = () => {
@@ -55,6 +55,7 @@ const ProfilePage = () => {
             <Route path="messages" element={<Messages />} />
             <Route path="favorites" element={<Favorites favorites={favorites} />} />
             <Route path="booking-history" element={<BookingHistory />} />
+            <Route path="visit-requests" element={<VisitRequests />} />
             <Route path='my-reports' element={<MyReportsPage></MyReportsPage>} />
           </Routes>
         </Content>

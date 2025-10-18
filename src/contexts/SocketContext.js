@@ -8,7 +8,7 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const s = io("http://localhost:5000"); // adjust to match your BE port
+    const s = io("http://localhost:5000");
     setSocket(s);
     return () => s.disconnect();
   }, []);

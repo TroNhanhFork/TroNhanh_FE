@@ -1,8 +1,18 @@
 import React from 'react';
-import { Menu } from 'antd';
-import { UserOutlined, HeartOutlined, MessageOutlined, WarningOutlined, HistoryOutlined } from '@ant-design/icons';
-
+import { Menu,Badge } from 'antd';
+import { UserOutlined, HeartOutlined, MessageOutlined, WarningOutlined, HistoryOutlined,CalendarOutlined } from '@ant-design/icons';
+import { useNotifications } from '../../../../contexts/NotificationContext';
 const Sidebar = ({ selectedKey, onSelect }) => {
+  const { hasVisitResponse, clearCustomerVisitNotif } = useNotifications();
+
+
+    const handleSelect = (e) => {
+
+        if (e.key === '/customer/profile/visit-requests') {
+            clearCustomerVisitNotif(); 
+        }
+        onSelect(e);
+    };
   return (
     <Menu
       mode="inline"
@@ -19,6 +29,16 @@ const Sidebar = ({ selectedKey, onSelect }) => {
       <Menu.Item key="/customer/profile/booking-history" icon={<HistoryOutlined />}>
         Booking History
       </Menu.Item>
+     <Menu.Item 
+        key="/customer/profile/visit-requests" 
+        icon={
+            <Badge dot={hasVisitResponse} size="small">
+                <CalendarOutlined />
+            </Badge>
+        }
+      >
+ Visit Requests 
+</Menu.Item>
        <Menu.Item key="/customer/profile/my-reports" icon={<WarningOutlined/>}>
         Reports
       </Menu.Item>

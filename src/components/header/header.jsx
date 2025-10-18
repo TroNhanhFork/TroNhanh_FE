@@ -1,5 +1,5 @@
 
-import { Layout, Menu, Dropdown, Avatar, message } from "antd";
+import { Layout, Menu, Dropdown, Avatar, message,Badge } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import {
   DownOutlined,
@@ -12,8 +12,10 @@ import {
   HeartOutlined,
   SettingOutlined,
   DashboardOutlined,
+  CalendarOutlined
 } from "@ant-design/icons";
 import useUser from "../../contexts/UserContext";
+import { useNotifications } from "../../contexts/NotificationContext";
 import "./header.css";
 
 const { Header } = Layout;
@@ -22,7 +24,11 @@ const HeaderComponent = () => {
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const { user, logout, loading } = useUser();
-
+const { 
+ pendingRequestCount,  
+ hasVisitResponse,     
+ clearCustomerVisitNotif 
+} = useNotifications();
 
   if (loading) return null;
 
@@ -48,6 +54,20 @@ const HeaderComponent = () => {
           label: "Favourite",
           icon: <HeartOutlined />,
           onClick: () => navigate("/customer/favourite"),
+        },
+               {
+          key: "visit-requests",
+          label: "Visit Request",
+         icon: (
+           <Badge dot={hasVisitResponse} size="small"> 
+          <CalendarOutlined />
+          </Badge>
+          ),
+          
+          onClick: () => {
+          clearCustomerVisitNotif();
+            navigate("/customer/profile/visit-requests");
+          },
         }
       );
     }
@@ -65,6 +85,20 @@ const HeaderComponent = () => {
           label: "Statistics",
           icon: <BarChartOutlined />,
           onClick: () => navigate("/owner/statistics"),
+        },
+        {
+          key: "visit-requests",
+          label: "Visit Request",
+         icon: (
+           <Badge dot={pendingRequestCount > 0} size="small"> 
+<CalendarOutlined />
+ </Badge>
+          ),
+          
+          onClick: () => {
+          
+            navigate("/owner/visit-requests");
+          },
         }
       );
     }
@@ -141,6 +175,7 @@ const HeaderComponent = () => {
               <Menu.Item key="manage-room">
                 <Link to="/owner/accommodation">Manage Room</Link>
               </Menu.Item>
+              
             </>
           )}
 
@@ -160,24 +195,31 @@ const HeaderComponent = () => {
 
         <div className="user-menu">
           {user ? (
-            <Dropdown
-              menu={{ items: getUserMenuItems(user.role) }}
-              placement="bottomRight"
-              trigger={["click"]}
-              overlayClassName="user-dropdown"
-            >
-              <div className="user-info">
-                <Avatar
-                  src={user.avatar || null}
-                  className="user-avatar"
-                  size={40}
-                >
-                  {!user.avatar && user.name?.charAt(0)}
-                </Avatar>
-                <span className="user-name">{user.name || user.email}</span>
-                <DownOutlined className="dropdown-icon" />
-              </div>
-            </Dropdown>
+   <Dropdown
+menu={{ items: getUserMenuItems(user.role) }}
+ placement="bottomRight"
+ trigger={["click"]}
+ overlayClassName="user-dropdown"
+ >
+      
+ <Badge 
+ dot={pendingRequestCount > 0 || hasVisitResponse} 
+size="small" 
+offset={[-8, 8]}
+ >
+<div className="user-info">
+ <Avatar
+src={user.avatar || null}
+className="user-avatar"
+ size={40}
+ >
+ {!user.avatar && user.name?.charAt(0)}
+</Avatar>
+ <span className="user-name">{user.name || user.email}</span>
+<DownOutlined className="dropdown-icon" />
+</div>
+ </Badge>
+ </Dropdown>
           ) : (
             <div className="auth-buttons">
               <Link to="/login">

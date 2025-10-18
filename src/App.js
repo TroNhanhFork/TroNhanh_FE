@@ -18,6 +18,8 @@ import ResetPasswordPage from './pages/CustomerPage/Auth/ResetPasswordPage';
 import ScrollToTop from './pages/CommonPage/ScrollToTop/ScrollToTop';
 import LogoutWarningModal from './components/LogoutWarningModal';
 import AIAssistant from './utils/AIAssistant';
+import { NotificationProvider } from './contexts/NotificationContext';
+import { SocketProvider } from './contexts/SocketContext';
 import { GoogleOAuthProvider } from '@react-oauth/google'; 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -84,9 +86,13 @@ function AppWrapper() {
     <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>  
       <BrowserRouter>
         <UserProvider>
+          <SocketProvider>
+          <NotificationProvider>
           <ScrollToTop />
           <AppRoutes />
           <AIAssistant />
+          </NotificationProvider>
+          </SocketProvider>
         </UserProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>
