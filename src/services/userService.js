@@ -11,7 +11,7 @@ const userAPI = axios.create({
 });
 // axios instance
 const chatAPI = axios.create({
-  baseURL: "http://localhost:5000/api/chats"
+    baseURL: "http://localhost:5000/api/chats"
 });
 
 // Add token to requests
@@ -274,13 +274,20 @@ export const getUserById = async (userId) => {
 
 // Get User Chat By ID
 export const getUserChatById = async (userId) => {
-  try {
-    const response = await chatAPI.get(`/user/${userId}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching user chat:", error);
-    throw error;
-  }
+    try {
+        console.log('🔍 Fetching chats for user:', userId);
+        console.log('📡 Request URL:', `${chatAPI.defaults.baseURL}/user/${userId}`);
+
+        const response = await chatAPI.get(`/user/${userId}`);
+
+        console.log('✅ Chat response:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('❌ Error fetching user chats:', error);
+        console.error('Error response:', error.response?.data);
+        console.error('Error status:', error.response?.status);
+        throw error;
+    }
 };
 
 // Get Audit Logs

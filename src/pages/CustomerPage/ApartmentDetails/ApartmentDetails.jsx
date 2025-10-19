@@ -104,6 +104,7 @@ const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
+  const socket = useSocket();
   const [messageApi, contextHolder] = message.useMessage();
 
   const [boardingHouse, setBoardingHouse] = useState(null);
@@ -216,9 +217,39 @@ const PropertyDetails = () => {
     // navigate("/customer/checkout", { state: { boardingHouseId: id, roomId } });
   };
 
-  const handleContactOwner = () => {
-    if (!boardingHouse?.ownerId?._id) return;
-    navigate(`/customer/chat/${boardingHouse.ownerId._id}`);
+  const handleContactOwner = async () => {
+    if (!user) {
+      messageApi.warning("Vui lòng đăng nhập để liên hệ chủ nhà!");
+      return;
+    }
+
+    if (!boardingHouse?.ownerId?._id) {
+      messageApi.error("Không tìm thấy thông tin chủ nhà!");
+      return;
+    }
+
+    try {
+      // Create or get existing chat
+      const res = await axios.post("http://localhost:5000/api/chats/get-or-create", {
+        user1Id: user._id,
+        user2Id: boardingHouse.ownerId._id,
+      });
+
+      const chat = res.data;
+
+      // Join socket room
+      if (socket) {
+        socket.emit("joinRoom", chat._id);
+        console.log(`🔌 Joined chat room: ${chat._id}`);
+      }
+
+      // Navigate to communication page with owner ID
+      navigate(`/customer/communication`);
+      messageApi.success("Đã kết nối với chủ nhà!");
+    } catch (error) {
+      console.error("Error creating chat:", error);
+      messageApi.error("Không thể kết nối với chủ nhà. Vui lòng thử lại!");
+    }
   };
   const handleScheduleVisitClick = () => {
     if (!user) {
@@ -258,22 +289,39 @@ const PropertyDetails = () => {
             title="Bạn đã đặt một phòng tại đây!"
             subTitle="Kiểm tra trang 'Chuyến đi của tôi' để xem chi tiết."
           />
+          <Divider />
+          <Button
+            icon={<MessageOutlined />}
+            onClick={handleContactOwner}
+            style={{ width: '100%' }}
+            type="primary"
+          >
+            Liên hệ chủ nhà
+          </Button>
         </Card>
       );
     }
+
  if (rooms.every((room) => room.bookingStatus !== "Available")) {
-    return (
-      <Card className="booking-card">
-        <div style={{ textAlign: "center", padding: "20px" }}>
-          <h3 style={{ color: "#ff4d4f" }}>Đã hết phòng</h3>
-          <p>
-            Rất tiếc, tất cả các phòng tại đây đã được đặt hoặc đang chờ duyệt.
-            Vui lòng quay lại sau!
-          </p>
-        </div>
-      </Card>
-    );
-  }
+      return (
+        <Card className="booking-card">
+          <div style={{ textAlign: 'center', padding: '20px' }}>
+            <h3 style={{ color: '#ff4d4f' }}>Đã hết phòng</h3>
+            <p>Rất tiếc, tất cả các phòng tại đây đã được đặt. Vui lòng quay lại sau!</p>
+          </div>
+          <Divider />
+          <Button
+            icon={<MessageOutlined />}
+            onClick={handleContactOwner}
+            style={{ width: '100%' }}
+            type="default"
+          >
+            Liên hệ chủ nhà
+          </Button>
+        </Card>
+      );
+    }
+
      return (
     <div className="booking-card">
       <h3 className="booking-price">
