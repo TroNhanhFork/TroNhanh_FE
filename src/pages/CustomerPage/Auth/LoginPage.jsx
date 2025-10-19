@@ -10,6 +10,7 @@ import { login, saveAccessToken } from '../../../services/authService';
 import { initAutoLogout } from '../../../services/autoLogout';
 import useUser from '../../../contexts/UserContext';
 import styles from './LoginPage.module.css';
+import { useSocket } from "../../../contexts/SocketContext";
 
 const { Title } = Typography;
 
@@ -19,6 +20,7 @@ const LoginPage = () => {
   const { fetchUser } = useUser();
   const navigate = useNavigate();
   const [messageApi, contextHolder] = antMessage.useMessage();
+  const { socket } = useSocket();
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -27,6 +29,12 @@ const LoginPage = () => {
 
       saveAccessToken(res.data.accessToken, 30 * 60 * 1000, res.data.refreshToken);
       await fetchUser();
+
+      if (socket && !socket.connected) {
+        socket.auth = { userId: res.data.user._id };
+        socket.connect();
+      }
+
       initAutoLogout();
 
       const role = res.data.user.role;

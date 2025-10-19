@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import { Input, Button, message as antMessage, Badge, Modal } from "antd";
+import { IoVideocamOutline, IoSendOutline, IoChatbubblesOutline, IoEllipse, IoEllipseOutline } from "react-icons/io5";
 import { useSocket } from "../../../contexts/SocketContext";
 import useUser from "../../../contexts/UserContext";
 import { getUserChatById } from "../../../services/userService";
@@ -12,7 +13,7 @@ const { Search } = Input;
 const Communication = ({ role = "customer" }) => {
     const { id: initialOtherUserId } = useParams();
     const { user } = useUser();
-    const socket = useSocket();
+    const { socket, onlineUsers } = useSocket();
     const chatBodyRef = useRef(null);
 
     const [chatList, setChatList] = useState([]);
@@ -23,6 +24,7 @@ const Communication = ({ role = "customer" }) => {
     const [searchText, setSearchText] = useState("");
     const [isTyping, setIsTyping] = useState(false);
     const [connected, setConnected] = useState(false);
+    const isUserOnline = Array.isArray(onlineUsers) && onlineUsers.includes(selectedUser?.userId);
 
     const [inCall, setInCall] = useState(false);
     const [incomingCall, setIncomingCall] = useState(false);
@@ -48,22 +50,24 @@ const Communication = ({ role = "customer" }) => {
         const fetchChats = async () => {
             try {
                 const data = await getUserChatById(user._id);
-                const transformed = data.map((chat) => {
-                    const otherUserId =
-                        chat.user1Id._id === user._id ? chat.user2Id._id : chat.user1Id._id;
-                    const otherUser =
-                        chat.user1Id._id === user._id ? chat.user2Id : chat.user1Id;
-                    return {
-                        _id: chat._id,
-                        otherUser: {
-                            userId: otherUserId,
-                            name: otherUser.name,
-                            avatar: otherUser.avatar,
-                        },
-                        lastMessage: chat.lastMessage?.content || "",
-                        updatedAt: chat.updatedAt,
-                    };
-                });
+                const transformed = data
+                    .filter((chat) => chat?.user1Id && chat?.user2Id) // 👈 skip invalid chats
+                    .map((chat) => {
+                        const isUser1 = chat.user1Id?._id === user?._id;
+                        const otherUser = isUser1 ? chat.user2Id : chat.user1Id;
+                        const otherUserId = otherUser?._id;
+
+                        return {
+                            _id: chat._id,
+                            otherUser: {
+                                userId: otherUserId,
+                                name: otherUser?.name || "Unknown",
+                                avatar: otherUser?.avatar || "/default-avatar.png",
+                            },
+                            lastMessage: chat.lastMessage?.content || "",
+                            updatedAt: chat.updatedAt,
+                        };
+                    });
 
                 setChatList(transformed);
 
@@ -191,6 +195,25 @@ const Communication = ({ role = "customer" }) => {
             console.error(err);
             antMessage.error("Failed to load chat");
         }
+    };
+
+    // format relative time
+    const formatRelativeTime = (timestamp) => {
+        if (!timestamp) return "";
+
+        const now = new Date();
+        const time = new Date(timestamp);
+        const diffMs = now - time;
+        const diffSec = Math.floor(diffMs / 1000);
+        const diffMin = Math.floor(diffSec / 60);
+        const diffHr = Math.floor(diffMin / 60);
+        const diffDay = Math.floor(diffHr / 24);
+
+        if (diffSec < 60) return "Just now";
+        if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? "s" : ""} ago`;
+        if (diffHr < 24) return `${diffHr} hour${diffHr > 1 ? "s" : ""} ago`;
+        // Over 24 hours → show actual time
+        return time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
     };
 
     const sendMessage = async () => {
@@ -385,7 +408,11 @@ const Communication = ({ role = "customer" }) => {
                 title="Video Call"
                 open={inCall}
                 onCancel={endCall}
-                footer={[<Button key="end" danger onClick={endCall}>End Call</Button>]}
+                footer={[
+                    <Button key="end" danger onClick={endCall}>
+                        End Call
+                    </Button>,
+                ]}
                 width={800}
             >
                 <div style={{ display: "flex", gap: "10px" }}>
@@ -420,31 +447,41 @@ const Communication = ({ role = "customer" }) => {
                         filteredChats.map((chat) => (
                             <div
                                 key={chat._id}
-                                className={`chat-item ${selectedUser?.userId === chat.otherUser.userId ? "selected" : ""}`}
+                                className={`chat-item ${selectedUser?.userId === chat.otherUser.userId ? "selected" : ""
+                                    }`}
                                 onClick={() => loadChat(chat.otherUser)}
                             >
                                 <div className="chat-avatar">
-                                    <Badge dot={connected} offset={[-5, 35]}>
-                                        <img
-                                            src={chat.otherUser?.avatar || "/default-avatar.png"}
-                                            alt="avatar"
-                                            style={{ width: 45, height: 45, borderRadius: "50%" }}
-                                        />
-                                    </Badge>
+                                    <img
+                                        src={chat.otherUser?.avatar || "/default-avatar.png"}
+                                        alt="avatar"
+                                        style={{ width: 45, height: 45, borderRadius: "50%" }}
+                                    />
                                 </div>
+
                                 <div className="chat-info">
                                     <div className="chat-top">
                                         <div className="chat-name">{chat.otherUser.name}</div>
                                         <div className="chat-time" style={{ fontSize: "0.75rem", color: "#999" }}>
-                                            {chat.updatedAt
-                                                ? new Date(chat.updatedAt).toLocaleTimeString([], {
-                                                    hour: "2-digit",
-                                                    minute: "2-digit",
-                                                })
-                                                : ""}
+                                            {formatRelativeTime(chat.updatedAt)}
                                         </div>
                                     </div>
-                                    <div className="chat-preview">{chat.lastMessage || "No messages"}</div>
+
+                                    <div
+                                        style={{
+                                            fontSize: "0.8rem",
+                                            fontWeight: 500,
+                                            color: onlineUsers?.includes(chat.otherUser.userId)
+                                                ? "#52c41a" // green for online
+                                                : "#ff4d4f", // red for offline
+                                        }}
+                                    >
+                                        {onlineUsers?.includes(chat.otherUser.userId) ? "Online" : "Offline"}
+                                    </div>
+
+                                    <div className="chat-preview" style={{ color: "#666" }}>
+                                        {chat.lastMessage || "No messages"}
+                                    </div>
                                 </div>
                             </div>
                         ))
@@ -468,10 +505,21 @@ const Communication = ({ role = "customer" }) => {
                                     <div
                                         style={{
                                             fontSize: "0.85rem",
-                                            color: connected ? "#52c41a" : "#999",
+                                            color: isUserOnline ? "#52c41a" : "#ff0000",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: "4px",
                                         }}
                                     >
-                                        {connected ? "🟢 Online" : "🔴 Offline"}
+                                        {isUserOnline ? (
+                                            <>
+                                                <IoEllipse color="#52c41a" size={10} /> Online
+                                            </>
+                                        ) : (
+                                            <>
+                                                <IoEllipseOutline color="#ff0000" size={10} /> Offline
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -479,8 +527,9 @@ const Communication = ({ role = "customer" }) => {
                                 type="primary"
                                 onClick={startCall}
                                 disabled={!connected || inCall}
+                                style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
                             >
-                                📹 Video Call
+                                <IoVideocamOutline size={26} />
                             </Button>
                         </div>
 
@@ -490,18 +539,16 @@ const Communication = ({ role = "customer" }) => {
                                 return (
                                     <div key={idx} className={`message ${isMe ? "me" : "other"}`}>
                                         <div className="message-content">{msg.content}</div>
-                                        <div className="message-time">
-                                            {new Date(msg.time).toLocaleTimeString([], {
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                            })}
-                                        </div>
+                                        <div className="message-time">{formatRelativeTime(msg.time)}</div>
+
                                     </div>
                                 );
                             })}
                             {isTyping && (
                                 <div className="typing-indicator">
-                                    <span></span><span></span><span></span>
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
                                 </div>
                             )}
                         </div>
@@ -518,13 +565,19 @@ const Communication = ({ role = "customer" }) => {
                                 disabled={!connected}
                             />
                             <button onClick={sendMessage} disabled={!connected || !newMessage.trim()}>
-                                📩
+                                <IoSendOutline size={22} />
                             </button>
                         </div>
                     </>
                 ) : (
-                    <div className="empty-chat">
-                        <div style={{ fontSize: "4rem" }}>💬</div>
+                    <div
+                        className="empty-chat"
+                        style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", color: "#aaa", gap: "10px" }}
+                    >
+                        <IoChatbubblesOutline
+                            size={80}
+                            color="#aaa"
+                        />
                         <div>Select a conversation to start chatting</div>
                     </div>
                 )}

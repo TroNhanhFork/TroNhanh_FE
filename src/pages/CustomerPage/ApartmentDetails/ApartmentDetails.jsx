@@ -210,7 +210,7 @@ const PropertyDetails = () => {
       }
 
       // Navigate to communication page with owner ID
-      navigate(`/customer/chat/${chat._id}`);
+      navigate(`/customer/communication`);
       messageApi.success("Đã kết nối với chủ nhà!");
     } catch (error) {
       console.error("Error creating chat:", error);
