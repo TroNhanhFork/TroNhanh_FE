@@ -44,18 +44,32 @@ const Communication = ({ role = "customer" }) => {
         chat.otherUser?.name?.toLowerCase().includes(searchText.toLowerCase())
     );
 
+    // cleanup on logout
     useEffect(() => {
-        if (!user?._id) return;
+        if (!user) {
+            setChatList([]);
+            setMessages([]);
+            setSelectedUser(null);
+            return;
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (!user?._id) {
+            setChatList([]);  // clear chats when user logs out
+            return;
+        }
 
         const fetchChats = async () => {
             try {
                 const data = await getUserChatById(user._id);
-                const transformed = data
-                    .filter((chat) => chat?.user1Id && chat?.user2Id) // 👈 skip invalid chats
-                    .map((chat) => {
-                        const isUser1 = chat.user1Id?._id === user?._id;
+                console.log("Raw chats:", data);
+                const transformed = (data || [])
+                    .filter(chat => chat?.user1Id && chat?.user2Id && chat.user1Id?._id && chat.user2Id?._id)
+                    .map(chat => {
+                        const isUser1 = chat.user1Id._id === user?._id;
                         const otherUser = isUser1 ? chat.user2Id : chat.user1Id;
-                        const otherUserId = otherUser?._id;
+                        const otherUserId = otherUser?._id || "unknown";
 
                         return {
                             _id: chat._id,
@@ -535,12 +549,12 @@ const Communication = ({ role = "customer" }) => {
 
                         <div className="chat-body" ref={chatBodyRef}>
                             {messages.map((msg, idx) => {
-                                const isMe = (msg.senderId._id || msg.senderId) === user._id;
+                                const senderId = typeof msg.senderId === "object" ? msg.senderId?._id : msg.senderId;
+                                const isMe = senderId === user?._id;
                                 return (
                                     <div key={idx} className={`message ${isMe ? "me" : "other"}`}>
                                         <div className="message-content">{msg.content}</div>
                                         <div className="message-time">{formatRelativeTime(msg.time)}</div>
-
                                     </div>
                                 );
                             })}

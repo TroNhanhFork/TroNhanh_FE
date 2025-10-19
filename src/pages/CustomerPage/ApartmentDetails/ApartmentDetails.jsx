@@ -45,7 +45,8 @@ import RoommatePostModal from "./RoommatePostModal";
 import { getRoommatePosts } from "../../../services/roommateAPI";
 // riel-time messaging
 import { useSocket } from "../../../contexts/SocketContext";
-import dayjs from 'dayjs'; // <-- Add this line
+
+import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Slider from "react-slick";
 import { getValidAccessToken } from "../../../services/authService";
@@ -76,24 +77,24 @@ const RoomCard = ({ room, onBook, bookingStatus }) => (
       </Col>
 
       <Col>
-  {onBook ? (
-    <Button type="primary" onClick={() => onBook(room._id)}>
-      Đặt ngay
-    </Button>
-  ) : bookingStatus ? (
-    <Tag
-      color={
-        bookingStatus === "Paid"
-          ? "green"
-          : bookingStatus === "Pending"
-          ? "gold"
-          : "default"
-      }
-    >
-      {bookingStatus}
-    </Tag>
-  ) : null}
-</Col>
+        {onBook ? (
+          <Button type="primary" onClick={() => onBook(room._id)}>
+            Đặt ngay
+          </Button>
+        ) : bookingStatus ? (
+          <Tag
+            color={
+              bookingStatus === "Paid"
+                ? "green"
+                : bookingStatus === "Pending"
+                  ? "gold"
+                  : "default"
+            }
+          >
+            {bookingStatus}
+          </Tag>
+        ) : null}
+      </Col>
 
     </Row>
   </Card>
@@ -104,7 +105,7 @@ const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
-  const socket = useSocket();
+  const { socket, isConnected, onlineUsers } = useSocket();
   const [messageApi, contextHolder] = message.useMessage();
 
   const [boardingHouse, setBoardingHouse] = useState(null);
@@ -275,9 +276,9 @@ const PropertyDetails = () => {
   // Render booking card hoặc booking info
   const renderBookingSection = () => {
 
-      if (!boardingHouse || !boardingHouse.rooms) return null;
+    if (!boardingHouse || !boardingHouse.rooms) return null;
 
-  const rooms = boardingHouse.rooms;
+    const rooms = boardingHouse.rooms;
 
     const availableRooms = boardingHouse.rooms.filter(room => room.status === 'Available');
 
@@ -302,7 +303,7 @@ const PropertyDetails = () => {
       );
     }
 
- if (rooms.every((room) => room.bookingStatus !== "Available")) {
+    if (rooms.every((room) => room.bookingStatus !== "Available")) {
       return (
         <Card className="booking-card">
           <div style={{ textAlign: 'center', padding: '20px' }}>
@@ -322,43 +323,43 @@ const PropertyDetails = () => {
       );
     }
 
-     return (
-    <div className="booking-card">
-      <h3 className="booking-price">
-        {boardingHouse.minPrice?.toLocaleString("vi-VN")} -{" "}
-        {boardingHouse.maxPrice?.toLocaleString("vi-VN")} VNĐ/tháng
-      </h3>
-      <Divider />
-      <h4>Chọn phòng:</h4>
+    return (
+      <div className="booking-card">
+        <h3 className="booking-price">
+          {boardingHouse.minPrice?.toLocaleString("vi-VN")} -{" "}
+          {boardingHouse.maxPrice?.toLocaleString("vi-VN")} VNĐ/tháng
+        </h3>
+        <Divider />
+        <h4>Chọn phòng:</h4>
 
-      <div
-        style={{
-          maxHeight: "300px",
-          overflowY: "auto",
-          paddingRight: "8px",
-        }}
-      >
-     {rooms.map((room) => (
-  <RoomCard
-    key={room._id}
-    room={room}
-    bookingStatus={room.bookingStatus !== "Available" ? room.bookingStatus : null}
-    onBook={room.bookingStatus === "Available" ? handleBookRoom : undefined}
-  />
-))}
+        <div
+          style={{
+            maxHeight: "300px",
+            overflowY: "auto",
+            paddingRight: "8px",
+          }}
+        >
+          {rooms.map((room) => (
+            <RoomCard
+              key={room._id}
+              room={room}
+              bookingStatus={room.bookingStatus !== "Available" ? room.bookingStatus : null}
+              onBook={room.bookingStatus === "Available" ? handleBookRoom : undefined}
+            />
+          ))}
 
+        </div>
+
+        <Button
+          icon={<MessageOutlined />}
+          onClick={handleContactOwner}
+          style={{ width: "100%", marginTop: "16px" }}
+        >
+          Liên hệ chủ nhà
+        </Button>
       </div>
-
-      <Button
-        icon={<MessageOutlined />}
-        onClick={handleContactOwner}
-        style={{ width: "100%", marginTop: "16px" }}
-      >
-        Liên hệ chủ nhà
-      </Button>
-    </div>
-  );
-};
+    );
+  };
   const sliderSettings = {
     dots: false,
     infinite: roommatePosts.length > 3,
