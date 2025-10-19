@@ -76,22 +76,29 @@ const RentalContract = () => {
         return content;
     };
 
-    const handleContinue = async () => { // Thêm async
+    const handleContinue = async () => {
         if (!agreed) {
             messageApi.warning("Bạn phải đồng ý với các điều khoản để tiếp tục.");
             return;
         }
         try {
-            setLoading(true); 
+            setLoading(true);
             await requestBooking({ boardingHouseId, roomId });
-            messageApi.success('Yêu cầu đặt phòng đã được gửi. Vui lòng đợi chủ nhà xác nhận.');
-            navigate('/customer/my-bookings'); 
+
+            // ✅ HIỂN THỊ THÔNG BÁO
+            messageApi.success('Yêu cầu đặt phòng đã được gửi. Vui lòng đợi chủ nhà xác nhận.', 2);
+
+            // ✅ THÊM TIMEOUT TRƯỚC KHI ĐIỀU HƯỚNG
+            setTimeout(() => {
+                navigate('/customer/my-bookings');
+            }, 2000); // Đợi 2000ms (2 giây) rồi mới chuyển trang
+
         } catch (error) {
             messageApi.error(error.response?.data?.message || 'Gửi yêu cầu thất bại.');
             console.error("Error requesting booking:", error);
-        } finally {
-            setLoading(false);
+            setLoading(false); // ✅ Chỉ setLoading(false) nếu có lỗi
         }
+        // Không cần setLoading(false) ở finally nữa nếu thành công vì sẽ chuyển trang
     };
 
     if (loading) {
@@ -108,7 +115,6 @@ const RentalContract = () => {
 
     return (
         <>
-            {/* ✅ SỬA LỖI: Render contextHolder */}
             {contextHolder}
             <div className="contract-container">
                 <Card title={template.title} bordered={false} className="contract-card">
@@ -123,13 +129,13 @@ const RentalContract = () => {
                             {template.signatureImage ? (
                                 <img src={`http://localhost:5000${template.signatureImage}`} alt="Chữ ký chủ trọ" className="signature-image-display" />
                             ) : (
-                                <div className="signature-image"><span className="signature-text">{owner.name}</span></div>
+                                <div className="signature-image"><span className="signature-text">{owner?.name}</span></div>
                             )}
                             <p>{owner.name}</p>
                         </div>
                         <div className="signature-block">
                             <h4>ĐẠI DIỆN BÊN B</h4>
-                            <div className="signature-image"><span className="signature-text">{user.name}</span></div>
+                            <div className="signature-image"><span className="signature-text">{user?.name}</span></div>
                             <p>{user.name}</p>
                         </div>
                     </div>

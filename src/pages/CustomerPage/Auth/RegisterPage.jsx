@@ -9,7 +9,7 @@ import {
   message as antMessage,
 } from "antd";
 import { useNavigate } from "react-router-dom";
-import { register,sendOTP } from "../../../services/authService";
+import { register, sendOTP } from "../../../services/authService";
 import styles from "./RegisterPage.module.css";
 
 const { Title } = Typography;
@@ -24,13 +24,13 @@ const RegisterPage = () => {
   const onFinish = async (values) => {
     setLoading(true);
     try {
- const res =  await register(values);
-       const { userId, email } = res.data; 
-         await sendOTP({ id: userId, email });
-     await messageApi.success('Registration successful! Check your email for OTP to verify your account.');
-          navigate('/verify-otp', {
-      state: { userId, email }
-    });
+      const res = await register(values);
+      const { userId, email } = res.data;
+      await sendOTP({ id: userId, email });
+      messageApi.success('Registration successful! Check your email for OTP to verify your account.');
+      setTimeout(() => {
+        navigate("/verify-otp", { state: { userId, email } });
+      }, 800);
     } catch (err) {
       const errors = err.response?.data?.errors;
       if (Array.isArray(errors)) {
@@ -50,8 +50,8 @@ const RegisterPage = () => {
 
   return (
     <div className={styles.registerPageWrapper}>
-      {contextHolder} 
-      <div className={`${styles.register_container} ${styles.container}`}>
+      {contextHolder}
+      <div className={styles.container}>
         <Title level={2} className={styles.title}>
           Register
         </Title>

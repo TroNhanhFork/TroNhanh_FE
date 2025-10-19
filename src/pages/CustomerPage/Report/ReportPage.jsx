@@ -24,6 +24,7 @@ const ReportPage = () => {
   const [messageApi, contextHolder] = antMessage.useMessage();
   const [submitting, setSubmitting] = useState(false);
   const [users, setUsers] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [isEligible, setIsEligible] = useState(null);
 
   useEffect(() => {
@@ -56,12 +57,27 @@ const ReportPage = () => {
     try {
       const res = await checkBookingHistory(value);
       setIsEligible(res.data?.hasHistory);
+
+
+      if (res.data?.hasHistory) {
+        const bookingList = res.data?.bookings || [];
+        setBookings(bookingList);
+
+        if (bookingList.length > 0) {
+          form.setFieldsValue({
+            bookingId: bookingList[0]._id,
+            accommodationId: bookingList[0].propertyId,
+          });
+        }
+      } else {
+        setBookings([]);
+      }
     } catch (err) {
       console.error("❌ Failed to check booking history", err);
       setIsEligible(false);
+      setBookings([]);
     }
   };
-
   const onFinish = async (values) => {
     try {
       setSubmitting(true);
@@ -74,6 +90,7 @@ const ReportPage = () => {
         icon: <CheckCircleOutlined style={{ color: "#52c41a" }} />,
       });
       form.resetFields();
+      setIsEligible(null);
       setIsEligible(null);
     } catch (error) {
       console.error("❌ Report submission failed:", error);
@@ -182,6 +199,14 @@ const ReportPage = () => {
               >
                 <TextArea rows={4} placeholder="Describe the issue you encountered..." />
               </Form.Item>
+              {/* NỘI DUNG */}
+              <Form.Item
+                label="Report Details"
+                name="content"
+                rules={[{ required: true, message: "Please enter your report details." }]}
+              >
+                <TextArea rows={4} placeholder="Describe the issue you encountered..." />
+              </Form.Item>
 
               <Form.Item>
                 <Button
@@ -195,10 +220,22 @@ const ReportPage = () => {
               </Form.Item>
             </>
           )}
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              block
+              loading={submitting}
+            >
+              {submitting ? "Submitting..." : "Submit Report"}
+            </Button>
+          </Form.Item>
+
         </Form>
       </Card>
-    </div>
+    </div >
   );
-};
+}
+
 
 export default ReportPage;

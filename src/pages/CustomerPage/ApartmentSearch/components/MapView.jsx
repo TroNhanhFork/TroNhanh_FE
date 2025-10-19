@@ -25,15 +25,22 @@ const MapView = ({ properties = [] }) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {properties.map((property) =>
-          property.position ? (
+          // Check if position exists and has valid numbers
+          (property.position && !isNaN(property.position[0]) && !isNaN(property.position[1])) ? (
             <Marker key={property._id} position={property.position}>
               <Popup>
-                <strong>{property.title}</strong>
+                {/* ✅ SỬA: Dùng property.name */}
+                <strong>{property.name}</strong>
                 <br />
-                {property.price?.toLocaleString()} VND / tháng
+                {/* ✅ SỬA: Hiển thị khoảng giá */}
+                {property.minPrice && property.maxPrice
+                  ? `${property.minPrice.toLocaleString('vi-VN')} - ${property.maxPrice.toLocaleString('vi-VN')} VND/tháng`
+                  : property.minPrice // Handle case where only one price might exist (though unlikely)
+                    ? `${property.minPrice.toLocaleString('vi-VN')} VND/tháng`
+                    : 'Giá liên hệ'}
               </Popup>
             </Marker>
-          ) : null
+          ) : null // Don't render marker if position is invalid
         )}
 
 

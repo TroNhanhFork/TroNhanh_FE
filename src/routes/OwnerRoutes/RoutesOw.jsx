@@ -12,6 +12,8 @@ import Communication from "../../pages/OwnerPage/Communication/communication";
 import Membership from "../../pages/OwnerPage/MemberShip/membership";
 import ContractManagement from "../../pages/OwnerPage/Contract/ContractManagement";
 import PendingBookings from "../../pages/OwnerPage/PendingBookings/PendingBookings";
+import OwnerVisitRequests from "../../pages/OwnerPage/VisitRequest/OwnerVisitRequests";
+import PaymentResult from "../../pages/OwnerPage/MemberShip/PaymentResult"
 const RoutesOw = () => {
   return (
     <Routes>
@@ -25,6 +27,8 @@ const RoutesOw = () => {
         <Route path="rating" element={<Rating />} />
         <Route path="rating/:id" element={<DetailRating />} />
         <Route path="communication" element={<Communication />} />
+        <Route path="visit-requests" element={<OwnerVisitRequests />} />
+         <Route path="membership-result" element={<PaymentResult />} />
         <Route path="membership" element={<Membership />} />
       </Route>
     </Routes>

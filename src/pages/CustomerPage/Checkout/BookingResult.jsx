@@ -2,14 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import "./bookingResult.css";
 import useUser from "../../../contexts/UserContext";
-
+import axios from "axios";
 const BookingResult = () => {
   const { user } = useUser();
   const location = useLocation();
   const query = new URLSearchParams(location.search);
   const success = query.get("success");
   const bookingId = query.get("bookingId");
-
+const orderCode = query.get("orderCode");
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
@@ -17,8 +17,15 @@ const BookingResult = () => {
       setStatus("success");
     } else {
       setStatus("fail");
+      if (orderCode) {
+        axios
+          .post("http://localhost:5000/api/payment/cancel", { orderCode })
+          .then(() => console.log("✅ Đã cập nhật trạng thái cancel thành công"))
+          .catch((err) => console.error("❌ Lỗi khi cập nhật cancel:", err));
+      }
     }
-  }, [success]);
+  }, [success, orderCode]);
+ 
 
   return (
     <main className="ticket-system">
@@ -44,10 +51,6 @@ const BookingResult = () => {
               <div className="item">
                 <span>Status</span>
                 <h3>{status === "success" ? "Success " : "Failure "}</h3>
-              </div>
-              <div className="item">
-                <span>Booking code</span>
-                <h3>{bookingId || "Undefined"}</h3>
               </div>
               <div className="item">
                 <span>Time</span>

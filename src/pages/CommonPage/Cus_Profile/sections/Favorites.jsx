@@ -1,193 +1,152 @@
+// file: src/pages/Customer/Profile/Favorites.jsx
 import React, { useEffect, useState } from "react";
-import { Card, Spin, Row, Col, Pagination, Modal, Button, message as antMessage, Tag } from "antd";
-import { getUserFavorites } from "../../../../services/profileServices";
+import { Card, Spin, Row, Col, Pagination, Button, message as antMessage, Tag, Empty } from "antd";
+import { Link } from 'react-router-dom';
+import { getUserFavorites, removeFavorite } from "../../../../services/profileServices"; // Import service calls
 import useUser from "../../../../contexts/UserContext";
-import { removeFavorite } from "../../../../services/profileServices";
 
 const Favorites = () => {
   const { user, loading: userLoading } = useUser();
   const [favorites, setFavorites] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [previewImage, setPreviewImage] = useState("");
   const [messageApi, contextHolder] = antMessage.useMessage();
-
-  const handleImageClick = (imageUrl) => {
-    setPreviewImage(imageUrl);
-    setPreviewVisible(true);
-  };
-
-  const handleCancel = () => setPreviewVisible(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 6;
-  const handleRemoveFavorite = async (accommodationId) => {
-    try {
-      await removeFavorite({
-        accommodationId,
-      });
-
-      messageApi.success("Removed from favorites");
-
-      setFavorites((prev) =>
-        prev.filter((fav) => fav.accommodationId._id !== accommodationId)
-      );
-    } catch (err) {
-      console.error(err);
-      messageApi.error("Failed to remove favorite");
-    }
-  };
 
   useEffect(() => {
     if (userLoading) return;
-
     if (!user?._id) {
-      setError("Bạn phải login để vào trang này.");
+      setError("Bạn phải đăng nhập để xem mục yêu thích.");
       return;
     }
-
     setLoading(true);
-
     getUserFavorites()
       .then((res) => {
-        setFavorites(res.data.favorites);
-        setLoading(false);
+        if (res && Array.isArray(res.favorites)) {
+          setFavorites(res.favorites);
+        } else {
+          setFavorites([]); // Set empty array on invalid data
+        }
       })
       .catch((err) => {
-        console.error(err);
-        setError("Lỗi khi lấy danh sách favorite.");
+        console.error("❌ [Component] Fetch favorites error:", err);
+        setError("Lỗi khi lấy danh sách yêu thích.");
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, [user, userLoading]);
 
-  if (userLoading) return <Spin />;
+  const handleRemoveFavorite = async (boardingHouseId) => {
+    try {
+      // ✅ Gọi hàm service removeFavorite với boardingHouseId
+      await removeFavorite(boardingHouseId);
+      messageApi.success("Đã xóa khỏi danh sách yêu thích");
+      setFavorites((prev) =>
+        // Lọc dựa trên _id của nhà trọ trong boardingHouseId object
+        prev.filter((fav) => fav.boardingHouseId?._id !== boardingHouseId)
+      );
+    } catch (err) {
+      console.error("Remove favorite error:", err);
+      messageApi.error("Xóa thất bại");
+    }
+  };
 
-  if (error) return <p style={{ color: "red" }}>{error}</p>;
-
-  if (loading) return <Spin />;
+  if (userLoading || loading) return <div style={{ textAlign: 'center', marginTop: 50 }}><Spin size="large" /></div>;
+  if (error) return <p style={{ color: "red", textAlign: 'center', marginTop: 50 }}>{error}</p>;
 
   const startIndex = (currentPage - 1) * pageSize;
   const currentFavorites = favorites.slice(startIndex, startIndex + pageSize);
 
   return (
-    <div style={{ padding: "16px" }}>
+    <div style={{ padding: "24px", maxWidth: 1200, margin: '0 auto' }}>
       {contextHolder}
-      <h2>Your Favorites</h2>
+      <h2 style={{ marginBottom: 24 }}>Danh sách Yêu thích</h2>
 
-      {favorites.length === 0 && (
-        <p>Chưa có accommodation nào trong favorite.</p>
-      )}
+      {favorites.length === 0 ? (
+        <Empty description="Bạn chưa có nhà trọ yêu thích nào." />
+      ) : (
+        <>
+          <Row gutter={[24, 24]}>
+            {currentFavorites.map((fav) => {
+              // fav.boardingHouseId bây giờ là object nhà trọ đầy đủ
+              const house = fav.boardingHouseId;
+              if (!house) return null;
 
-      <Row gutter={[16, 16]}>
-        {currentFavorites.map((fav) => {
-          const acc = fav.accommodationId;
+              // ✅ SỬ DỤNG DỮ LIỆU TỪ AGGREGATION
+              const priceRange = house.minPrice && house.maxPrice
+                ? `${house.minPrice.toLocaleString('vi-VN')} - ${house.maxPrice.toLocaleString('vi-VN')} VNĐ/tháng`
+                : house.minPrice
+                  ? `${house.minPrice.toLocaleString('vi-VN')} VNĐ/tháng`
+                  : 'Liên hệ';
 
-          return (
+              const availabilityTag = house.availableRoomsCount > 0
+                ? <Tag color="green">{`Còn ${house.availableRoomsCount} phòng`}</Tag>
+                : <Tag color="orange">Hết phòng</Tag>;
 
-            <Col xs={24} sm={10} md={8} key={fav._id}>
-              <Card
-                title={acc?.name || "No title"}
-                style={{
-                  marginBottom: "16px",
-                  height: "600px",
-                  borderRadius: "12px", // Bo góc đẹp hơn
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                }}
-                bodyStyle={{
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  flexGrow: 1,
-                }}
-                cover={
-                  acc?.photos ? (
-                    <img
-                      alt={acc.title}
-                      src={
-                        acc.photos && acc.photos.length > 0
-                          ? `http://localhost:5000${acc.photos[0]}`
-                          : "/default-image.jpg"
-                      }
-                      style={{
-                        width: "100%",
-                        height: "200px",
-                        objectFit: "cover",
-                        borderTopLeftRadius: "12px",
-                        borderTopRightRadius: "12px",
-                      }}
-                      onClick={() => handleImageClick(acc.photos)}
+              return (
+                <Col xs={24} sm={12} md={8} key={fav._id}>
+                  <Card
+                    hoverable
+                    style={{ height: "100%", display: 'flex', flexDirection: 'column' }}
+                    cover={
+                      <Link to={`/customer/property/${house._id}`}>
+                        <img
+                          alt={house.name} // ✅ Sửa alt text
+                          src={house.photos?.[0] ? `http://localhost:5000${house.photos[0]}` : "/default-image.jpg"}
+                          style={{ height: "200px", objectFit: "cover", width: '100%' }}
+                        />
+                      </Link>
+                    }
+                    actions={[
+                      <Button
+                        danger
+                        type="primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFavorite(house._id);
+                        }}
+                      >
+                        Xóa
+                      </Button>,
+                      <Link to={`/customer/property/${house._id}`}>
+                        <Button type="default">Xem chi tiết</Button>
+                      </Link>
+                    ]}
+                  >
+                    <Card.Meta
+                      title={<Link to={`/customer/property/${house._id}`} style={{ color: 'inherit' }}>{house.name || "Chưa có tên"}</Link>}
+                      description={`${house.location?.street || ''}, ${house.location?.district || ''}`}
+                      style={{ marginBottom: 16 }}
                     />
-                  ) : null
-                }
-              >
-                <div style={{ flexGrow: 1 }}>
-                  <p>{acc?.description || "No description"}</p>
-                  <p>
-                    <strong>Giá:</strong> {acc?.price?.toLocaleString()} VNĐ
-                  </p>
-                  <p>
-                    <strong>Trạng thái:</strong>{" "}
-                    <Tag color={acc?.status === "Available" ? "green" : "volcano"}>
-                      {acc?.status?.toUpperCase()}
-                    </Tag>
-                  </p>
-
-                  {acc?.location && (
-                    <>
+                    <div style={{ marginTop: 'auto' }}>
                       <p>
-                        <strong>Địa chỉ:</strong>{" "}
-                        {acc.location.addressDetail
-                          ? `${acc.location.addressDetail}, `
-                          : ""}
-                        {acc.location.street ? `${acc.location.street}, ` : ""}
-                        {acc.location.district || ""}
+                        <strong>Giá:</strong> {priceRange} {/* ✅ Hiển thị khoảng giá */}
                       </p>
-                      {(acc.location.latitude || acc.location.longitude) && (
-                        <p>
-                          <strong>Tọa độ:</strong> {acc.location.latitude},{" "}
-                          {acc.location.longitude}
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
+                      <p>
+                        <strong>Trạng thái:</strong>{" "}
+                        {availabilityTag} {/* ✅ Hiển thị trạng thái phòng */}
+                      </p>
+                    </div>
+                  </Card>
+                </Col>
+              );
+            })}
+          </Row>
 
-                <Button
-                  danger
-                  type="primary"
-                  onClick={() => handleRemoveFavorite(acc._id)}
-                  style={{ marginTop: 8 }}
-                  block
-                >
-                  Remove from favorites
-                </Button>
-              </Card>
-
-            </Col>
-          );
-        })}
-      </Row>
-
-      {favorites.length > pageSize && (
-        <Pagination
-          current={currentPage}
-          pageSize={pageSize}
-          total={favorites.length}
-          onChange={setCurrentPage}
-          style={{ marginTop: "24px", textAlign: "center" }}
-        />
+          {favorites.length > pageSize && (
+            <Pagination
+              current={currentPage}
+              pageSize={pageSize}
+              total={favorites.length}
+              onChange={setCurrentPage}
+              style={{ marginTop: "32px", textAlign: "center" }}
+              showSizeChanger={false}
+            />
+          )}
+        </>
       )}
-      <Modal
-        visible={previewVisible}
-        footer={null}
-        onCancel={handleCancel}
-        centered
-        bodyStyle={{ padding: 0 }}
-      >
-        <img alt="preview" src={previewImage} style={{ width: '100%', maxHeight: '80vh', objectFit: 'contain' }} />
-      </Modal>
     </div>
   );
 };

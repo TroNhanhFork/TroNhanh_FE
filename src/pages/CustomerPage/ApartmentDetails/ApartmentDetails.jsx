@@ -14,6 +14,7 @@ import {
   message,
   Modal,
   List,
+  Carousel
 } from "antd";
 import {
   UserOutlined,
@@ -24,6 +25,7 @@ import {
   RightOutlined,
   CheckCircleOutlined,
   MessageOutlined,
+  TagOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -43,30 +45,60 @@ import RoommatePostModal from "./RoommatePostModal";
 import { getRoommatePosts } from "../../../services/roommateAPI";
 // riel-time messaging
 import { useSocket } from "../../../contexts/SocketContext";
-
+import dayjs from 'dayjs'; // <-- Add this line
+import relativeTime from 'dayjs/plugin/relativeTime';
 import Slider from "react-slick";
 import { getValidAccessToken } from "../../../services/authService";
+import VisitRequestModal from "./VisitRequestModal";
 
+const { Option } = Select;
 const { TextArea } = Input;
 
-const RoomCard = ({ room, onBook }) => (
-  <Card size="small" style={{ marginBottom: 12 }} bodyStyle={{ padding: '12px' }}>
+const RoomCard = ({ room, onBook, bookingStatus }) => (
+  <Card size="small" style={{ marginBottom: 12 }} bodyStyle={{ padding: "12px" }}>
     <Row align="middle" justify="space-between" gutter={8}>
       <Col flex="auto">
-        <p style={{ margin: 0, fontWeight: 'bold' }}>Phòng {room.roomNumber}</p>
+        <p style={{ margin: 0, fontWeight: "bold" }}>Phòng {room.roomNumber}</p>
         <small>{room.area} m²</small>
       </Col>
+
       <Col>
-        <p style={{ margin: 0, color: '#004d40', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-          {room.price.toLocaleString('vi-VN')} VNĐ/tháng
+        <p
+          style={{
+            margin: 0,
+            color: "#004d40",
+            fontWeight: "bold",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {room.price.toLocaleString("vi-VN")} VNĐ/tháng
         </p>
       </Col>
+
       <Col>
-        <Button type="primary" onClick={() => onBook(room._id)}>Đặt ngay</Button>
-      </Col>
+  {onBook ? (
+    <Button type="primary" onClick={() => onBook(room._id)}>
+      Đặt ngay
+    </Button>
+  ) : bookingStatus ? (
+    <Tag
+      color={
+        bookingStatus === "Paid"
+          ? "green"
+          : bookingStatus === "Pending"
+          ? "gold"
+          : "default"
+      }
+    >
+      {bookingStatus}
+    </Tag>
+  ) : null}
+</Col>
+
     </Row>
   </Card>
 );
+
 
 const PropertyDetails = () => {
   const { id } = useParams();
@@ -92,10 +124,12 @@ const PropertyDetails = () => {
   const [editedReviewRating, setEditedReviewRating] = useState(null);
   const [editedReviewPurpose, setEditedReviewPurpose] = useState("");
   const [token, setToken] = useState('');
-
+  const [isVisitModalVisible, setIsVisitModalVisible] = useState(false);
+  // Tạo function riêng để fetch boarding-house data
   const fetchBoardingHouseData = async () => {
     try {
       const data = await getBoardingHouseById(id);
+      console.log(data)
       setBoardingHouse(data);
       const userToken = await getValidAccessToken();
       setToken(userToken);
@@ -113,7 +147,7 @@ const PropertyDetails = () => {
       if (!user || !boardingHouse?._id) return;
       try {
         const favorites = await getUserFavorites();
-        const isFav = favorites.some((fav) => fav.accommodationId?._id === boardingHouse._id);
+        const isFav = favorites.some((fav) => fav.boardingHouseId?._id === boardingHouse._id);
         setIsFavorite(isFav);
       } catch (err) {
         console.error("Lỗi khi kiểm tra yêu thích", err);
@@ -151,7 +185,7 @@ const PropertyDetails = () => {
   }, [boardingHouse?._id]);
 
   if (!boardingHouse) {
-    return <div className="accommodation-not-found">Đang tải hoặc không tìm thấy nhà trọ...</div>;
+    return <div className="boarding-house-not-found">Đang tải hoặc không tìm thấy nhà trọ...</div>;
   }
 
   const toggleFavorite = async () => {
@@ -165,7 +199,7 @@ const PropertyDetails = () => {
         setIsFavorite(false);
         messageApi.success("Đã xóa khỏi danh sách yêu thích");
       } else {
-        await addToFavorite({ accommodationId: boardingHouse._id });
+        await addToFavorite({ boardingHouseId: boardingHouse._id });
         setIsFavorite(true);
         messageApi.success("Đã thêm vào danh sách yêu thích");
       }
@@ -217,8 +251,34 @@ const PropertyDetails = () => {
       messageApi.error("Không thể kết nối với chủ nhà. Vui lòng thử lại!");
     }
   };
+  const handleScheduleVisitClick = () => {
+    if (!user) {
+      messageApi.warning("Please log in to schedule a visit.");
+      return;
+    }
 
+    if (user._id === boardingHouse.ownerId?._id) {
+      messageApi.info("You cannot schedule a visit for your own accomodation.");
+      return;
+    }
+    setIsVisitModalVisible(true);
+  };
+
+  const handleVisitModalClose = () => {
+    setIsVisitModalVisible(false);
+  };
+
+  const handleVisitModalSuccess = () => {
+    setIsVisitModalVisible(false);
+    messageApi.success("Your visit request has been sent to the owner!");
+  };
+  // Render booking card hoặc booking info
   const renderBookingSection = () => {
+
+      if (!boardingHouse || !boardingHouse.rooms) return null;
+
+  const rooms = boardingHouse.rooms;
+
     const availableRooms = boardingHouse.rooms.filter(room => room.status === 'Available');
 
     if (userHasBooking) {
@@ -242,7 +302,7 @@ const PropertyDetails = () => {
       );
     }
 
-    if (availableRooms.length === 0) {
+ if (rooms.every((room) => room.bookingStatus !== "Available")) {
       return (
         <Card className="booking-card">
           <div style={{ textAlign: 'center', padding: '20px' }}>
@@ -254,6 +314,7 @@ const PropertyDetails = () => {
             icon={<MessageOutlined />}
             onClick={handleContactOwner}
             style={{ width: '100%' }}
+            type="default"
           >
             Liên hệ chủ nhà
           </Button>
@@ -261,31 +322,43 @@ const PropertyDetails = () => {
       );
     }
 
-    return (
-      <div className="booking-card">
-        <h3 className="booking-price">
-          {boardingHouse.minPrice?.toLocaleString('vi-VN')} - {boardingHouse.maxPrice?.toLocaleString('vi-VN')} VNĐ/tháng
-        </h3>
-        <Divider />
-        <h4>Chọn phòng còn trống:</h4>
-        <div style={{ maxHeight: '300px', overflowY: 'auto', paddingRight: '8px' }}>
-          {availableRooms.map(room => (
-            <RoomCard key={room._id} room={room} onBook={handleBookRoom} />
-          ))}
-        </div>
-        <Divider />
-        <Button
-          icon={<MessageOutlined />}
-          onClick={handleContactOwner}
-          style={{ width: '100%' }}
-          type="default"
-        >
-          Liên hệ chủ nhà
-        </Button>
-      </div>
-    );
-  };
+     return (
+    <div className="booking-card">
+      <h3 className="booking-price">
+        {boardingHouse.minPrice?.toLocaleString("vi-VN")} -{" "}
+        {boardingHouse.maxPrice?.toLocaleString("vi-VN")} VNĐ/tháng
+      </h3>
+      <Divider />
+      <h4>Chọn phòng:</h4>
 
+      <div
+        style={{
+          maxHeight: "300px",
+          overflowY: "auto",
+          paddingRight: "8px",
+        }}
+      >
+     {rooms.map((room) => (
+  <RoomCard
+    key={room._id}
+    room={room}
+    bookingStatus={room.bookingStatus !== "Available" ? room.bookingStatus : null}
+    onBook={room.bookingStatus === "Available" ? handleBookRoom : undefined}
+  />
+))}
+
+      </div>
+
+      <Button
+        icon={<MessageOutlined />}
+        onClick={handleContactOwner}
+        style={{ width: "100%", marginTop: "16px" }}
+      >
+        Liên hệ chủ nhà
+      </Button>
+    </div>
+  );
+};
   const sliderSettings = {
     dots: false,
     infinite: roommatePosts.length > 3,
@@ -395,8 +468,8 @@ const PropertyDetails = () => {
   //   if (!inputValue.trim()) return;
   //   const messageData = {
   //     senderId: user._id,
-  //     receiverId: accommodation.ownerId,
-  //     accommodationId: accommodation._id,
+  //     receiverId: boardingHouse.ownerId,
+  //     boardingHouseId: boardingHouse._id,
   //     text: inputValue,
   //   };
   //   try {
@@ -420,17 +493,17 @@ const PropertyDetails = () => {
   // };
 
   // const fetchMessages = async () => {
-  //   const accommodationId = accommodation?._id;
+  //   const boardingHouseId = boardingHouse?._id;
 
   //   try {
   //     console.log(
   //       "[DEBUG] GET messages for:",
-  //       `/api/messages/${accommodationId}`
+  //       `/api/messages/${boardingHouseId}`
   //     );
 
-  //     console.log("[DEBUG] accommodationId length:", accommodationId.length);
+  //     console.log("[DEBUG] boardingHouseId length:", boardingHouseId.length);
 
-  //     const res = await axios.get(process.env.REACT_APP_API_URL + `/messages/${accommodationId}`, {
+  //     const res = await axios.get(process.env.REACT_APP_API_URL + `/messages/${boardingHouseId}`, {
   //       headers: {
   //         Authorization: `Bearer ${user.token}`,
   //       },
@@ -446,11 +519,11 @@ const PropertyDetails = () => {
       {contextHolder}
       <Row gutter={[16, 16]}>
         <Col xs={24}>
-          <div className="accommodation-main-image-wrapper">
+          <div className="boardingHouse-main-image-wrapper">
             <img
               src={boardingHouse.photos?.[0] ? `http://localhost:5000${boardingHouse.photos[0]}` : "/image/default-image.jpg"}
               alt={boardingHouse.name}
-              className="accommodation-main-image"
+              className="boardingHouse-main-image"
             />
             <button className="favorite-btn" onClick={toggleFavorite}>
               {isFavorite ? <HeartFilled style={{ color: "red", fontSize: 24 }} /> : <HeartOutlined style={{ color: "black", fontSize: 24 }} />}
@@ -459,10 +532,10 @@ const PropertyDetails = () => {
         </Col>
       </Row>
 
-      <Row gutter={32} className="accommodation-main-content">
+      <Row gutter={32} className="boardingHouse-main-content">
         <Col xs={24} md={16}>
-          <h1 className="accommodation-title">{boardingHouse.name}</h1>
-          <p className="accommodation-location">
+          <h1 className="boardingHouse-title">{boardingHouse.name}</h1>
+          <p className="boardingHouse-location">
             {`${boardingHouse.location.addressDetail}, ${boardingHouse.location.street}, ${boardingHouse.location.district}`}
           </p>
           <h2>Mô tả</h2>
@@ -476,7 +549,7 @@ const PropertyDetails = () => {
 
       <Divider />
       <h1 className="text-heading">Tiện ích</h1>
-      <Row gutter={[24, 24]} className="accommodation-amenities">
+      <Row gutter={[24, 24]} className="boardingHouse-amenities">
         {boardingHouse.amenities?.map((amenity, index) => (
           <Col xs={12} sm={8} md={6} key={index} className="amenity-item">
             <CheckCircleOutlined className="amenity-icon" />
@@ -509,27 +582,111 @@ const PropertyDetails = () => {
       ) : (
         <div style={{ position: "relative" }}>
           <Slider {...sliderSettings} ref={sliderRef}>
-            {roommatePosts.map((post) => (
-              <div key={post._id} style={{ padding: "0 10px" }}>
-                <Card className="roommate-card" hoverable>
-                  {/* ... Nội dung Card tìm bạn ... */}
-                </Card>
-              </div>
-            ))}
-          </Slider>
+            {roommatePosts.map((post) => {
+              // Lấy thông tin người đăng bài
+              const author = post.userId;
+
+              return (
+                <div key={post._id} style={{ padding: "0 8px" }}> {/* Giảm padding ngang */}
+                  <Card
+                    className="roommate-card"
+                    hoverable
+                    style={{ height: '100%' }} // Để Card tự điều chỉnh chiều cao
+                    bodyStyle={{ padding: '16px' }} // Giảm padding body
+                  >
+                    {/* Phần thông tin người đăng */}
+                    <Card.Meta
+                      avatar={
+                        <Avatar
+                          size={48} // Kích thước avatar
+                          src={author?.avatar ? `http://localhost:5000${author.avatar}` : null} // ✅ Lấy avatar của người đăng bài
+                          style={{
+                            backgroundColor: author?.avatar ? 'transparent' : '#004d40', // Màu nền nếu không có avatar
+                            border: '1px solid #eee'
+                          }}
+                        >
+                          {/* Hiển thị chữ cái đầu nếu không có avatar */}
+                          {!author?.avatar && author?.name?.charAt(0).toUpperCase()}
+                        </Avatar>
+                      }
+                      title={author?.name || "Người dùng ẩn danh"}
+                      description={`Đăng ${dayjs(post.createdAt).fromNow()}`} // Hiển thị thời gian tương đối
+                      style={{ marginBottom: '12px' }}
+                    />
+
+                    {/* Phần nội dung bài đăng */}
+                    <div className="roommate-post-content">
+                      {/* Hiển thị ảnh nếu có */}
+                      {post.images?.length > 0 && (
+                        <Carousel autoplay dotPosition="bottom" style={{ marginBottom: '12px' }}>
+                          {post.images.map((img, idx) => (
+                            <div key={idx}>
+                              <img
+                                src={`http://localhost:5000${img}`} // Giả sử ảnh được lưu tương đối
+                                alt={`Giới thiệu ${idx + 1}`}
+                                style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 4 }}
+                              />
+                            </div>
+                          ))}
+                        </Carousel>
+                      )}
+
+                      {/* Phần giới thiệu */}
+                      <p style={{ fontStyle: 'italic', color: '#555', marginBottom: '10px' }}>"{post.intro}"</p>
+
+                      {/* Thông tin chi tiết */}
+                      <div className="roommate-details">
+                        <p>
+                          <UserOutlined style={{ marginRight: 8, color: '#004d40' }} />
+                          <strong>Giới tính mong muốn:</strong> {post.genderPreference || "Linh hoạt"}
+                        </p>
+                        {/* Hiển thị Habits dưới dạng Tag */}
+                        {post.habits && post.habits.length > 0 && (
+                          <p style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                            <TagOutlined style={{ marginRight: 8, color: '#004d40' }} />
+                            <strong>Thói quen:</strong>
+                            {post.habits.map((habit, i) => (
+                              <Tag key={i} color="blue">{habit}</Tag>
+                            ))}
+                          </p>
+                        )}
+                        {/* Nút liên hệ (ví dụ) */}
+                        <Button
+                          icon={<MessageOutlined />}
+                          style={{ marginTop: '12px', width: '100%' }}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Ngăn Card kích hoạt link (nếu có)
+                            navigate(`/customer/chat/${author?._id}`);
+                          }}
+                        >
+                          Nhắn tin
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              );
+            })}
+          </Slider >
           <div className="custom-carousel-buttons">
             <button className="nav-button" onClick={() => sliderRef.current.slickPrev()}><LeftOutlined /></button>
             <button className="nav-button" onClick={() => sliderRef.current.slickNext()}><RightOutlined /></button>
           </div>
-        </div>
+        </div >
       )}
       <RoommatePostModal
         visible={showModal}
         onClose={() => setShowModal(false)}
-        accommodationId={boardingHouse._id}
+        boardingHouseId={boardingHouse._id}
         onSuccess={fetchRoommates}
       />
-
+      <VisitRequestModal
+        visible={isVisitModalVisible}
+        onClose={handleVisitModalClose}
+        onSuccess={handleVisitModalSuccess}
+        boardingHouseId={boardingHouse._id}
+        ownerId={boardingHouse.ownerId?._id}
+      />
       <Divider />
 
       <h1 className="text-heading">Reviews</h1>
@@ -547,7 +704,7 @@ const PropertyDetails = () => {
                     <label className="review-form-label">Your Review</label>
                     <Input.TextArea
                       rows={4}
-                      placeholder="Share your experience about this accommodation..."
+                      placeholder="Share your experience about this boardingHouse..."
                       value={reviewContent}
                       onChange={(e) => setReviewContent(e.target.value)}
                       className="review-custom-textarea"
@@ -591,7 +748,7 @@ const PropertyDetails = () => {
                     <i className="bi bi-info-circle review-prompt-icon"></i>
                     <h3 className="review-prompt-title">Only Verified Guests Can Review</h3>
                     <p className="review-prompt-description">
-                      You need to book and stay at this accommodation to leave a review.
+                      You need to book and stay at this boardingHouse to leave a review.
                     </p>
                     <p className="review-prompt-note">
                       This helps ensure authentic and helpful reviews for other travelers.
@@ -726,7 +883,7 @@ const PropertyDetails = () => {
               </Card>
             ))
           ) : (
-            <p>No reviews yet for this accommodation.</p>
+            <p>No reviews yet for this boarding-house.</p>
           )}
         </Col>
       </Row>
@@ -774,7 +931,7 @@ const PropertyDetails = () => {
           </ul>
         </Col>
       </Row>
-    </div>
+    </div >
   );
 };
 

@@ -18,8 +18,8 @@ const MyBookings = () => {
         const fetchBookings = async () => {
             setLoading(true);
             try {
-                // Assuming getUserBookingHistory fetches all bookings for the logged-in user
-                const data = await bookingService.getUserBookingHistory();
+                // Assuming getUserRequestHistory fetches all bookings for the logged-in user
+                const data = await bookingService.getUserRequestHistory();
                 // Sort bookings, maybe pending first, then by creation date
                 data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 setBookings(data);
@@ -60,7 +60,7 @@ const MyBookings = () => {
     const getStatusTag = (booking) => {
         const { contractStatus, status } = booking; // contractStatus is for approval, status is for payment/completion
 
-        if (status === 'paid') return <Tag color="success">Đã thanh toán</Tag>;
+        if (status === 'Paid') return <Tag color="success">Đã thanh toán</Tag>;
         if (status === 'completed') return <Tag color="default">Đã hoàn thành</Tag>; // For past stays
         if (contractStatus === 'pending_approval') return <Tag color="processing">Chờ duyệt</Tag>;
         if (contractStatus === 'approved') return <Tag color="warning">Chờ thanh toán</Tag>;

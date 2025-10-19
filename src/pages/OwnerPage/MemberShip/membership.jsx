@@ -21,6 +21,10 @@ const Membership = () => {
       setTimeout(() => {
         window.location.href = "/login";
       }, 2000);
+      messageApi.error("Bạn chưa đăng nhập hoặc phiên đăng nhập đã hết hạn!");
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 2000);
     }
   }, [messageApi]);
 
@@ -72,15 +76,18 @@ const Membership = () => {
 
       if (!userId) {
         messageApi.warning("Bạn chưa đăng nhập!");
+        messageApi.warning("Bạn chưa đăng nhập!");
         return;
       }
 
       // ✅ Nếu đang dùng đúng gói này → cảnh báo
       if (String(currentPackageId) === String(pkg._id)) {
         messageApi.info("Bạn đã mua gói thành viên này rồi.");
+        messageApi.info("Bạn đã mua gói thành viên này rồi.");
         return;
       }
 
+      // ✅ Nếu đang dùng gói khác → hiện confirmation để upgrade
       // ✅ Nếu đang dùng gói khác → hiện confirmation để upgrade
       if (currentPackageId && String(currentPackageId) !== String(pkg._id)) {
         const currentPkg = packages.find(p => String(p._id) === String(currentPackageId));
@@ -110,12 +117,12 @@ const Membership = () => {
       console.log("💡 Subscribing with userId:", userId);
       console.log("📦 Package:", pkg.packageName, "—", pkg.price);
 
-      const res = await axios.post("http://localhost:5000/api/payment/create", {
-        amount: pkg.price,
-        packageId: pkg._id,
-        userId: userId,
-        role: "owner"
-      });
+    // Gọi API backend để tạo PayOS payment
+    const res = await axios.post("http://localhost:5000/api/payment/create", {
+      packageId: pkg._id,
+      userId: userId,
+      type: "membership" // Hoặc "booking" nếu là booking
+    });
 
       window.location.href = res.data.url;
     } catch (err) {
@@ -126,6 +133,7 @@ const Membership = () => {
 
   return (
     <div className="membership-container">
+      {contextHolder}
       {contextHolder}
       <div className="membership-header">
         <div className="header-left">
@@ -156,9 +164,15 @@ const Membership = () => {
             )}
 
             <button
-              className="subscribe-btn"
+              className="subscribe-btn" 
               onClick={() => handleSubscribe(pkg)}
             >
+              {String(currentPackageId) === String(pkg._id) 
+                ? "Current Plan" 
+                : currentPackageId && String(currentPackageId) !== String(pkg._id)
+                ? "Upgrade" 
+                : "Subscribe"
+              }
               {String(currentPackageId) === String(pkg._id) 
                 ? "Current Plan" 
                 : currentPackageId && String(currentPackageId) !== String(pkg._id)
