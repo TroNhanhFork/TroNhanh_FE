@@ -9,11 +9,12 @@ import {
   CreditCardOutlined,
   LogoutOutlined,
   BarChartOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./sidebar.css";
 import useUser from "../../../../contexts/UserContext";
-
+import { useNotifications } from '../../../../contexts/NotificationContext';
 const { Title, Text } = Typography;
 
 const Sidebar = () => {
@@ -72,6 +73,9 @@ const Sidebar = () => {
         <Menu.Item key="pending-bookings" icon={<HomeOutlined />}>
           <Link to="/owner/pending-bookings">Pending Bookings</Link>
         </Menu.Item>
+        <Menu.Item key="visit-requests" icon={<CalendarOutlined />}>
+ <Link to="/owner/visit-requests">Visit Requests</Link>
+ </Menu.Item>
         <Menu.Item key="rating" icon={<StarOutlined />}>
           <Link to="/owner/rating">Rating</Link>
         </Menu.Item>

@@ -261,7 +261,7 @@ const BookingHistory = () => {
               >
                 <div className="booking-info-inline">
                   <span className="info-inline-item">
-                    <strong>VNPay Transaction ID:</strong> {selectedBooking.paymentInfo?.vnpayTransactionId || 'N/A'}
+                   <strong>Transaction Code:</strong> {selectedBooking.paymentInfo?.payosOrderCode || 'N/A'}
                   </span>
                   <span className="info-divider">|</span>
                   <span className="info-inline-item">

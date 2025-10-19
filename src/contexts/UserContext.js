@@ -18,7 +18,7 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
     localStorage.removeItem("token");
   };

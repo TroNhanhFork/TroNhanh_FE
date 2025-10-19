@@ -173,32 +173,47 @@ const CheckoutPage = () => {
       return messageApi.warning("Vui lòng điền đầy đủ thông tin khách và chi tiết đặt phòng.");
     }
     if (startDate && startDate.isBefore(dayjs().startOf('day'))) {
-      return messageApi.error("Ngày bắt đầu không thể là ngày trong quá khứ.");
+      notification.error({ 
+        message: "Invalid Date", 
+        description: "Start date cannot be in the past. Please select today or a future date." 
+      });
+      return;
     }
 
-    const guestData = {
-      firstName, lastName, email, phone, purpose,
-      startDate: startDate ? startDate.format("YYYY-MM-DD") : null,
-      leaseDuration, guests,
-    };
-
+    // 1. Create booking first
     try {
-      // Initiate payment
-      if (paymentMethod === "vnpay") {
-        // ✅ SỬA: Dùng axiosInstance
-        const res = await axiosInstance.post(
-          "/payment/create", // Đường dẫn tương đối vì đã cấu hình baseURL
-          {
-            // ✅ SỬA: Dùng giá từ roomDetails
-            amount: Math.round(roomDetails.price * 1), // Chỉ tiền thuê tháng đầu
-            userId: user._id,
-            bookingId: booking._id,
-            type: "booking",
-          }
-        );
-        window.location.href = res.data.url;
-      } else {
-        messageApi.info("Phương thức thanh toán chưa được hỗ trợ.");
+      const bookingRes = await axios.post(
+        "http://localhost:5000/api/bookings",
+        {
+          userId: user._id,
+          propertyId: property._id,
+          guestInfo: {
+            firstName,
+            lastName,
+            email,
+            phone,
+            purpose,
+            startDate: startDate ? startDate.format("YYYY-MM-DD") : null,
+            leaseDuration,
+            guests,
+          },
+        }
+      );
+
+      // 2. Only proceed to payment if booking is created
+if (paymentMethod === "payos") {
+  const res = await axios.post("http://localhost:5000/api/payment/create", {
+    amount: Math.round(property.price * 1.003 + 500000),
+    userId: user._id,
+    bookingId: bookingRes.data._id,
+     type: "booking",
+  });
+
+  // redirect sang PayOS checkout page
+  window.location.href = res.data.url;
+}
+ else {
+        // Handle other payment methods if needed
       }
     } catch (err) {
       // ✅ SỬA: Dùng messageApi
@@ -206,35 +221,37 @@ const CheckoutPage = () => {
       console.error("Payment initiation error:", err.response?.data || err.message);
     }
   };
-
-  if (loading) {
-    return <div className="loading-container"><Spin size="large" tip="Đang tải thông tin thanh toán..." /></div>;
+useEffect(() => {
+  // Prefill từ user (nếu có)
+  if (user && Object.keys(user).length > 0) {
+    if (user.name) {
+      const nameParts = user.name.trim().split(" ");
+      const first = nameParts.pop();
+      const last = nameParts.join(" ");
+      setFirstName((prev) => prev || first);
+      setLastName((prev) => prev || last);
+    } else {
+      setFirstName((prev) => prev || user.firstName || "");
+      setLastName((prev) => prev || user.lastName || "");
+    }
+    setEmail((prev) => prev || user.email || "");
+    setPhone((prev) => prev || user.phone || "");
   }
 
-  if (error) {
-    return (
-      <div className="checkout-container">
-        <Result status="error" title="Không thể tiến hành thanh toán" subTitle={error}
-          extra={<Button type="primary" onClick={() => navigate('/customer/my-bookings')}>Quay lại Đặt chỗ của tôi</Button>}
-        />
-      </div>
-    );
+  // Prefill từ accommodation (nếu có)
+  if (propertyId) {
+    getAccommodationById(propertyId).then((data) => {
+      setProperty(data);
+      if (data.guestFirstName) setFirstName(data.guestFirstName);
+      if (data.guestLastName) setLastName(data.guestLastName);
+      if (data.guestEmail) setEmail(data.guestEmail);
+      if (data.guestPhone) setPhone(data.guestPhone);
+      if (data.purpose) setPurpose(data.purpose);
+    });
   }
+}, [user, propertyId]);
 
-  if (!booking || !roomDetails || !boardingHouseDetails) {
-    return (
-      <div className="checkout-container">
-        <Result status="warning" title="Thiếu thông tin" subTitle="Không thể tải đầy đủ thông tin đặt phòng."
-          extra={<Button type="primary" onClick={() => navigate('/customer/my-bookings')}>Quay lại</Button>}
-        />
-      </div>
-    );
-  }
 
-  // Tính toán giá (ví dụ chỉ tháng đầu)
-  const amountDueNow = roomDetails.price; // Có thể cộng thêm cọc nếu cần
-  // Tính ngày kết thúc
-  const endDate = startDate ? startDate.add(leaseDuration, 'month').format('DD/MM/YYYY') : 'N/A';
 
   return (
     <div className="checkout-container">
@@ -272,10 +289,15 @@ const CheckoutPage = () => {
 
           {/* Payment Method */}
           <div className="payment-method-section">
-            <h3 className="section-title">Phương thức thanh toán</h3>
-            <Select placeholder="Chọn phương thức thanh toán" size="large" style={{ width: "100%" }} value={paymentMethod} onChange={setPaymentMethod}>
-              <Option value="vnpay">VNPay</Option>
-              {/* <Option value="paypal">PayPal</Option> */}
+            <h3 className="section-title">Payment method</h3>
+            <Select
+              placeholder="Select payment method"
+              size="large"
+              style={{ width: "100%" }}
+              value={paymentMethod}
+              onChange={setPaymentMethod}
+            >
+              <Option value="payos">PayOS</Option>
             </Select>
             <p className="terms-note">Bằng việc nhấn "Thanh toán", bạn đồng ý với các điều khoản...</p>
             {/* ✅ SỬA: Disable nút nếu thiếu thông tin */}

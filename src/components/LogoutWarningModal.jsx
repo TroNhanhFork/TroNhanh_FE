@@ -1,3 +1,4 @@
+// components/common/LogoutWarningModal.jsx
 import React, { useEffect, useState } from 'react';
 import { Modal } from 'antd';
 

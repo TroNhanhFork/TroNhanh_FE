@@ -46,7 +46,7 @@ import { useSocket } from "../../../contexts/SocketContext";
 
 import Slider from "react-slick";
 import { getValidAccessToken } from "../../../services/authService";
-
+import VisitRequestModal from "./VisitRequestModal";
 const { TextArea } = Input;
 
 const RoomCard = ({ room, onBook }) => (
@@ -91,8 +91,10 @@ const PropertyDetails = () => {
   const [editedReviewRating, setEditedReviewRating] = useState(null);
   const [editedReviewPurpose, setEditedReviewPurpose] = useState("");
   const [token, setToken] = useState('');
-
-  const fetchBoardingHouseData = async () => {
+  const [messageApi, contextHolder] = message.useMessage();
+  const [isVisitModalVisible, setIsVisitModalVisible] = useState(false);
+  // Tạo function riêng để fetch accommodation data
+  const fetchAccommodationData = async () => {
     try {
       const data = await getBoardingHouseById(id);
       setBoardingHouse(data);
@@ -181,12 +183,28 @@ const PropertyDetails = () => {
     navigate(`/customer/contract/${id}/${roomId}`);
     // navigate("/customer/checkout", { state: { boardingHouseId: id, roomId } });
   };
+const handleScheduleVisitClick = () => {
+    if (!user) {
+      messageApi.warning("Please log in to schedule a visit.");
+      return;
+    }
 
-  const handleContactOwner = () => {
-    if (!boardingHouse?.ownerId?._id) return;
-    navigate(`/customer/chat/${boardingHouse.ownerId._id}`);
+    if (user._id === accommodation.ownerId?._id) { 
+    messageApi.info("You cannot schedule a visit for your own accomodation.");
+    return;
+  }
+    setIsVisitModalVisible(true);
   };
-
+  
+  const handleVisitModalClose = () => {
+    setIsVisitModalVisible(false);
+  };
+  
+  const handleVisitModalSuccess = () => {
+    setIsVisitModalVisible(false);
+    messageApi.success("Your visit request has been sent to the owner!");
+  };
+  // Render booking card hoặc booking info
   const renderBookingSection = () => {
     const availableRooms = boardingHouse.rooms.filter(room => room.status === 'Available');
 
@@ -225,6 +243,14 @@ const PropertyDetails = () => {
             <RoomCard key={room._id} room={room} onBook={handleBookRoom} />
           ))}
         </div>
+        <Button 
+            className="schedule-visit-button" 
+            onClick={handleScheduleVisitClick}
+            style={{ marginBottom: '10px' }} 
+            block 
+          >
+            Hẹn lịch xem trọ
+          </Button>
         <Button icon={<MessageOutlined />} onClick={handleContactOwner} style={{ width: '100%', marginTop: '16px' }}>
           Liên hệ chủ nhà
         </Button>
@@ -458,7 +484,64 @@ const PropertyDetails = () => {
             {roommatePosts.map((post) => (
               <div key={post._id} style={{ padding: "0 10px" }}>
                 <Card className="roommate-card" hoverable>
-                  {/* ... Nội dung Card tìm bạn ... */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Avatar
+                      src={
+                        post.userId.avatar
+                          ? `${post.userId.avatar}`
+                          : "/default-avatar.png"
+                      }
+
+                      size={48}
+                      style={{ marginRight: 12 }}
+                    />
+
+                    <div>
+                      <h3 style={{ margin: 0 }}>
+                        {post.userId?.name || "Unknown"}
+                      </h3>
+                      <small>{post.createdAt?.slice(0, 10)}</small>
+                    </div>
+                  </div>
+
+                  {post.images?.length > 0 && (
+                    <Carousel autoplay>
+                      {post.images.map((img, idx) => (
+                        <div key={idx}>
+                          <img
+                            src={img}
+                            alt={`post-${idx}`}
+                            style={{
+                              width: "100%",
+                              height: 200,
+                              objectFit: "cover",
+                              borderRadius: 8,
+                              marginBottom: 12,
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </Carousel>
+                  )}
+
+                  <p>{post.intro}</p>
+                  <p>
+                       <p>
+        <strong>Gender:</strong> {post.genderPreference || "Not specified"}
+      </p>
+      <p>
+          <strong>Phone:</strong> {post.userId?.phone || "Not provided"}
+        </p>
+
+                    <strong>Habits:</strong>{" "}
+                    {post.habits?.join(", ") || "Not specified"}
+                  </p>
                 </Card>
               </div>
             ))}
@@ -475,7 +558,13 @@ const PropertyDetails = () => {
         accommodationId={boardingHouse._id}
         onSuccess={fetchRoommates}
       />
-
+      <VisitRequestModal
+      visible={isVisitModalVisible}
+      onClose={handleVisitModalClose}
+      onSuccess={handleVisitModalSuccess}
+      accommodationId={accommodation._id}
+     ownerId={accommodation.ownerId?._id}
+  />
       <Divider />
 
       <h1 className="text-heading">Reviews</h1>

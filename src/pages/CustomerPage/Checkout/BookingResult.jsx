@@ -46,10 +46,6 @@ const BookingResult = () => {
                 <h3>{status === "success" ? "Success " : "Failure "}</h3>
               </div>
               <div className="item">
-                <span>Booking code</span>
-                <h3>{bookingId || "Undefined"}</h3>
-              </div>
-              <div className="item">
                 <span>Time</span>
                 <h3>{new Date().toLocaleString("vi-VN")}</h3>
               </div>

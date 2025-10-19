@@ -13,6 +13,7 @@ import OwnerInbox from "../../pages/OwnerPage/Communication/OwnerInbox";
 import Membership from "../../pages/OwnerPage/MemberShip/membership";
 import ContractManagement from "../../pages/OwnerPage/Contract/ContractManagement";
 import PendingBookings from "../../pages/OwnerPage/PendingBookings/PendingBookings";
+import OwnerVisitRequests from "../../pages/OwnerPage/VisitRequest/OwnerVisitRequests";
 const RoutesOw = () => {
   return (
     <Routes>
@@ -26,6 +27,7 @@ const RoutesOw = () => {
         <Route path="rating" element={<Rating />} />
         <Route path="rating/:id" element={<DetailRating />} />
         <Route path="communication" element={<OwnerInbox />} />
+                <Route path="visit-requests" element={<OwnerVisitRequests />} />
         <Route path="membership" element={<Membership />} />
       </Route>
     </Routes>

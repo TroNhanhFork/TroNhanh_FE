@@ -17,6 +17,11 @@ import VerifyOtpPage from './pages/CustomerPage/Auth/VerifyOTP';
 import ForgotPasswordPage from './pages/CustomerPage/Auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/CustomerPage/Auth/ResetPasswordPage';
 import ScrollToTop from './pages/CommonPage/ScrollToTop/ScrollToTop';
+import LogoutWarningModal from './components/LogoutWarningModal';
+import AIAssistant from './utils/AIAssistant';
+import { NotificationProvider } from './contexts/NotificationContext';
+import { SocketProvider } from './contexts/SocketContext';
+import { GoogleOAuthProvider } from '@react-oauth/google'; 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
@@ -74,7 +79,7 @@ function AppRoutes() {
           <Route path="*" element={<ExceptionRoutes />} />
         </Routes>
       </main>
-
+<LogoutWarningModal />
       {!hideLayout && <FooterComponent />}
     </>
   );
@@ -83,13 +88,30 @@ function AppRoutes() {
 
 function AppWrapper() {
   return (
+<<<<<<< HEAD
     <BrowserRouter>
       <UserProvider>
           <ScrollToTop />
           <AppRoutes />
       </UserProvider>
     </BrowserRouter>
+=======
+    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>  
+      <BrowserRouter>
+        <UserProvider>
+          <SocketProvider>
+          <NotificationProvider>
+          <ScrollToTop />
+          <AppRoutes />
+          <AIAssistant />
+          </NotificationProvider>
+          </SocketProvider>
+        </UserProvider>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
+>>>>>>> c8f93bc5a5c306fef56df8fa3df3bdad4e9eaa82
   );
 }
+
 
 export default AppWrapper;
