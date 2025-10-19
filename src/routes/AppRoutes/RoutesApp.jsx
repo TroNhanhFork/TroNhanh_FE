@@ -7,6 +7,7 @@ const RoutesApp = () => {
     <Routes>
       <Route path="/" element={<HomePage />}>
         <Route path="about" element={<AboutUs />} />
+   
       </Route>
     </Routes>
   );
