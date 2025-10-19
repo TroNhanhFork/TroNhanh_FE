@@ -54,21 +54,47 @@ import VisitRequestModal from "./VisitRequestModal";
 const { Option } = Select;
 const { TextArea } = Input;
 
-const RoomCard = ({ room, onBook }) => (
-  <Card size="small" style={{ marginBottom: 12 }} bodyStyle={{ padding: '12px' }}>
+const RoomCard = ({ room, onBook, bookingStatus }) => (
+  <Card size="small" style={{ marginBottom: 12 }} bodyStyle={{ padding: "12px" }}>
     <Row align="middle" justify="space-between" gutter={8}>
       <Col flex="auto">
-        <p style={{ margin: 0, fontWeight: 'bold' }}>Phòng {room.roomNumber}</p>
+        <p style={{ margin: 0, fontWeight: "bold" }}>Phòng {room.roomNumber}</p>
         <small>{room.area} m²</small>
       </Col>
+
       <Col>
-        <p style={{ margin: 0, color: '#004d40', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-          {room.price.toLocaleString('vi-VN')} VNĐ/tháng
+        <p
+          style={{
+            margin: 0,
+            color: "#004d40",
+            fontWeight: "bold",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {room.price.toLocaleString("vi-VN")} VNĐ/tháng
         </p>
       </Col>
+
       <Col>
-        <Button type="primary" onClick={() => onBook(room._id)}>Đặt ngay</Button>
-      </Col>
+  {onBook ? (
+    <Button type="primary" onClick={() => onBook(room._id)}>
+      Đặt ngay
+    </Button>
+  ) : bookingStatus ? (
+    <Tag
+      color={
+        bookingStatus === "Paid"
+          ? "green"
+          : bookingStatus === "Pending"
+          ? "gold"
+          : "default"
+      }
+    >
+      {bookingStatus}
+    </Tag>
+  ) : null}
+</Col>
+
     </Row>
   </Card>
 );
@@ -102,6 +128,7 @@ const PropertyDetails = () => {
   const fetchBoardingHouseData = async () => {
     try {
       const data = await getBoardingHouseById(id);
+      console.log(data)
       setBoardingHouse(data);
       const userToken = await getValidAccessToken();
       setToken(userToken);
@@ -216,6 +243,11 @@ const PropertyDetails = () => {
   };
   // Render booking card hoặc booking info
   const renderBookingSection = () => {
+
+      if (!boardingHouse || !boardingHouse.rooms) return null;
+
+  const rooms = boardingHouse.rooms;
+
     const availableRooms = boardingHouse.rooms.filter(room => room.status === 'Available');
 
     if (userHasBooking) {
@@ -229,37 +261,56 @@ const PropertyDetails = () => {
         </Card>
       );
     }
-
-    if (availableRooms.length === 0) {
-      return (
-        <Card className="booking-card">
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <h3 style={{ color: '#ff4d4f' }}>Đã hết phòng</h3>
-            <p>Rất tiếc, tất cả các phòng tại đây đã được đặt. Vui lòng quay lại sau!</p>
-          </div>
-        </Card>
-      );
-    }
-
+ if (rooms.every((room) => room.bookingStatus !== "Available")) {
     return (
-      <div className="booking-card">
-        <h3 className="booking-price">
-          {boardingHouse.minPrice?.toLocaleString('vi-VN')} - {boardingHouse.maxPrice?.toLocaleString('vi-VN')} VNĐ/tháng
-        </h3>
-        <Divider />
-        <h4>Chọn phòng còn trống:</h4>
-        <div style={{ maxHeight: '300px', overflowY: 'auto', paddingRight: '8px' }}>
-          {availableRooms.map(room => (
-            <RoomCard key={room._id} room={room} onBook={handleBookRoom} />
-          ))}
+      <Card className="booking-card">
+        <div style={{ textAlign: "center", padding: "20px" }}>
+          <h3 style={{ color: "#ff4d4f" }}>Đã hết phòng</h3>
+          <p>
+            Rất tiếc, tất cả các phòng tại đây đã được đặt hoặc đang chờ duyệt.
+            Vui lòng quay lại sau!
+          </p>
         </div>
-        <Button icon={<MessageOutlined />} onClick={handleContactOwner} style={{ width: '100%', marginTop: '16px' }}>
-          Liên hệ chủ nhà
-        </Button>
-      </div>
+      </Card>
     );
-  };
+  }
+     return (
+    <div className="booking-card">
+      <h3 className="booking-price">
+        {boardingHouse.minPrice?.toLocaleString("vi-VN")} -{" "}
+        {boardingHouse.maxPrice?.toLocaleString("vi-VN")} VNĐ/tháng
+      </h3>
+      <Divider />
+      <h4>Chọn phòng:</h4>
 
+      <div
+        style={{
+          maxHeight: "300px",
+          overflowY: "auto",
+          paddingRight: "8px",
+        }}
+      >
+     {rooms.map((room) => (
+  <RoomCard
+    key={room._id}
+    room={room}
+    bookingStatus={room.bookingStatus !== "Available" ? room.bookingStatus : null}
+    onBook={room.bookingStatus === "Available" ? handleBookRoom : undefined}
+  />
+))}
+
+      </div>
+
+      <Button
+        icon={<MessageOutlined />}
+        onClick={handleContactOwner}
+        style={{ width: "100%", marginTop: "16px" }}
+      >
+        Liên hệ chủ nhà
+      </Button>
+    </div>
+  );
+};
   const sliderSettings = {
     dots: false,
     infinite: roommatePosts.length > 3,
