@@ -135,7 +135,7 @@ const HeaderComponent = () => {
           {user?.role === "customer" && (
             <>
               <Menu.Item key="chat">
-                <Link to="/customer/chat" onClick={() => console.log("Menu: /customer/chat")}>Chat</Link>
+                <Link to="/customer/communication" onClick={() => console.log("Menu: /customer/communication")}>Chat</Link>
               </Menu.Item>
               <Menu.Item key="contact">
                 <Link to="/customer/reports" onClick={() => console.log("Menu: /customer/reports")}>Contact & Reports</Link>
@@ -147,6 +147,9 @@ const HeaderComponent = () => {
             <>
               <Menu.Item key="manage-room">
                 <Link to="/owner/boarding-house" onClick={() => console.log("Menu: /owner/accommodation")}>Manage Room</Link>
+              </Menu.Item>
+              <Menu.Item key="chat">
+                <Link to="/owner/communication" onClick={() => console.log("Menu: /owner/communication")}>Chat</Link>
               </Menu.Item>
             </>
           )}

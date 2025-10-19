@@ -9,7 +9,6 @@ import Report from "../../pages/OwnerPage/Report/report";
 import Rating from "../../pages/OwnerPage/Rating/rating";
 import DetailRating from "../../pages/OwnerPage/Rating/DetailRating";
 import Communication from "../../pages/OwnerPage/Communication/communication";
-import OwnerInbox from "../../pages/OwnerPage/Communication/OwnerInbox";
 import Membership from "../../pages/OwnerPage/MemberShip/membership";
 import ContractManagement from "../../pages/OwnerPage/Contract/ContractManagement";
 import PendingBookings from "../../pages/OwnerPage/PendingBookings/PendingBookings";
@@ -25,7 +24,7 @@ const RoutesOw = () => {
         <Route path="report" element={<Report />} />
         <Route path="rating" element={<Rating />} />
         <Route path="rating/:id" element={<DetailRating />} />
-        <Route path="communication" element={<OwnerInbox />} />
+        <Route path="communication" element={<Communication />} />
         <Route path="membership" element={<Membership />} />
       </Route>
     </Routes>

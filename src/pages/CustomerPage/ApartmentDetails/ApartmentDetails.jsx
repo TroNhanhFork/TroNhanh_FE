@@ -72,6 +72,7 @@ const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
+  const socket = useSocket();
   const [messageApi, contextHolder] = message.useMessage();
 
   const [boardingHouse, setBoardingHouse] = useState(null);
@@ -182,9 +183,39 @@ const PropertyDetails = () => {
     // navigate("/customer/checkout", { state: { boardingHouseId: id, roomId } });
   };
 
-  const handleContactOwner = () => {
-    if (!boardingHouse?.ownerId?._id) return;
-    navigate(`/customer/chat/${boardingHouse.ownerId._id}`);
+  const handleContactOwner = async () => {
+    if (!user) {
+      messageApi.warning("Vui lòng đăng nhập để liên hệ chủ nhà!");
+      return;
+    }
+
+    if (!boardingHouse?.ownerId?._id) {
+      messageApi.error("Không tìm thấy thông tin chủ nhà!");
+      return;
+    }
+
+    try {
+      // Create or get existing chat
+      const res = await axios.post("http://localhost:5000/api/chats/get-or-create", {
+        user1Id: user._id,
+        user2Id: boardingHouse.ownerId._id,
+      });
+
+      const chat = res.data;
+
+      // Join socket room
+      if (socket) {
+        socket.emit("joinRoom", chat._id);
+        console.log(`🔌 Joined chat room: ${chat._id}`);
+      }
+
+      // Navigate to communication page with owner ID
+      navigate(`/customer/chat/${chat._id}`);
+      messageApi.success("Đã kết nối với chủ nhà!");
+    } catch (error) {
+      console.error("Error creating chat:", error);
+      messageApi.error("Không thể kết nối với chủ nhà. Vui lòng thử lại!");
+    }
   };
 
   const renderBookingSection = () => {
@@ -198,6 +229,15 @@ const PropertyDetails = () => {
             title="Bạn đã đặt một phòng tại đây!"
             subTitle="Kiểm tra trang 'Chuyến đi của tôi' để xem chi tiết."
           />
+          <Divider />
+          <Button
+            icon={<MessageOutlined />}
+            onClick={handleContactOwner}
+            style={{ width: '100%' }}
+            type="primary"
+          >
+            Liên hệ chủ nhà
+          </Button>
         </Card>
       );
     }
@@ -209,6 +249,14 @@ const PropertyDetails = () => {
             <h3 style={{ color: '#ff4d4f' }}>Đã hết phòng</h3>
             <p>Rất tiếc, tất cả các phòng tại đây đã được đặt. Vui lòng quay lại sau!</p>
           </div>
+          <Divider />
+          <Button
+            icon={<MessageOutlined />}
+            onClick={handleContactOwner}
+            style={{ width: '100%' }}
+          >
+            Liên hệ chủ nhà
+          </Button>
         </Card>
       );
     }
@@ -225,7 +273,13 @@ const PropertyDetails = () => {
             <RoomCard key={room._id} room={room} onBook={handleBookRoom} />
           ))}
         </div>
-        <Button icon={<MessageOutlined />} onClick={handleContactOwner} style={{ width: '100%', marginTop: '16px' }}>
+        <Divider />
+        <Button
+          icon={<MessageOutlined />}
+          onClick={handleContactOwner}
+          style={{ width: '100%' }}
+          type="default"
+        >
           Liên hệ chủ nhà
         </Button>
       </div>
@@ -252,80 +306,80 @@ const PropertyDetails = () => {
 
   // Review handlers
   const handleSubmitReview = async () => {
-        if (!reviewRating || !reviewContent || !reviewPurpose) {
-            messageApi.error("Vui lòng điền đầy đủ thông tin đánh giá.");
-            return;
-        }
-        try {
-            // ✅ SỬA: Dùng boardingHouse._id
-            const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ rating: reviewRating, comment: reviewContent, purpose: reviewPurpose }),
-            });
+    if (!reviewRating || !reviewContent || !reviewPurpose) {
+      messageApi.error("Vui lòng điền đầy đủ thông tin đánh giá.");
+      return;
+    }
+    try {
+      // ✅ SỬA: Dùng boardingHouse._id
+      const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating: reviewRating, comment: reviewContent, purpose: reviewPurpose }),
+      });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Gửi đánh giá thất bại');
-            }
-            messageApi.success("Gửi đánh giá thành công!");
-            fetchBoardingHouseData(); // Tải lại toàn bộ dữ liệu
-            setReviewContent("");
-            setReviewPurpose("");
-            setReviewRating(null);
-        } catch (error) {
-            messageApi.error(error.message);
-        }
-    };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Gửi đánh giá thất bại');
+      }
+      messageApi.success("Gửi đánh giá thành công!");
+      fetchBoardingHouseData(); // Tải lại toàn bộ dữ liệu
+      setReviewContent("");
+      setReviewPurpose("");
+      setReviewRating(null);
+    } catch (error) {
+      messageApi.error(error.message);
+    }
+  };
 
-    const handleEditReview = async (reviewId) => {
-        try {
-            // ✅ SỬA: Dùng boardingHouse._id
-            const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ rating: editedReviewRating, comment: editedReviewContent, purpose: editedReviewPurpose }),
-            });
-            const result = await response.json();
-            if (response.ok) {
-                messageApi.success("Cập nhật đánh giá thành công!");
-                // ✅ SỬA: Dùng setBoardingHouse
-                setBoardingHouse(prev => ({
-                    ...prev,
-                    reviews: prev.reviews.map(r => (r._id === reviewId ? result.review : r)),
-                }));
-                setEditingReviewId(null);
-            } else {
-                throw new Error(result.message || "Cập nhật đánh giá thất bại.");
-            }
-        } catch (err) {
-            messageApi.error(err.message);
-        }
-    };
+  const handleEditReview = async (reviewId) => {
+    try {
+      // ✅ SỬA: Dùng boardingHouse._id
+      const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating: editedReviewRating, comment: editedReviewContent, purpose: editedReviewPurpose }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        messageApi.success("Cập nhật đánh giá thành công!");
+        // ✅ SỬA: Dùng setBoardingHouse
+        setBoardingHouse(prev => ({
+          ...prev,
+          reviews: prev.reviews.map(r => (r._id === reviewId ? result.review : r)),
+        }));
+        setEditingReviewId(null);
+      } else {
+        throw new Error(result.message || "Cập nhật đánh giá thất bại.");
+      }
+    } catch (err) {
+      messageApi.error(err.message);
+    }
+  };
 
-    const handleDeleteReview = async (reviewId) => {
-        if (!window.confirm("Bạn có chắc muốn xóa đánh giá này?")) return;
-        try {
-            // ✅ SỬA: Dùng boardingHouse._id
-            const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (response.ok) {
-                messageApi.success("Xóa đánh giá thành công.");
-                // ✅ SỬA: Dùng setBoardingHouse
-                setBoardingHouse(prev => ({
-                    ...prev,
-                    reviews: prev.reviews.filter((r) => r._id !== reviewId),
-                }));
-            } else {
-                const result = await response.json();
-                throw new Error(result.message || "Xóa đánh giá thất bại.");
-            }
-        } catch (err) {
-            messageApi.error(err.message);
-        }
-    };
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm("Bạn có chắc muốn xóa đánh giá này?")) return;
+    try {
+      // ✅ SỬA: Dùng boardingHouse._id
+      const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        messageApi.success("Xóa đánh giá thành công.");
+        // ✅ SỬA: Dùng setBoardingHouse
+        setBoardingHouse(prev => ({
+          ...prev,
+          reviews: prev.reviews.filter((r) => r._id !== reviewId),
+        }));
+      } else {
+        const result = await response.json();
+        throw new Error(result.message || "Xóa đánh giá thất bại.");
+      }
+    } catch (err) {
+      messageApi.error(err.message);
+    }
+  };
 
 
   // // riel-time messaging section
@@ -487,7 +541,7 @@ const PropertyDetails = () => {
             <h2 className="leave-review-title">Leave a Review</h2>
 
             {user ? (
-              userHasBooking  ? (
+              userHasBooking ? (
                 <div className="review-form-container">
                   <div className="review-form-row">
                     <label className="review-form-label">Your Review</label>
