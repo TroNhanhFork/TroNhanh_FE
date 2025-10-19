@@ -1,8 +1,7 @@
 let logoutTimer;
 let warningTimer;
-let warningTimer;
 
-export function initAutoLogout(logout,  delay = 600 * 1000, warningBefore = 3 * 1000) {
+export function initAutoLogout(logout, delay = 600 * 1000, warningBefore = 3 * 1000) {
   clearTimeout(logoutTimer);
   clearTimeout(warningTimer);
 
@@ -31,43 +30,38 @@ export function initAutoLogout(logout,  delay = 600 * 1000, warningBefore = 3 * 
 
   const events = ['click', 'mousemove', 'keydown', 'scroll'];
   for (const event of events) {
-  clearTimeout(warningTimer);
-
-  const startTimers = () => {
-    clearTimeout(logoutTimer);
     clearTimeout(warningTimer);
 
-    // Cảnh báo trước khi logout
-    warningTimer = setTimeout(() => {
-      const event = new CustomEvent('show-logout-warning');
-      window.dispatchEvent(event);
-    }, delay - warningBefore);
+    const startTimers = () => {
+      clearTimeout(logoutTimer);
+      clearTimeout(warningTimer);
 
-    // Logout thực sự
-    logoutTimer = setTimeout(() => {
-      localStorage.removeItem('accessToken');
-      logout();
-      window.location.href = '/login';
+      // Cảnh báo trước khi logout
+      warningTimer = setTimeout(() => {
+        const event = new CustomEvent('show-logout-warning');
+        window.dispatchEvent(event);
+      }, delay - warningBefore);
 
-    }, delay);
-  };
+      // Logout thực sự
+      logoutTimer = setTimeout(() => {
+        localStorage.removeItem('accessToken');
+        logout();
+        window.location.href = '/login';
 
-  const resetTimer = () => {
+      }, delay);
+    };
+
+    const resetTimer = () => {
+      startTimers();
+    };
+
+    const events = ['click', 'mousemove', 'keydown', 'scroll'];
+    for (const event of events) {
+      window.addEventListener(event, resetTimer);
+    }
+
     startTimers();
-  };
-
-  const events = ['click', 'mousemove', 'keydown', 'scroll'];
-  for (const event of events) {
-    window.addEventListener(event, resetTimer);
   }
-
-  startTimers();
-}
-
-export function stopAutoLogout() {
-  }
-
-  startTimers();
 }
 
 export function stopAutoLogout() {
@@ -76,6 +70,6 @@ export function stopAutoLogout() {
 
   const events = ['click', 'mousemove', 'keydown', 'scroll'];
   for (const event of events) {
-    window.removeEventListener(event, stopAutoLogout); 
+    window.removeEventListener(event, stopAutoLogout);
   }
 }

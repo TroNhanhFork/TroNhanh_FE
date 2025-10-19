@@ -18,8 +18,8 @@ const MyBookings = () => {
         const fetchBookings = async () => {
             setLoading(true);
             try {
-                // Assuming getUserBookingHistory fetches all bookings for the logged-in user
-                const data = await bookingService.getUserBookingHistory();
+                // Assuming getUserRequestHistory fetches all bookings for the logged-in user
+                const data = await bookingService.getUserRequestHistory();
                 // Sort bookings, maybe pending first, then by creation date
                 data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 setBookings(data);

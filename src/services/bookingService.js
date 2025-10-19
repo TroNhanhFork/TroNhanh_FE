@@ -30,6 +30,16 @@ export const getUserBookingHistory = async () => { // Removed userId, assuming i
     }
 };
 
+export const getUserRequestHistory = async () => { // Removed userId, assuming it's inferred from token
+    try {
+        const response = await axiosInstance.get(`/bookings/user/request-history`); // Adjusted endpoint
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching booking history:', error.response?.data || error.message);
+        throw error;
+    }
+};
+
 /**
  * Tenant requests to book a specific room.
  * @param {object} data - { boardingHouseId, roomId }
@@ -102,6 +112,7 @@ export const cancelBookingRequest = async (bookingId) => {
 export default {
     getUserBookingForBoardingHouse,
     getUserBookingHistory,
+    getUserRequestHistory,
     requestBooking,
     getOwnerPendingBookings,
     updateBookingApproval,

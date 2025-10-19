@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { message, Modal } from 'antd';
-import { message, Modal } from 'antd';
 import './membership.css';
 import useUser from '../../../contexts/UserContext';
 
@@ -12,8 +11,6 @@ import useUser from '../../../contexts/UserContext';
 const Membership = () => {
   const [packages, setPackages] = useState([]);
   const [currentPackageId, setCurrentPackageId] = useState(null);
-  const { user } = useUser();
-  const [messageApi, contextHolder] = message.useMessage();
   const { user } = useUser();
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -29,7 +26,6 @@ const Membership = () => {
         window.location.href = "/login";
       }, 2000);
     }
-  }, [messageApi]);
   }, [messageApi]);
 
   // Lấy danh sách gói membership
@@ -70,9 +66,7 @@ const Membership = () => {
 
     if (success === "false") {
       messageApi.error("❌ Thanh toán thất bại hoặc chữ ký không hợp lệ.");
-      messageApi.error("❌ Thanh toán thất bại hoặc chữ ký không hợp lệ.");
     }
-  }, [messageApi]);
   }, [messageApi]);
 
   // Xử lý khi click Subscribe

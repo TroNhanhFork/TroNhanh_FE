@@ -6,6 +6,7 @@ import { getUserBookingHistory } from '../../../../services/bookingService';
 import { getBoardingHouseById } from '../../../../services/boardingHouseAPI';
 import useUser from '../../../../contexts/UserContext';
 import './BookingHistory.css';
+import dayjs from "dayjs";
 
 const BookingHistory = () => {
   const [messageApi, contextHolder] = message.useMessage();
@@ -39,26 +40,26 @@ const BookingHistory = () => {
   const handleViewDetails = async (booking) => {
     try {
       console.log('Booking object:', booking);
-      console.log('PropertyId:', booking.propertyId);
-      
-      // Lấy ID từ propertyId (có thể là object hoặc string)
-      const propertyId = booking.propertyId?._id || booking.propertyId;
-      console.log('Extracted propertyId:', propertyId);
-      
-      if (!propertyId) {
+      console.log('PropertyId:', booking.roomId);
+
+      // Lấy ID từ roomId (có thể là object hoặc string)
+      const roomId = booking.roomId?._id || booking.roomId;
+      console.log('Extracted roomId:', roomId);
+
+      if (!roomId) {
         messageApi.error('Property ID not found!');
         return;
       }
-      
-      // Fetch chi tiết accommodation
-      const accommodationData = await getBoardingHouseById(propertyId);
+
+      // Fetch chi tiết boardinghouse
+      const boardinghouseData = await getBoardingHouseById(roomId);
       setSelectedBooking({
         ...booking,
-        accommodation: accommodationData
+        boardinghouse: boardinghouseData
       });
       setIsModalVisible(true);
     } catch (error) {
-      console.error('Error fetching accommodation details:', error);
+      console.error('Error fetching boardinghouse details:', error);
       console.error('Error details:', error.response?.data);
       messageApi.error(`Unable to load detailed information! ${error.response?.data?.message || error.message || ''}`);
     }
@@ -90,63 +91,75 @@ const BookingHistory = () => {
     }
   };
 
+  const getStatusTag = (booking) => {
+    const { contractStatus, status } = booking; // status = payment status
+
+    if (status === 'paid') return <Tag color="success">Đã thanh toán</Tag>;
+    if (status === 'completed') return <Tag color="default">Đã hoàn thành</Tag>;
+    if (contractStatus === 'pending_approval') return <Tag color="processing">Chờ duyệt</Tag>;
+    if (contractStatus === 'approved') return <Tag color="warning">Chờ thanh toán</Tag>;
+    if (contractStatus === 'rejected') return <Tag color="error">Đã từ chối</Tag>;
+    if (contractStatus === 'cancelled_by_tenant') return <Tag color="default">Đã hủy (bởi bạn)</Tag>;
+    if (contractStatus === 'cancelled_by_system') return <Tag color="default">Đã hủy (hết hạn)</Tag>;
+    if (status === 'pending') return <Tag color="blue">Chờ thanh toán</Tag>; // Payment initiated?
+
+    return <Tag>{contractStatus || status || 'Không rõ'}</Tag>;
+  };
+
   const columns = [
     {
-      title: 'Accommodation',
-      dataIndex: 'propertyId',
-      key: 'propertyId',
-      render: (propertyId, record) => {
-        // Hiển thị tên accommodation nếu có, nếu không thì hiển thị ID
-        if (propertyId && typeof propertyId === 'object' && propertyId.title) {
-          return propertyId.title;
-        }
-        return `Property #${(propertyId?.slice ? propertyId.slice(-8) : propertyId) || 'Unknown'}`;
-      },
+      title: 'Nhà trọ', // ✅ Changed Title
+      // ✅ Access name from the populated boardingHouse object
+      render: (_, record) => record.boardingHouse?.name || 'N/A',
     },
     {
-      title: 'Booking Date',
+      title: 'Phòng', // ✅ Added Room column
+      // ✅ Access roomNumber from the populated room object
+      render: (_, record) => record.room?.roomNumber || 'N/A',
+    },
+    {
+      title: 'Ngày đặt', // Booking Date
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (date) => new Date(date).toLocaleDateString('vi-VN'),
-      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+      render: (date) => date ? dayjs(date).format('DD/MM/YYYY HH:mm') : 'N/A', // Added time
+      sorter: (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
     },
     {
-      title: 'Check-in Date',
+      title: 'Ngày nhận', // Check-in
       dataIndex: 'checkInDate',
       key: 'checkInDate',
-      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A',
+      render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : 'N/A',
     },
     {
-      title: 'Check-out Date',
+      title: 'Ngày trả', // Check-out
       dataIndex: 'checkOutDate',
       key: 'checkOutDate',
-      render: (date) => date ? new Date(date).toLocaleDateString('vi-VN') : 'N/A',
+      render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : 'N/A',
     },
     {
-      title: 'Total Amount',
+      title: 'Tổng tiền', // Total Amount
       dataIndex: 'totalPrice',
       key: 'totalPrice',
-      render: (price) => `${price?.toLocaleString()} VND`,
-      sorter: (a, b) => a.totalPrice - b.totalPrice,
+      render: (price) => price != null ? `${price.toLocaleString('vi-VN')} VND` : 'N/A',
+      sorter: (a, b) => (a.totalPrice || 0) - (b.totalPrice || 0),
     },
     {
-      title: 'Status',
-      dataIndex: 'status',
+      title: 'Trạng thái', // Status
       key: 'status',
-      render: (status) => (
-        <Tag color={getStatusColor(status)} className="booking-history-tag">
-          {getStatusText(status)}
-        </Tag>
-      ),
+      // ✅ Use the combined status logic
+      render: (_, record) => getStatusTag(record),
+      // Filtering might need adjustment based on combined status logic if desired
       filters: [
-        { text: 'Paid', value: 'paid' },
-        { text: 'Pending', value: 'pending' },
-        { text: 'Cancelled', value: 'cancelled' },
+        { text: 'Đã thanh toán', value: 'paid' },
+        { text: 'Chờ duyệt', value: 'pending_approval' },
+        { text: 'Chờ thanh toán', value: 'approved' },
+        { text: 'Đã từ chối', value: 'rejected' },
+        { text: 'Đã hủy', value: 'cancelled_by_tenant' }, // Or combine cancelled statuses
       ],
-      onFilter: (value, record) => record.status === value,
+      onFilter: (value, record) => record.status === value || record.contractStatus === value,
     },
     {
-      title: 'Actions',
+      title: 'Hành động', // Actions
       key: 'action',
       render: (_, record) => (
         <Button
@@ -156,17 +169,16 @@ const BookingHistory = () => {
           size="small"
           className="booking-history-details-btn"
         >
-          Details
+          Chi tiết
         </Button>
       ),
     },
   ];
-
   return (
     <>
       {contextHolder}
       <div className="booking-history-container">
-        <Card 
+        <Card
           title={
             <div className="header-with-icon">
               <CalendarOutlined style={{ marginRight: '8px', color: 'white' }} />
@@ -185,7 +197,7 @@ const BookingHistory = () => {
               pageSize: 10,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total, range) => 
+              showTotal: (total, range) =>
                 `${range[0]}-${range[1]} of ${total} bookings`,
             }}
             scroll={{ x: 800 }}
@@ -203,18 +215,18 @@ const BookingHistory = () => {
         >
           {selectedBooking && (
             <div className="booking-detail-modal">
-              {/* Thông tin accommodation */}
-              {selectedBooking.accommodation && (
-                <Card 
+              {/* Thông tin boardinghouse */}
+              {selectedBooking.boardinghouse && (
+                <Card
                   title={
                     <div className="detail-section-title">
                       <HomeOutlined /> Accommodation Information
                     </div>
-                  } 
+                  }
                   className="detail-card"
                 >
-                  {/* Hình ảnh accommodation */}
-                  {selectedBooking.accommodation.photos && selectedBooking.accommodation.photos.length > 0 && (
+                  {/* Hình ảnh boardinghouse */}
+                  {selectedBooking.boardinghouse.photos && selectedBooking.boardinghouse.photos.length > 0 && (
                     <div style={{ marginBottom: '16px' }}>
                       <Carousel
                         autoplay
@@ -222,11 +234,11 @@ const BookingHistory = () => {
                         prevArrow={<AiOutlineLeft className="custom-arrow arrow-left" />}
                         nextArrow={<AiOutlineRight className="custom-arrow arrow-right" />}
                       >
-                        {selectedBooking.accommodation.photos.map((photo, index) => (
+                        {selectedBooking.boardinghouse.photos.map((photo, index) => (
                           <div key={index}>
                             <img
                               src={`http://localhost:5000${photo}`}
-                              alt={`accommodation-${index}`}
+                              alt={`boardinghouse-${index}`}
                               style={{
                                 width: "100%",
                                 maxHeight: "250px",
@@ -240,28 +252,28 @@ const BookingHistory = () => {
                     </div>
                   )}
 
-                  <div className="accommodation-info">
-                    <h3>{selectedBooking.accommodation.title}</h3>
-                    <p><strong>Address:</strong> {selectedBooking.accommodation.location?.addressDetail}, {selectedBooking.accommodation.location?.street}, {selectedBooking.accommodation.location?.district}</p>
-                    <p><strong>Room Price:</strong> {selectedBooking.accommodation.price?.toLocaleString()} VND</p>
-                    <p><strong>Description:</strong> {selectedBooking.accommodation.description}</p>
+                  <div className="boardinghouse-info">
+                    <h3>{selectedBooking.boardinghouse.title}</h3>
+                    <p><strong>Address:</strong> {selectedBooking.boardinghouse.location?.addressDetail}, {selectedBooking.boardinghouse.location?.street}, {selectedBooking.boardinghouse.location?.district}</p>
+                    <p><strong>Room Price:</strong> {selectedBooking.boardinghouse.price?.toLocaleString()} VND</p>
+                    <p><strong>Description:</strong> {selectedBooking.boardinghouse.description}</p>
                   </div>
                 </Card>
               )}
 
               {/* Thông tin booking */}
-              <Card 
+              <Card
                 title={
                   <div className="detail-section-title">
                     <CalendarOutlined /> Booking Information
                   </div>
-                } 
+                }
                 className="detail-card"
                 style={{ marginTop: '16px' }}
               >
                 <div className="booking-info-inline">
                   <span className="info-inline-item">
-                   <strong>Transaction Code:</strong> {selectedBooking.paymentInfo?.payosOrderCode || 'N/A'}
+                    <strong>Transaction Code:</strong> {selectedBooking.paymentInfo?.payosOrderCode || 'N/A'}
                   </span>
                   <span className="info-divider">|</span>
                   <span className="info-inline-item">

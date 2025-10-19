@@ -1,14 +1,14 @@
-.accommodation-not-found {
+.boardingHouse-not-found {
   padding: 24px;
 }
 
-.accommodation-main-image-wrapper {
+.boardingHouse-main-image-wrapper {
   position: relative;
   width: 100%;
   height: 100%;
 }
 
-.accommodation-main-image {
+.boardingHouse-main-image {
   width: 100%;
   height: 400px;
   object-fit: cover;
@@ -29,28 +29,28 @@
 }
 
 
-.accommodation-gallery-image {
+.boardingHouse-gallery-image {
   width: 100%;
   height: 190px;
   object-fit: cover;
   border-radius: 8px;
 }
 
-.accommodation-main-content {
+.boardingHouse-main-content {
   margin-top: 24px;
 }
 
-.accommodation-title {
+.boardingHouse-title {
   font-size: 28px;
   margin-bottom: 8px;
 }
 
-.accommodation-location {
+.boardingHouse-location {
   color: #555;
   margin-bottom: 16px;
 }
 
-.accommodation-summary {
+.boardingHouse-summary {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
@@ -113,7 +113,7 @@
   text-align: center;
 }
 
-.accommodation-amenities {
+.boardingHouse-amenities {
   margin-top: 24px;
 }
 

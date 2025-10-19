@@ -27,7 +27,7 @@ const RoutesOw = () => {
         <Route path="rating" element={<Rating />} />
         <Route path="rating/:id" element={<DetailRating />} />
         <Route path="communication" element={<OwnerInbox />} />
-                <Route path="visit-requests" element={<OwnerVisitRequests />} />
+        <Route path="visit-requests" element={<OwnerVisitRequests />} />
         <Route path="membership" element={<Membership />} />
       </Route>
     </Routes>

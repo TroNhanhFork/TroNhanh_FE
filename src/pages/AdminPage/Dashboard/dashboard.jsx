@@ -46,7 +46,7 @@ const tableProps = {
   size: "small",
   pagination: false,
   className: "dashboard-table extra-compact-table",
-  bordered: false,
+  variant: "borderless"
 };
 
 const Dashboard = () => {

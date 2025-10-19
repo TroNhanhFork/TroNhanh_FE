@@ -14,6 +14,7 @@ import {
   message,
   Modal,
   List,
+  Carousel
 } from "antd";
 import {
   UserOutlined,
@@ -24,6 +25,7 @@ import {
   RightOutlined,
   CheckCircleOutlined,
   MessageOutlined,
+  TagOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -43,10 +45,13 @@ import RoommatePostModal from "./RoommatePostModal";
 import { getRoommatePosts } from "../../../services/roommateAPI";
 // riel-time messaging
 import { useSocket } from "../../../contexts/SocketContext";
-
+import dayjs from 'dayjs'; // <-- Add this line
+import relativeTime from 'dayjs/plugin/relativeTime';
 import Slider from "react-slick";
 import { getValidAccessToken } from "../../../services/authService";
 import VisitRequestModal from "./VisitRequestModal";
+
+const { Option } = Select;
 const { TextArea } = Input;
 
 const RoomCard = ({ room, onBook }) => (
@@ -67,6 +72,7 @@ const RoomCard = ({ room, onBook }) => (
     </Row>
   </Card>
 );
+
 
 const PropertyDetails = () => {
   const { id } = useParams();
@@ -91,10 +97,9 @@ const PropertyDetails = () => {
   const [editedReviewRating, setEditedReviewRating] = useState(null);
   const [editedReviewPurpose, setEditedReviewPurpose] = useState("");
   const [token, setToken] = useState('');
-  const [messageApi, contextHolder] = message.useMessage();
   const [isVisitModalVisible, setIsVisitModalVisible] = useState(false);
-  // Tạo function riêng để fetch accommodation data
-  const fetchAccommodationData = async () => {
+  // Tạo function riêng để fetch boarding-house data
+  const fetchBoardingHouseData = async () => {
     try {
       const data = await getBoardingHouseById(id);
       setBoardingHouse(data);
@@ -114,7 +119,7 @@ const PropertyDetails = () => {
       if (!user || !boardingHouse?._id) return;
       try {
         const favorites = await getUserFavorites();
-        const isFav = favorites.some((fav) => fav.accommodationId?._id === boardingHouse._id);
+        const isFav = favorites.some((fav) => fav.boardingHouseId?._id === boardingHouse._id);
         setIsFavorite(isFav);
       } catch (err) {
         console.error("Lỗi khi kiểm tra yêu thích", err);
@@ -152,7 +157,7 @@ const PropertyDetails = () => {
   }, [boardingHouse?._id]);
 
   if (!boardingHouse) {
-    return <div className="accommodation-not-found">Đang tải hoặc không tìm thấy nhà trọ...</div>;
+    return <div className="boarding-house-not-found">Đang tải hoặc không tìm thấy nhà trọ...</div>;
   }
 
   const toggleFavorite = async () => {
@@ -166,7 +171,7 @@ const PropertyDetails = () => {
         setIsFavorite(false);
         messageApi.success("Đã xóa khỏi danh sách yêu thích");
       } else {
-        await addToFavorite({ accommodationId: boardingHouse._id });
+        await addToFavorite({ boardingHouseId: boardingHouse._id });
         setIsFavorite(true);
         messageApi.success("Đã thêm vào danh sách yêu thích");
       }
@@ -183,23 +188,28 @@ const PropertyDetails = () => {
     navigate(`/customer/contract/${id}/${roomId}`);
     // navigate("/customer/checkout", { state: { boardingHouseId: id, roomId } });
   };
-const handleScheduleVisitClick = () => {
+
+  const handleContactOwner = () => {
+    if (!boardingHouse?.ownerId?._id) return;
+    navigate(`/customer/chat/${boardingHouse.ownerId._id}`);
+  };
+  const handleScheduleVisitClick = () => {
     if (!user) {
       messageApi.warning("Please log in to schedule a visit.");
       return;
     }
 
-    if (user._id === accommodation.ownerId?._id) { 
-    messageApi.info("You cannot schedule a visit for your own accomodation.");
-    return;
-  }
+    if (user._id === boardingHouse.ownerId?._id) {
+      messageApi.info("You cannot schedule a visit for your own accomodation.");
+      return;
+    }
     setIsVisitModalVisible(true);
   };
-  
+
   const handleVisitModalClose = () => {
     setIsVisitModalVisible(false);
   };
-  
+
   const handleVisitModalSuccess = () => {
     setIsVisitModalVisible(false);
     messageApi.success("Your visit request has been sent to the owner!");
@@ -243,14 +253,6 @@ const handleScheduleVisitClick = () => {
             <RoomCard key={room._id} room={room} onBook={handleBookRoom} />
           ))}
         </div>
-        <Button 
-            className="schedule-visit-button" 
-            onClick={handleScheduleVisitClick}
-            style={{ marginBottom: '10px' }} 
-            block 
-          >
-            Hẹn lịch xem trọ
-          </Button>
         <Button icon={<MessageOutlined />} onClick={handleContactOwner} style={{ width: '100%', marginTop: '16px' }}>
           Liên hệ chủ nhà
         </Button>
@@ -278,80 +280,80 @@ const handleScheduleVisitClick = () => {
 
   // Review handlers
   const handleSubmitReview = async () => {
-        if (!reviewRating || !reviewContent || !reviewPurpose) {
-            messageApi.error("Vui lòng điền đầy đủ thông tin đánh giá.");
-            return;
-        }
-        try {
-            // ✅ SỬA: Dùng boardingHouse._id
-            const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ rating: reviewRating, comment: reviewContent, purpose: reviewPurpose }),
-            });
+    if (!reviewRating || !reviewContent || !reviewPurpose) {
+      messageApi.error("Vui lòng điền đầy đủ thông tin đánh giá.");
+      return;
+    }
+    try {
+      // ✅ SỬA: Dùng boardingHouse._id
+      const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating: reviewRating, comment: reviewContent, purpose: reviewPurpose }),
+      });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Gửi đánh giá thất bại');
-            }
-            messageApi.success("Gửi đánh giá thành công!");
-            fetchBoardingHouseData(); // Tải lại toàn bộ dữ liệu
-            setReviewContent("");
-            setReviewPurpose("");
-            setReviewRating(null);
-        } catch (error) {
-            messageApi.error(error.message);
-        }
-    };
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Gửi đánh giá thất bại');
+      }
+      messageApi.success("Gửi đánh giá thành công!");
+      fetchBoardingHouseData(); // Tải lại toàn bộ dữ liệu
+      setReviewContent("");
+      setReviewPurpose("");
+      setReviewRating(null);
+    } catch (error) {
+      messageApi.error(error.message);
+    }
+  };
 
-    const handleEditReview = async (reviewId) => {
-        try {
-            // ✅ SỬA: Dùng boardingHouse._id
-            const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                body: JSON.stringify({ rating: editedReviewRating, comment: editedReviewContent, purpose: editedReviewPurpose }),
-            });
-            const result = await response.json();
-            if (response.ok) {
-                messageApi.success("Cập nhật đánh giá thành công!");
-                // ✅ SỬA: Dùng setBoardingHouse
-                setBoardingHouse(prev => ({
-                    ...prev,
-                    reviews: prev.reviews.map(r => (r._id === reviewId ? result.review : r)),
-                }));
-                setEditingReviewId(null);
-            } else {
-                throw new Error(result.message || "Cập nhật đánh giá thất bại.");
-            }
-        } catch (err) {
-            messageApi.error(err.message);
-        }
-    };
+  const handleEditReview = async (reviewId) => {
+    try {
+      // ✅ SỬA: Dùng boardingHouse._id
+      const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating: editedReviewRating, comment: editedReviewContent, purpose: editedReviewPurpose }),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        messageApi.success("Cập nhật đánh giá thành công!");
+        // ✅ SỬA: Dùng setBoardingHouse
+        setBoardingHouse(prev => ({
+          ...prev,
+          reviews: prev.reviews.map(r => (r._id === reviewId ? result.review : r)),
+        }));
+        setEditingReviewId(null);
+      } else {
+        throw new Error(result.message || "Cập nhật đánh giá thất bại.");
+      }
+    } catch (err) {
+      messageApi.error(err.message);
+    }
+  };
 
-    const handleDeleteReview = async (reviewId) => {
-        if (!window.confirm("Bạn có chắc muốn xóa đánh giá này?")) return;
-        try {
-            // ✅ SỬA: Dùng boardingHouse._id
-            const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
-                method: "DELETE",
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (response.ok) {
-                messageApi.success("Xóa đánh giá thành công.");
-                // ✅ SỬA: Dùng setBoardingHouse
-                setBoardingHouse(prev => ({
-                    ...prev,
-                    reviews: prev.reviews.filter((r) => r._id !== reviewId),
-                }));
-            } else {
-                const result = await response.json();
-                throw new Error(result.message || "Xóa đánh giá thất bại.");
-            }
-        } catch (err) {
-            messageApi.error(err.message);
-        }
-    };
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm("Bạn có chắc muốn xóa đánh giá này?")) return;
+    try {
+      // ✅ SỬA: Dùng boardingHouse._id
+      const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        messageApi.success("Xóa đánh giá thành công.");
+        // ✅ SỬA: Dùng setBoardingHouse
+        setBoardingHouse(prev => ({
+          ...prev,
+          reviews: prev.reviews.filter((r) => r._id !== reviewId),
+        }));
+      } else {
+        const result = await response.json();
+        throw new Error(result.message || "Xóa đánh giá thất bại.");
+      }
+    } catch (err) {
+      messageApi.error(err.message);
+    }
+  };
 
 
   // // riel-time messaging section
@@ -367,8 +369,8 @@ const handleScheduleVisitClick = () => {
   //   if (!inputValue.trim()) return;
   //   const messageData = {
   //     senderId: user._id,
-  //     receiverId: accommodation.ownerId,
-  //     accommodationId: accommodation._id,
+  //     receiverId: boardingHouse.ownerId,
+  //     boardingHouseId: boardingHouse._id,
   //     text: inputValue,
   //   };
   //   try {
@@ -392,17 +394,17 @@ const handleScheduleVisitClick = () => {
   // };
 
   // const fetchMessages = async () => {
-  //   const accommodationId = accommodation?._id;
+  //   const boardingHouseId = boardingHouse?._id;
 
   //   try {
   //     console.log(
   //       "[DEBUG] GET messages for:",
-  //       `/api/messages/${accommodationId}`
+  //       `/api/messages/${boardingHouseId}`
   //     );
 
-  //     console.log("[DEBUG] accommodationId length:", accommodationId.length);
+  //     console.log("[DEBUG] boardingHouseId length:", boardingHouseId.length);
 
-  //     const res = await axios.get(process.env.REACT_APP_API_URL + `/messages/${accommodationId}`, {
+  //     const res = await axios.get(process.env.REACT_APP_API_URL + `/messages/${boardingHouseId}`, {
   //       headers: {
   //         Authorization: `Bearer ${user.token}`,
   //       },
@@ -418,11 +420,11 @@ const handleScheduleVisitClick = () => {
       {contextHolder}
       <Row gutter={[16, 16]}>
         <Col xs={24}>
-          <div className="accommodation-main-image-wrapper">
+          <div className="boardingHouse-main-image-wrapper">
             <img
               src={boardingHouse.photos?.[0] ? `http://localhost:5000${boardingHouse.photos[0]}` : "/image/default-image.jpg"}
               alt={boardingHouse.name}
-              className="accommodation-main-image"
+              className="boardingHouse-main-image"
             />
             <button className="favorite-btn" onClick={toggleFavorite}>
               {isFavorite ? <HeartFilled style={{ color: "red", fontSize: 24 }} /> : <HeartOutlined style={{ color: "black", fontSize: 24 }} />}
@@ -431,10 +433,10 @@ const handleScheduleVisitClick = () => {
         </Col>
       </Row>
 
-      <Row gutter={32} className="accommodation-main-content">
+      <Row gutter={32} className="boardingHouse-main-content">
         <Col xs={24} md={16}>
-          <h1 className="accommodation-title">{boardingHouse.name}</h1>
-          <p className="accommodation-location">
+          <h1 className="boardingHouse-title">{boardingHouse.name}</h1>
+          <p className="boardingHouse-location">
             {`${boardingHouse.location.addressDetail}, ${boardingHouse.location.street}, ${boardingHouse.location.district}`}
           </p>
           <h2>Mô tả</h2>
@@ -448,7 +450,7 @@ const handleScheduleVisitClick = () => {
 
       <Divider />
       <h1 className="text-heading">Tiện ích</h1>
-      <Row gutter={[24, 24]} className="accommodation-amenities">
+      <Row gutter={[24, 24]} className="boardingHouse-amenities">
         {boardingHouse.amenities?.map((amenity, index) => (
           <Col xs={12} sm={8} md={6} key={index} className="amenity-item">
             <CheckCircleOutlined className="amenity-icon" />
@@ -481,90 +483,111 @@ const handleScheduleVisitClick = () => {
       ) : (
         <div style={{ position: "relative" }}>
           <Slider {...sliderSettings} ref={sliderRef}>
-            {roommatePosts.map((post) => (
-              <div key={post._id} style={{ padding: "0 10px" }}>
-                <Card className="roommate-card" hoverable>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      marginBottom: 12,
-                    }}
-                  >
-                    <Avatar
-                      src={
-                        post.userId.avatar
-                          ? `${post.userId.avatar}`
-                          : "/default-avatar.png"
-                      }
+            {roommatePosts.map((post) => {
+              // Lấy thông tin người đăng bài
+              const author = post.userId;
 
-                      size={48}
-                      style={{ marginRight: 12 }}
+              return (
+                <div key={post._id} style={{ padding: "0 8px" }}> {/* Giảm padding ngang */}
+                  <Card
+                    className="roommate-card"
+                    hoverable
+                    style={{ height: '100%' }} // Để Card tự điều chỉnh chiều cao
+                    bodyStyle={{ padding: '16px' }} // Giảm padding body
+                  >
+                    {/* Phần thông tin người đăng */}
+                    <Card.Meta
+                      avatar={
+                        <Avatar
+                          size={48} // Kích thước avatar
+                          src={author?.avatar ? `http://localhost:5000${author.avatar}` : null} // ✅ Lấy avatar của người đăng bài
+                          style={{
+                            backgroundColor: author?.avatar ? 'transparent' : '#004d40', // Màu nền nếu không có avatar
+                            border: '1px solid #eee'
+                          }}
+                        >
+                          {/* Hiển thị chữ cái đầu nếu không có avatar */}
+                          {!author?.avatar && author?.name?.charAt(0).toUpperCase()}
+                        </Avatar>
+                      }
+                      title={author?.name || "Người dùng ẩn danh"}
+                      description={`Đăng ${dayjs(post.createdAt).fromNow()}`} // Hiển thị thời gian tương đối
+                      style={{ marginBottom: '12px' }}
                     />
 
-                    <div>
-                      <h3 style={{ margin: 0 }}>
-                        {post.userId?.name || "Unknown"}
-                      </h3>
-                      <small>{post.createdAt?.slice(0, 10)}</small>
+                    {/* Phần nội dung bài đăng */}
+                    <div className="roommate-post-content">
+                      {/* Hiển thị ảnh nếu có */}
+                      {post.images?.length > 0 && (
+                        <Carousel autoplay dotPosition="bottom" style={{ marginBottom: '12px' }}>
+                          {post.images.map((img, idx) => (
+                            <div key={idx}>
+                              <img
+                                src={`http://localhost:5000${img}`} // Giả sử ảnh được lưu tương đối
+                                alt={`Giới thiệu ${idx + 1}`}
+                                style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 4 }}
+                              />
+                            </div>
+                          ))}
+                        </Carousel>
+                      )}
+
+                      {/* Phần giới thiệu */}
+                      <p style={{ fontStyle: 'italic', color: '#555', marginBottom: '10px' }}>"{post.intro}"</p>
+
+                      {/* Thông tin chi tiết */}
+                      <div className="roommate-details">
+                        <p>
+                          <UserOutlined style={{ marginRight: 8, color: '#004d40' }} />
+                          <strong>Giới tính mong muốn:</strong> {post.genderPreference || "Linh hoạt"}
+                        </p>
+                        {/* Hiển thị Habits dưới dạng Tag */}
+                        {post.habits && post.habits.length > 0 && (
+                          <p style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                            <TagOutlined style={{ marginRight: 8, color: '#004d40' }} />
+                            <strong>Thói quen:</strong>
+                            {post.habits.map((habit, i) => (
+                              <Tag key={i} color="blue">{habit}</Tag>
+                            ))}
+                          </p>
+                        )}
+                        {/* Nút liên hệ (ví dụ) */}
+                        <Button
+                          icon={<MessageOutlined />}
+                          style={{ marginTop: '12px', width: '100%' }}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Ngăn Card kích hoạt link (nếu có)
+                            navigate(`/customer/chat/${author?._id}`);
+                          }}
+                        >
+                          Nhắn tin
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-
-                  {post.images?.length > 0 && (
-                    <Carousel autoplay>
-                      {post.images.map((img, idx) => (
-                        <div key={idx}>
-                          <img
-                            src={img}
-                            alt={`post-${idx}`}
-                            style={{
-                              width: "100%",
-                              height: 200,
-                              objectFit: "cover",
-                              borderRadius: 8,
-                              marginBottom: 12,
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </Carousel>
-                  )}
-
-                  <p>{post.intro}</p>
-                  <p>
-                       <p>
-        <strong>Gender:</strong> {post.genderPreference || "Not specified"}
-      </p>
-      <p>
-          <strong>Phone:</strong> {post.userId?.phone || "Not provided"}
-        </p>
-
-                    <strong>Habits:</strong>{" "}
-                    {post.habits?.join(", ") || "Not specified"}
-                  </p>
-                </Card>
-              </div>
-            ))}
-          </Slider>
+                  </Card>
+                </div>
+              );
+            })}
+          </Slider >
           <div className="custom-carousel-buttons">
             <button className="nav-button" onClick={() => sliderRef.current.slickPrev()}><LeftOutlined /></button>
             <button className="nav-button" onClick={() => sliderRef.current.slickNext()}><RightOutlined /></button>
           </div>
-        </div>
+        </div >
       )}
       <RoommatePostModal
         visible={showModal}
         onClose={() => setShowModal(false)}
-        accommodationId={boardingHouse._id}
+        boardingHouseId={boardingHouse._id}
         onSuccess={fetchRoommates}
       />
       <VisitRequestModal
-      visible={isVisitModalVisible}
-      onClose={handleVisitModalClose}
-      onSuccess={handleVisitModalSuccess}
-      accommodationId={accommodation._id}
-     ownerId={accommodation.ownerId?._id}
-  />
+        visible={isVisitModalVisible}
+        onClose={handleVisitModalClose}
+        onSuccess={handleVisitModalSuccess}
+        boardingHouseId={boardingHouse._id}
+        ownerId={boardingHouse.ownerId?._id}
+      />
       <Divider />
 
       <h1 className="text-heading">Reviews</h1>
@@ -576,13 +599,13 @@ const handleScheduleVisitClick = () => {
             <h2 className="leave-review-title">Leave a Review</h2>
 
             {user ? (
-              userHasBooking  ? (
+              userHasBooking ? (
                 <div className="review-form-container">
                   <div className="review-form-row">
                     <label className="review-form-label">Your Review</label>
                     <Input.TextArea
                       rows={4}
-                      placeholder="Share your experience about this accommodation..."
+                      placeholder="Share your experience about this boardingHouse..."
                       value={reviewContent}
                       onChange={(e) => setReviewContent(e.target.value)}
                       className="review-custom-textarea"
@@ -626,7 +649,7 @@ const handleScheduleVisitClick = () => {
                     <i className="bi bi-info-circle review-prompt-icon"></i>
                     <h3 className="review-prompt-title">Only Verified Guests Can Review</h3>
                     <p className="review-prompt-description">
-                      You need to book and stay at this accommodation to leave a review.
+                      You need to book and stay at this boardingHouse to leave a review.
                     </p>
                     <p className="review-prompt-note">
                       This helps ensure authentic and helpful reviews for other travelers.
@@ -761,7 +784,7 @@ const handleScheduleVisitClick = () => {
               </Card>
             ))
           ) : (
-            <p>No reviews yet for this accommodation.</p>
+            <p>No reviews yet for this boarding-house.</p>
           )}
         </Col>
       </Row>
@@ -809,7 +832,7 @@ const handleScheduleVisitClick = () => {
           </ul>
         </Col>
       </Row>
-    </div>
+    </div >
   );
 };
 

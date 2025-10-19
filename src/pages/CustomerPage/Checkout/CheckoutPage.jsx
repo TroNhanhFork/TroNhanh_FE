@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+// Sửa: Dùng axiosInstance thay vì axios
 import axiosInstance from "../../../services/axiosInstance";
 import { useNavigate, useLocation } from "react-router-dom";
 import dayjs from "dayjs";
@@ -9,7 +10,6 @@ import {
   Input,
   Select,
   Radio,
-  Checkbox,
   Button,
   Divider,
   notification,
@@ -20,7 +20,6 @@ import {
 } from "antd";
 import {
   CalendarOutlined,
-  UserOutlined,
   InfoCircleOutlined,
 } from "@ant-design/icons";
 import "./CheckoutPage.css";
@@ -32,9 +31,10 @@ const { Option } = Select;
 const CheckoutPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const propertyId = location.state?.accommodationId;
+  // KHÔNG DÙNG propertyId nữa, luồng mới dựa trên bookingId
+  // const propertyId = location.state?.accommodationId; 
 
-  // form state to auto-fill user info
+  // form state
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -45,7 +45,6 @@ const CheckoutPage = () => {
   const [leaseDuration, setLeaseDuration] = useState(null);
   const [guests, setGuests] = useState(1);
 
-  // get user info from context
   const { user } = useUser();
   const [paymentMethod, setPaymentMethod] = useState(null);
 
@@ -56,36 +55,16 @@ const CheckoutPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Function to disable past dates
+  // Định nghĩa tiền cọc (Nếu động, hãy lấy từ API)
+  const DEPOSIT_FEE = 500000;
+
   const disabledDate = (current) => {
-    // Can not select days before today
     return current && current < dayjs().startOf('day');
   };
 
-  // handle payment result after redirect
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("success") === "true") {
-      notification.success({
-        message: "Payment Successful",
-        description: "Your booking has been confirmed!",
-      });
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
-    }
-    if (params.get("success") === "false") {
-      notification.error({
-        message: "Payment Failed",
-        description: "Your payment was not successful.",
-      });
-    }
-  }, [navigate]);
-
-  // --- Fetch Booking and Related Data ---
+  // --- Fetch Booking và Data liên quan (Logic mới) ---
   useEffect(() => {
     const fetchBookingDetails = async () => {
-      // Lấy bookingId từ location.state
       const { bookingId } = location.state || {};
 
       if (!bookingId) {
@@ -96,10 +75,10 @@ const CheckoutPage = () => {
 
       setLoading(true);
       try {
-        // 1. Fetch booking data
+        // 1. Fetch booking data (đã bao gồm populate)
         const bookingData = await bookingService.getBookingById(bookingId);
 
-        // 2. Validate status
+        // 2. Validate status (như cũ)
         if (!bookingData) throw new Error("Không tìm thấy thông tin đặt phòng.");
         if (bookingData.contractStatus !== 'approved') {
           throw new Error(`Yêu cầu đặt phòng này ${bookingData.contractStatus === 'pending_approval' ? 'đang chờ duyệt' : 'đã bị từ chối'}. Không thể thanh toán.`);
@@ -109,32 +88,33 @@ const CheckoutPage = () => {
         }
         setBooking(bookingData);
 
-        // 3. Fetch House and Room details
-        const houseData = await getBoardingHouseById(bookingData.boardingHouseId);
-        const specificRoom = houseData.rooms.find(r => r._id === bookingData.roomId);
+        // 3. (SỬA LỖI) Lấy trực tiếp dữ liệu đã populate
+        // KHÔNG CẦN GỌI API NỮA
+        const houseData = bookingData.boardingHouseId;
+        const specificRoom = bookingData.roomId;
 
-        if (!houseData || !specificRoom) {
-          throw new Error("Không thể tải thông tin chi tiết phòng hoặc nhà trọ.");
+        // Kiểm tra xem backend có populate đúng không
+        if (!houseData || typeof houseData !== 'object' || !specificRoom || typeof specificRoom !== 'object') {
+          throw new Error("Không thể tải thông tin chi tiết phòng hoặc nhà trọ (Dữ liệu populate bị thiếu).");
         }
+
         setBoardingHouseDetails(houseData);
         setRoomDetails(specificRoom);
 
-        // 4. Pre-fill form
-        if (bookingData.guestInfo) {
-          setFirstName(bookingData.guestInfo.firstName || user?.name.split(' ')[0] || "");
-          setLastName(bookingData.guestInfo.lastName || user?.name.split(' ').slice(1).join(' ') || "");
-          setEmail(bookingData.guestInfo.email || user?.email || "");
-          setPhone(bookingData.guestInfo.phone || user?.phone || "");
-          setPurpose(bookingData.guestInfo.purpose || "");
-          setStartDate(bookingData.guestInfo.startDate ? dayjs(bookingData.guestInfo.startDate) : null);
-          setLeaseDuration(bookingData.guestInfo.leaseDuration || null);
-          setGuests(bookingData.guestInfo.guests || 1);
-        } else if (user) { // Fallback
-          setFirstName(user.name.split(' ')[0] || "");
-          setLastName(user.name.split(' ').slice(1).join(' ') || "");
-          setEmail(user.email || "");
-          setPhone(user.phone || "");
-        }
+        // 4. Pre-fill form (Ưu tiên guestInfo từ booking, fallback về user)
+        const info = bookingData.guestInfo || {};
+        const nameParts = user?.name.trim().split(" ") || [];
+        const userFirstName = nameParts[0] || "";
+        const userLastName = nameParts.slice(1).join(' ') || "";
+
+        setFirstName(info.firstName || userFirstName);
+        setLastName(info.lastName || userLastName);
+        setEmail(info.email || user?.email || "");
+        setPhone(info.phone || user?.phone || "");
+        setPurpose(info.purpose || "");
+        setStartDate(info.startDate ? dayjs(info.startDate) : dayjs()); // Default là hôm nay nếu chưa có
+        setLeaseDuration(info.leaseDuration || 6); // Default 6 tháng
+        setGuests(info.guests || 1);
 
       } catch (err) {
         setError(err.message || "Lỗi khi tải thông tin đặt phòng.");
@@ -145,120 +125,133 @@ const CheckoutPage = () => {
     };
 
     fetchBookingDetails();
-  }, [location.state, user]);
+  }, [location.state, user]); // Phụ thuộc vào location.state và user
 
-  // --- Handle Payment Redirect Results ---
+  // --- Xử lý kết quả trả về từ VNPay ---
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("vnp_ResponseCode") === "00") { // VNPay success code
+    if (params.get("vnp_ResponseCode") === "00") {
       messageApi.success({ content: "Thanh toán thành công! Đặt phòng của bạn đã được xác nhận.", duration: 5 });
-      // Navigate to a success page or booking history
       setTimeout(() => navigate('/customer/my-bookings'), 3000);
-    } else if (params.get("vnp_ResponseCode")) { // VNPay failed or cancelled
+    } else if (params.get("vnp_ResponseCode")) {
       messageApi.error({ content: "Thanh toán thất bại hoặc đã bị hủy.", duration: 5 });
-      // Clear VNPay params from URL without reloading
       window.history.replaceState(null, '', window.location.pathname);
     }
-    // Add similar checks for PayPal if using it
   }, [navigate, messageApi]);
 
-  // VNPay booking handler
+  // --- Xử lý nhấn nút Thanh toán (Đã sửa) ---
   const handleBook = async () => {
     console.log("Book button pressed");
     if (!paymentMethod) return messageApi.warning("Vui lòng chọn phương thức thanh toán.");
-    // ✅ SỬA: Kiểm tra state mới
     if (!booking || !roomDetails) return messageApi.error("Thông tin đặt phòng chưa được tải.");
     if (!user?._id) return messageApi.error("Vui lòng đăng nhập lại.");
-    if (!startDate || !leaseDuration || !guests || !purpose || !firstName || !lastName || !email || !phone) {
+
+    // Validate form
+    const allFieldsFilled = startDate && leaseDuration && guests && purpose && firstName && lastName && email && phone;
+    if (!allFieldsFilled) {
       return messageApi.warning("Vui lòng điền đầy đủ thông tin khách và chi tiết đặt phòng.");
     }
     if (startDate && startDate.isBefore(dayjs().startOf('day'))) {
-      notification.error({ 
-        message: "Invalid Date", 
-        description: "Start date cannot be in the past. Please select today or a future date." 
+      notification.error({
+        message: "Ngày không hợp lệ",
+        description: "Ngày bắt đầu thuê không thể là ngày trong quá khứ."
       });
       return;
     }
 
-    // 1. Create booking first
+    // 1. Tính toán số tiền
+    const amountToPay = roomDetails.price + DEPOSIT_FEE;
+
+    // 2. (Tùy chọn) Cập nhật guestInfo vào booking trước khi thanh toán
+    // Bạn có thể tạo 1 endpoint (vd: PUT /api/bookings/:id/guestinfo)
+    /*     const guestInfo = {
+      firstName, lastName, email, phone, purpose,
+      startDate: startDate.format("YYYY-MM-DD"),
+      leaseDuration, guests,
+    };
+    await bookingService.updateGuestInfo(booking._id, guestInfo); 
+    */
+
+    // 3. Tạo link thanh toán
     try {
-      const bookingRes = await axios.post(
-        "http://localhost:5000/api/bookings",
-        {
+      if (paymentMethod === "payos") {
+        const res = await axiosInstance.post("/payment/create", { // Dùng axiosInstance
+          // amount: amountToPay,
+          amount: 5000,
           userId: user._id,
-          propertyId: property._id,
-          guestInfo: {
-            firstName,
-            lastName,
-            email,
-            phone,
-            purpose,
-            startDate: startDate ? startDate.format("YYYY-MM-DD") : null,
-            leaseDuration,
-            guests,
-          },
-        }
-      );
+          bookingId: booking._id, // Dùng bookingId đã fetch được
+          type: "booking",
+        });
 
-      // 2. Only proceed to payment if booking is created
-if (paymentMethod === "payos") {
-  const res = await axios.post("http://localhost:5000/api/payment/create", {
-    amount: Math.round(property.price * 1.003 + 500000),
-    userId: user._id,
-    bookingId: bookingRes.data._id,
-     type: "booking",
-  });
-
-  // redirect sang PayOS checkout page
-  window.location.href = res.data.url;
-}
- else {
-        // Handle other payment methods if needed
+        // Chuyển hướng sang trang checkout PayOS
+        window.location.href = res.data.url;
+      } else {
+        messageApi.warning("Phương thức thanh toán chưa được hỗ trợ.");
       }
     } catch (err) {
-      // ✅ SỬA: Dùng messageApi
       messageApi.error("Không thể tạo yêu cầu thanh toán. Vui lòng thử lại.");
       console.error("Payment initiation error:", err.response?.data || err.message);
     }
   };
-useEffect(() => {
-  // Prefill từ user (nếu có)
-  if (user && Object.keys(user).length > 0) {
-    if (user.name) {
-      const nameParts = user.name.trim().split(" ");
-      const first = nameParts.pop();
-      const last = nameParts.join(" ");
-      setFirstName((prev) => prev || first);
-      setLastName((prev) => prev || last);
-    } else {
-      setFirstName((prev) => prev || user.firstName || "");
-      setLastName((prev) => prev || user.lastName || "");
-    }
-    setEmail((prev) => prev || user.email || "");
-    setPhone((prev) => prev || user.phone || "");
+
+  // --- XÓA useEffect cũ (dòng 269-291) ---
+  // useEffect(() => { ... }, [user, propertyId]); // ĐÃ XÓA
+
+  // --- Tính toán các giá trị cho Summary Card ---
+  const endDate = (startDate && leaseDuration)
+    ? startDate.add(leaseDuration, 'month').format('DD/MM/YYYY')
+    : 'N/A';
+
+  const amountDueNow = (roomDetails?.price || 0) + DEPOSIT_FEE;
+
+  // --- Xử lý trạng thái Loading và Error ---
+  if (loading) {
+    return (
+      <div className="checkout-container" style={{ textAlign: 'center', padding: '100px' }}>
+        <Spin size="large" />
+        <p>Đang tải thông tin thanh toán...</p>
+      </div>
+    );
   }
 
-  // Prefill từ accommodation (nếu có)
-  if (propertyId) {
-    getAccommodationById(propertyId).then((data) => {
-      setProperty(data);
-      if (data.guestFirstName) setFirstName(data.guestFirstName);
-      if (data.guestLastName) setLastName(data.guestLastName);
-      if (data.guestEmail) setEmail(data.guestEmail);
-      if (data.guestPhone) setPhone(data.guestPhone);
-      if (data.purpose) setPurpose(data.purpose);
-    });
+  if (error) {
+    return (
+      <div className="checkout-container">
+        <Result
+          status="error"
+          title="Đã xảy ra lỗi"
+          subTitle={error}
+          extra={[
+            <Button type="primary" key="console" onClick={() => navigate('/customer/my-bookings')}>
+              Về trang Yêu cầu
+            </Button>,
+          ]}
+        />
+      </div>
+    );
   }
-}, [user, propertyId]);
 
+  // Đảm bảo data đã về trước khi render
+  if (!booking || !roomDetails || !boardingHouseDetails) {
+    return (
+      <div className="checkout-container">
+        <Result
+          status="warning"
+          title="Không tìm thấy dữ liệu"
+          subTitle="Không thể tải chi tiết đặt phòng. Vui lòng thử lại."
+        />
+      </div>
+    );
+  }
 
-
+  // --- Render JSX ---
   return (
     <div className="checkout-container">
+      {contextHolder} {/* Hiển thị messageApi */}
       <Row gutter={[40, 40]}>
         {/* Left side - Guest details */}
         <Col xs={24} md={14}>
-          <h2 className="section-title">Guest details</h2>
+          <h2 className="section-title">Chi tiết khách thuê</h2>
           <Row gutter={16}>
             <Col span={12}><Input placeholder="Tên" size="large" value={firstName} onChange={(e) => setFirstName(e.target.value)} /></Col>
             <Col span={12}><Input placeholder="Họ" size="large" value={lastName} onChange={(e) => setLastName(e.target.value)} /></Col>
@@ -289,18 +282,17 @@ useEffect(() => {
 
           {/* Payment Method */}
           <div className="payment-method-section">
-            <h3 className="section-title">Payment method</h3>
+            <h3 className="section-title">Phương thức thanh toán</h3>
             <Select
-              placeholder="Select payment method"
+              placeholder="Chọn phương thức thanh toán"
               size="large"
               style={{ width: "100%" }}
               value={paymentMethod}
               onChange={setPaymentMethod}
             >
-              <Option value="payos">PayOS</Option>
+              <Option value="payos">Thanh toán qua PayOS (Thẻ ATM, QR, Visa)</Option>
             </Select>
             <p className="terms-note">Bằng việc nhấn "Thanh toán", bạn đồng ý với các điều khoản...</p>
-            {/* ✅ SỬA: Disable nút nếu thiếu thông tin */}
             <Button className="book-button" onClick={handleBook} disabled={!user || !paymentMethod}>
               Thanh toán
             </Button>
@@ -311,26 +303,22 @@ useEffect(() => {
         <Col xs={24} md={10}>
           <div className="summary-card">
             <img
-              // ✅ SỬA: Dùng boardingHouseDetails
-              src={boardingHouseDetails.photos?.[0] ? `http://localhost:5000${boardingHouseDetails.photos[0]}` : "/default-image.jpg"}
-              alt={boardingHouseDetails.name}
+              src={boardingHouseDetails?.photos?.[0] ? `http://localhost:5000${boardingHouseDetails.photos[0]}` : "/default-image.jpg"}
+              alt={boardingHouseDetails?.name || 'Boarding House'}
               className="summary-image"
             />
             <div className="summary-section">
-              {/* ✅ SỬA: Dùng boardingHouseDetails và roomDetails */}
-              <h3>{boardingHouseDetails.name}</h3>
-              <p>Phòng: {roomDetails.roomNumber}</p>
-              <p>{`${boardingHouseDetails.location.addressDetail}, ${boardingHouseDetails.location.street}, ${boardingHouseDetails.location.district}`}</p>
+              <h3>{boardingHouseDetails?.name}</h3>
+              <p>Phòng: {roomDetails?.roomNumber}</p>
+              <p>{`${boardingHouseDetails?.location?.addressDetail}, ${boardingHouseDetails?.location?.street}, ${boardingHouseDetails?.location?.district}`}</p>
               <Divider />
               <Row>
                 <Col span={12}>
                   <CalendarOutlined /> Nhận phòng
-                  {/* ✅ SỬA: Hiển thị ngày đã chọn */}
                   <div>{startDate ? startDate.format('DD/MM/YYYY') : 'N/A'}</div>
                 </Col>
                 <Col span={12}>
-                  <CalendarOutlined /> Trả phòng
-                  {/* ✅ SỬA: Tính ngày trả phòng */}
+                  <CalendarOutlined /> Trả phòng (dự kiến)
                   <div>{endDate}</div>
                 </Col>
               </Row>
@@ -338,14 +326,12 @@ useEffect(() => {
               <h4>Chi tiết thanh toán</h4>
               <div className="payment-detail-row">
                 <span>Tiền thuê tháng đầu</span>
-                {/* ✅ SỬA: Dùng giá từ roomDetails */}
-                <span>{roomDetails.price.toLocaleString('vi-VN')} VNĐ</span>
+                <span>{roomDetails?.price ? roomDetails.price.toLocaleString('vi-VN') : 0} VNĐ</span>
               </div>
-              {/* Bạn có thể thêm tiền cọc ở đây nếu backend yêu cầu */}
-              {/* <div className="payment-detail-row">
-                                <span>Tiền cọc</span>
-                                <span>{depositFee.toLocaleString('vi-VN')} VNĐ</span>
-                            </div> */}
+              <div className="payment-detail-row">
+                <span>Tiền cọc</span>
+                <span>{DEPOSIT_FEE.toLocaleString('vi-VN')} VNĐ</span>
+              </div>
               <Divider />
               <div className="payment-detail-row total-cost">
                 <span>Tổng cộng thanh toán ngay</span>
@@ -354,46 +340,26 @@ useEffect(() => {
               <Divider />
               <h4>Lịch trình thanh toán</h4>
               <div className="payment-detail-row">
-                <span>Average monthly rent</span>
+                <span>Tiền thuê hàng tháng</span>
                 <span>
-                  {boardingHouseDetails
+                  {roomDetails?.price
                     ? new Intl.NumberFormat("vi-VN", {
                       style: "currency",
                       currency: "VND",
-                    }).format(boardingHouseDetails.price * 0.93)
+                    }).format(roomDetails.price)
                     : "—"}
-                  <br />
-                  <span className="vat-label">incl. VAT</span>
                 </span>
               </div>
               <div className="payment-detail-row">
                 <span>
-                  Pay upon booking <InfoCircleOutlined />
+                  Thanh toán khi đặt phòng <InfoCircleOutlined />
                 </span>
                 <span>
-                  {boardingHouseDetails
-                    ? new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(boardingHouseDetails.price * 0.9998)
-                    : "—"}
-                  <br />
-                  <span className="vat-label">incl. VAT</span>
-                </span>
-              </div>
-              <div className="payment-detail-row">
-                <span>
-                  Total costs <InfoCircleOutlined />
-                </span>
-                <span>
-                  {boardingHouseDetails
-                    ? new Intl.NumberFormat("vi-VN", {
-                      style: "currency",
-                      currency: "VND",
-                    }).format(boardingHouseDetails.price * 1.003)
-                    : "—"}
-                  <br />
-                  <span className="vat-label">incl. VAT</span>
+                  {new Intl.NumberFormat("vi-VN", {
+                    style: "currency",
+                    currency: "VND",
+                  }).format(amountDueNow)
+                  }
                 </span>
               </div>
 
@@ -406,42 +372,36 @@ useEffect(() => {
                 <div className="payment-item">
                   <div className="bullet-point" />
                   <div className="payment-content">
-                    <strong>Reserve this apartment</strong>
+                    <strong>Thanh toán giữ phòng</strong>
                     <div className="sub-note">
-                      Due now {"(Including deposit fee)"}
+                      Thanh toán ngay (Bao gồm tiền cọc)
                     </div>
                   </div>
                   <div className="payment-amount">
                     <span>
-                      {boardingHouseDetails
-                        ? new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                        }).format(boardingHouseDetails.price * 1.003 + 500000)
-                        : "—"}
-                      <br />
+                      {new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND",
+                      }).format(amountDueNow)
+                      }
                     </span>
+                    A new
                   </div>
                 </div>
 
                 <div className="payment-item">
                   <div className="bullet-point" />
                   <div className="payment-content">
-                    <strong>After move-out</strong>
+                    Tên
+                    <strong>Sau khi trả phòng</strong>
                     <div className="sub-note">
-                      Receive your 500.000đ deposit after move out{" "}
+                      Hoàn {DEPOSIT_FEE.toLocaleString('vi-VN')}đ tiền cọc
                       <InfoCircleOutlined style={{ fontSize: 12 }} />
                     </div>
                   </div>
                   <div className="payment-amount">
                     <span>
-                      {boardingHouseDetails
-                        ? new Intl.NumberFormat("vi-VN", {
-                          style: "currency",
-                          currency: "VND",
-                        }).format(boardingHouseDetails.price * 1.003 - 500000)
-                        : "—"}
-                      <br />
+                      +{DEPOSIT_FEE.toLocaleString('vi-VN')} VNĐ
                     </span>
                   </div>
                 </div>

@@ -6,7 +6,7 @@ export const createRoommatePost = async (data) => {
   return res.data;
 };
 
-export const getRoommatePosts = async (accommodationId) => {
-  const res = await axiosInstance.get(`/roommates/${accommodationId}`);
+export const getRoommatePosts = async (boardingHouseId) => {
+  const res = await axiosInstance.get(`/roommates/${boardingHouseId}`);
   return res.data.posts;
 };

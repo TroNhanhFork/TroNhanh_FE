@@ -1,5 +1,5 @@
 
-import { Layout, Menu, Dropdown, Avatar, message,Badge } from "antd";
+import { Layout, Menu, Dropdown, Avatar, message, Badge } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import {
   DownOutlined,
@@ -24,18 +24,20 @@ const HeaderComponent = () => {
   const navigate = useNavigate();
   const [messageApi, contextHolder] = message.useMessage();
   const { user, logout, loading } = useUser();
-const { 
- pendingRequestCount,  
- hasVisitResponse,     
- clearCustomerVisitNotif 
-} = useNotifications();
+  const {
+    pendingRequestCount,
+    hasVisitResponse,
+    clearCustomerVisitNotif
+  } = useNotifications();
 
   if (loading) return null;
 
   const handleLogout = async () => {
-    await messageApi.success("Logout successfully", 2);
-    logout();
-    navigate("/homepage");
+    messageApi.success("Logout successfully");
+    setTimeout(() => {
+      logout();
+      navigate("/homepage");
+    }, 500);
   };
 
   const getUserMenuItems = (role) => {
@@ -57,17 +59,17 @@ const {
           icon: <HeartOutlined />,
           onClick: () => navigate("/customer/favourite"),
         },
-               {
+        {
           key: "visit-requests",
           label: "Visit Request",
-         icon: (
-           <Badge dot={hasVisitResponse} size="small"> 
-          <CalendarOutlined />
-          </Badge>
+          icon: (
+            <Badge dot={hasVisitResponse} size="small">
+              <CalendarOutlined />
+            </Badge>
           ),
-          
+
           onClick: () => {
-          clearCustomerVisitNotif();
+            clearCustomerVisitNotif();
             navigate("/customer/profile/visit-requests");
           },
         }
@@ -93,14 +95,14 @@ const {
         {
           key: "visit-requests",
           label: "Visit Request",
-         icon: (
-           <Badge dot={pendingRequestCount > 0} size="small"> 
-<CalendarOutlined />
- </Badge>
+          icon: (
+            <Badge dot={pendingRequestCount > 0} size="small">
+              <CalendarOutlined />
+            </Badge>
           ),
-          
+
           onClick: () => {
-          
+
             navigate("/owner/visit-requests");
           },
         }
@@ -171,7 +173,7 @@ const {
               <Menu.Item key="manage-room">
                 <Link to="/owner/boarding-house" onClick={() => console.log("Menu: /owner/accommodation")}>Manage Room</Link>
               </Menu.Item>
-              
+
             </>
           )}
 
@@ -190,31 +192,31 @@ const {
 
         <div className="user-menu">
           {user ? (
-   <Dropdown
-menu={{ items: getUserMenuItems(user.role) }}
- placement="bottomRight"
- trigger={["click"]}
- overlayClassName="user-dropdown"
- >
-      
- <Badge 
- dot={pendingRequestCount > 0 || hasVisitResponse} 
-size="small" 
-offset={[-8, 8]}
- >
-<div className="user-info">
- <Avatar
-src={user.avatar || null}
-className="user-avatar"
- size={40}
- >
- {!user.avatar && user.name?.charAt(0)}
-</Avatar>
- <span className="user-name">{user.name || user.email}</span>
-<DownOutlined className="dropdown-icon" />
-</div>
- </Badge>
- </Dropdown>
+            <Dropdown
+              menu={{ items: getUserMenuItems(user.role) }}
+              placement="bottomRight"
+              trigger={["click"]}
+              overlayClassName="user-dropdown"
+            >
+
+              <Badge
+                dot={pendingRequestCount > 0 || hasVisitResponse}
+                size="small"
+                offset={[-8, 8]}
+              >
+                <div className="user-info">
+                  <Avatar
+                    src={user.avatar || null}
+                    className="user-avatar"
+                    size={40}
+                  >
+                    {!user.avatar && user.name?.charAt(0)}
+                  </Avatar>
+                  <span className="user-name">{user.name || user.email}</span>
+                  <DownOutlined className="dropdown-icon" />
+                </div>
+              </Badge>
+            </Dropdown>
           ) : (
             <div className="auth-buttons">
               <Link to="/login">

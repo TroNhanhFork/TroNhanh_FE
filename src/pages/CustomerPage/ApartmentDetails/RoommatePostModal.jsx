@@ -3,7 +3,7 @@ import { Modal, Form, Input, DatePicker, InputNumber, Select, Checkbox, Button }
 import { useState } from 'react';
 import { createRoommatePost } from '../../../services/roommateAPI';
 
-const RoommatePostModal = ({ visible, onClose, accommodationId, onSuccess }) => {
+const RoommatePostModal = ({ visible, onClose, boardingHouseId, onSuccess }) => {
   const [loading, setLoading] = useState(false);
 
   const handleFinish = async (values) => {
@@ -11,7 +11,7 @@ const RoommatePostModal = ({ visible, onClose, accommodationId, onSuccess }) => 
     try {
       await createRoommatePost({
         ...values,
-        accommodationId,
+        boardingHouseId,
       });
       onSuccess?.(); // reload list
       onClose();
