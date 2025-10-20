@@ -171,7 +171,7 @@ export const SocketProvider = ({ children }) => {
       }}
     >
       {children}
-      {SocketStatusBadge}
+      {/* {SocketStatusBadge} */}
     </SocketContext.Provider>
   );
 };

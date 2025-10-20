@@ -123,6 +123,8 @@ const Communication = ({ role = "customer" }) => {
 
         const handleWebRTCOffer = async ({ fromUserId, offer }) => {
             setCallerId(fromUserId);
+            const caller = chatList.find(c => c.otherUser.userId === fromUserId)?.otherUser;
+            if (caller) setSelectedUser(caller);
             setIncomingCall(true);
 
             peerConnectionRef.current = createPeerConnection();
