@@ -563,20 +563,60 @@
   font-weight: 600;
 }
 
-/* Click hint */
 .bookings-table .ant-table-tbody > tr {
   cursor: pointer;
 }
 
-.bookings-table .ant-table-tbody > tr:hover::after {
+/* 1. Định vị cho ô cuối cùng */
+.bookings-table .ant-table-tbody > tr > td:last-child {
+  position: relative;
+}
+
+/* 2. Nội dung Status gốc (Cái Tag) */
+.bookings-table .ant-table-tbody > tr > td:last-child .status-content {
+  /* Thiết lập transition cho độ mờ */
+  opacity: 1;
+  transition: opacity 0.2s ease-in-out;
+  
+  /* Đảm bảo nó luôn ở trên cùng (khi chưa hover) */
+  position: relative;
+  z-index: 1;
+}
+
+/* 3. Nội dung "Click..." (::after) */
+.bookings-table .ant-table-tbody > tr > td:last-child::after {
   content: "Click to view details";
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
   color: #49735A;
   font-size: 12px;
-  opacity: 0.7;
+  
+  /* Căn giữa bên trong ô */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  
+  /* Ẩn nó đi bằng độ mờ */
+  opacity: 0; 
+  transition: opacity 0.2s ease-in-out;
+  
+  /* Quan trọng: không cho click khi đang ẩn */
+  pointer-events: none; 
+  z-index: 0; /* Nằm dưới cái Tag */
+}
+
+/* 4. KHI HOVER HÀNG (tr:hover) */
+
+/* 4a. Mờ nội dung Status gốc đi */
+.bookings-table .ant-table-tbody > tr:hover > td:last-child .status-content {
+  opacity: 0;
+  z-index: 0; /* Cho nó xuống dưới */
+}
+
+/* 4b. Hiện nội dung "Click..." lên */
+.bookings-table .ant-table-tbody > tr:hover > td:last-child::after {
+  opacity: 1;
+  pointer-events: auto; 
+  z-index: 1; /* Cho nó lên trên */
 }
 
 /* Modal accommodation images */
@@ -589,17 +629,14 @@
 
 .accommodation-image {
   position: relative;
-  width: 120px;
-  height: 80px;
   border-radius: 8px;
   overflow: hidden;
   border: 2px solid #DDEBDD;
   transition: all 0.2s ease;
-}
-
-.accommodation-image:hover {
-  transform: scale(1.05);
-  border-color: #49735A;
+  /* Remove fixed dimensions */
+  flex: 1 1 120px; /* Grow to fill space, but min-width is 120px */
+  max-width: 100%; /* Ensure it doesn't exceed container */
+  aspect-ratio: 3 / 2; /* Maintain aspect ratio (adjust as needed) */
 }
 
 .accommodation-image img {
@@ -609,12 +646,17 @@
   transition: all 0.2s ease;
 }
 
+.accommodation-image:hover {
+  transform: scale(1.05);
+  border-color: #49735A;
+}
+
 .accommodation-image:hover img {
   filter: brightness(1.1);
 }
 
 .accommodation-more-images {
-  width: 120px;
+  flex: 1 1 120px;
   height: 80px;
   border-radius: 8px;
   border: 2px dashed #DDEBDD;
@@ -633,6 +675,13 @@
   background-color: #e8f5ea;
 }
 
+/* Special case for single image */
+.accommodation-images:has(.accommodation-image:nth-child(1):nth-last-child(1)) .accommodation-image {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: 300px; /* Prevent overly large images */
+}
 .accommodation-info {
   margin-top: 8px;
   padding: 12px;
@@ -789,6 +838,12 @@
 .recent-bookings-hint {
   font-size: 12px;
   font-weight: normal;
-  color: #666;
+  color: #fff;
   margin-left: 8px;
 }
+.accommodation-images-container {
+  max-height: 300px; /* Giới hạn chiều cao modal cho ảnh */
+  overflow-y: auto;  /* Scroll nếu quá cao */
+  margin-bottom: 12px;
+}
+

@@ -39,7 +39,7 @@ const Report = () => {
   const fetchBookedAccommodations = async () => {
     try {
       // Lấy tất cả accommodations của owner có status = "Booked"
-      const accRes = await axios.get(`http://localhost:5000/api/accommodation?ownerId=${user._id}`);
+      const accRes = await axios.get(`http://localhost:5000/api/boarding-house?ownerId=${user._id}`);
       const ownerAccommodations = accRes.data;
       
       // Lọc chỉ những accommodation đang có status "Booked"
@@ -56,7 +56,7 @@ const Report = () => {
         accommodationsToProcess.map(async (acc) => {
           try {
             // Lấy booking info để có thông tin customer
-            const bookingRes = await axios.get(`http://localhost:5000/api/booking/accommodation/${acc._id}`);
+            const bookingRes = await axios.get(`http://localhost:5000/api/booking/boarding-house/${acc._id}`);
             
             const latestBooking = bookingRes.data.find(booking => 
               booking.status === "paid" || booking.status === "pending"

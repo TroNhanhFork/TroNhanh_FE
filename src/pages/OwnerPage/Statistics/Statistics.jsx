@@ -66,45 +66,56 @@ const Statistics = () => {
   }, [monthlyRevenueData]);
 
   const fetchStatistics = async () => {
-    try {
-      setLoading(true);
-      
-      // Sử dụng API mới để lấy statistics tổng hợp
-      const statisticsRes = await getOwnerStatistics();
-      
-      if (statisticsRes.success) {
-        setStats(statisticsRes.statistics);
-      } else {
-        // Fallback to old method if API fails
-        const accommodationsRes = await axios.get(`http://localhost:5000/api/accommodation?ownerId=${user._id}`);
-        const accommodations = accommodationsRes.data;
+  try {
+    setLoading(true);
+    const statisticsRes = await getOwnerStatistics();
 
-        const totalAccommodations = accommodations.length;
-        const availableAccommodations = accommodations.filter(acc => acc.status === 'Available').length;
-        const bookedAccommodations = accommodations.filter(acc => acc.status === 'Booked').length;
-        const unavailableAccommodations = accommodations.filter(acc => acc.status === 'Unavailable').length;
+    if (statisticsRes.success) {
+      const s = statisticsRes.statistics;
 
-        // Calculate revenue (fallback calculation)
-        const totalRevenue = bookedAccommodations * 2500000;
-        const monthlyRevenue = totalRevenue * 0.3;
+      // ✅ Mapping tên key cho thống nhất với state
+      setStats({
+        totalAccommodations: s.totalHouses || 0,
+        availableAccommodations: s.approvedHouses || 0,
+        bookedAccommodations: s.totalBookings || 0,
+        unavailableAccommodations: s.rejectedHouses || 0,
+        totalRevenue: s.totalRevenue || 0,
+        totalBookings: s.totalBookings || 0,
+        monthlyRevenue: s.monthlyRevenue || 0,
+      });
+    } else {
+      // 🆘 Fallback nếu API lỗi
+      const housesRes = await axios.get(`http://localhost:5000/api/boardinghouse/owner/${user._id}`);
+      const houses = housesRes.data.boardingHouses || [];
 
-        setStats({
-          totalAccommodations,
-          availableAccommodations,
-          bookedAccommodations,
-          unavailableAccommodations,
-          totalRevenue,
-          totalBookings: bookedAccommodations,
-          monthlyRevenue
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching statistics:', error);
-      messageApi.error('Unable to load statistics!');
-    } finally {
-      setLoading(false);
+      const totalHouses = houses.length;
+      const approvedHouses = houses.filter(h => h.approvedStatus === 'approved').length;
+      const pendingHouses = houses.filter(h => h.approvedStatus === 'pending').length;
+      const rejectedHouses = houses.filter(h => h.approvedStatus === 'rejected').length;
+
+      // Giả lập doanh thu fallback
+      const totalRevenue = approvedHouses * 2500000;
+      const monthlyRevenue = totalRevenue * 0.3;
+
+      setStats({
+        totalAccommodations: totalHouses,
+        availableAccommodations: approvedHouses,
+        bookedAccommodations: approvedHouses, // fallback tạm
+        unavailableAccommodations: rejectedHouses,
+        totalRevenue,
+        totalBookings: approvedHouses,
+        monthlyRevenue,
+      });
     }
-  };
+  } catch (error) {
+    console.error("Error fetching statistics:", error);
+    messageApi.error("Không thể tải thống kê!");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   const fetchRecentBookings = async () => {
     try {
@@ -198,40 +209,50 @@ const Statistics = () => {
   };
 
   // Function để fetch chi tiết accommodation cho modal
-  const fetchAccommodationDetails = async (accommodationId) => {
-    try {
-      setModalLoading(true);
-      
-      // Chỉ cần fetch thông tin accommodation và ảnh
-      const accommodationResponse = await axios.get(`http://localhost:5000/api/accommodation/${accommodationId}?viewAs=owner`);
+const fetchBookingDetails = async (houseId) => {
+  try {
+    setModalLoading(true);
+
+    // Chỉ gọi 1 API để lấy boarding house chi tiết, bao gồm cả rooms
+    const houseRes = await axios.get(
+      `http://localhost:5000/api/boarding-houses/${houseId}`
+    );
+    console.log('API Response (houseRes.data):', houseRes.data);
       
       setBookingDetails({
-        accommodation: accommodationResponse.data
+        house: houseRes.data
       });
-    } catch (error) {
-      console.error('Error fetching accommodation details:', error);
-      messageApi.error(`Unable to load accommodation details! Error: ${error.message}`);
-      setBookingDetails({ accommodation: null });
-    } finally {
-      setModalLoading(false);
-    }
-  };
+
+  } catch (error) {
+    console.error('Error fetching booking details:', error);
+    messageApi.error(`Unable to load booking details!`);
+    setBookingDetails({ house:null });
+  } finally {
+    setModalLoading(false);
+  }
+};
+
+
+
 
   // Function để handle click vào row trong bảng Recent Bookings
   const handleRowClick = (record) => {
+    console.log(record)
+     console.log("House ID:", record.houseId);
     setSelectedBooking(record);
     setIsModalVisible(true);
     
     // Fetch chi tiết accommodation từ accommodation ID
-    if (record.accommodationId) {
-      fetchAccommodationDetails(record.accommodationId);
+    if (record.houseId) {
+      fetchBookingDetails(record.houseId);
     } else if (record.key) {
-      fetchAccommodationDetails(record.key);
+      fetchBookingDetails(record.key);
     } else {
-      console.error('No accommodation ID found in record');
-      setBookingDetails({ accommodation: null });
+      console.error('No boardingHouseId found in record');
+      setBookingDetails({ house: null });
     }
   };
+
 
   const handleCloseModal = () => {
     setIsModalVisible(false);
@@ -246,14 +267,14 @@ const Statistics = () => {
       key: 'customerName',
     },
     {
-      title: 'Accommodation',
-      dataIndex: 'accommodationTitle',
-      key: 'accommodationTitle',
+      title: 'BoardingHouse',
+      dataIndex: 'houseName',
+      key: 'houseName',
     },
     {
       title: 'Booking Date',
-      dataIndex: 'bookingDate',
-      key: 'bookingDate',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
       render: (date) => new Date(date).toLocaleDateString('vi-VN'),
     },
     {
@@ -266,6 +287,7 @@ const Statistics = () => {
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      align: 'center',
       render: (status) => {
         let color = 'default';
         let text = status;
@@ -288,9 +310,13 @@ const Statistics = () => {
             text = status.charAt(0).toUpperCase() + status.slice(1);
         }
         
-        return <Tag color={color}>{text}</Tag>;
+        return <span className="status-content">
+        <Tag color={color}>{text}</Tag>
+      </span>
       },
+      
     },
+    
   ];
 
   const topAccommodationsColumns = [
@@ -496,7 +522,7 @@ const Statistics = () => {
             <Card className="stat-card">
               <Statistic
                 title="Booked"
-                value={stats.bookedAccommodations}
+                value={stats.totalBookings}
                 prefix={<UserOutlined className="stat-icon" />}
                 valueStyle={{ color: '#49735A' }}
               />
@@ -688,7 +714,7 @@ const Statistics = () => {
           title={
             <div className="modal-title">
               <InfoCircleOutlined />
-              Booking Details - {selectedBooking?.accommodationTitle}
+              Booking Details - {selectedBooking?.houseName}
             </div>
           }
           open={isModalVisible}
@@ -708,15 +734,17 @@ const Statistics = () => {
                   <Descriptions.Item label="Customer Name">
                     <strong>{selectedBooking.customerName}</strong>
                   </Descriptions.Item>
-                  <Descriptions.Item label="Booking ID">
-                    <code>{selectedBooking.bookingId || selectedBooking.key}</code>
+                 
+                  <Descriptions.Item label="Boarding House">
+                  {selectedBooking.houseName || 'N/A'}
                   </Descriptions.Item>
-                  <Descriptions.Item label="Accommodation">
-                    {selectedBooking.accommodationTitle}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Booking Date">
-                    {new Date(selectedBooking.bookingDate).toLocaleDateString('vi-VN')} {new Date(selectedBooking.bookingDate).toLocaleTimeString('vi-VN')}
-                  </Descriptions.Item>
+                <Descriptions.Item label="Booking Date">
+  {selectedBooking.createdAt ? 
+    new Date(selectedBooking.createdAt).toLocaleDateString('vi-VN') + ' ' + 
+    new Date(selectedBooking.createdAt).toLocaleTimeString('vi-VN') 
+    : 'N/A'
+  }
+</Descriptions.Item>
                                     <Descriptions.Item label="Amount">
                     <strong style={{ color: '#49735A' }}>{selectedBooking.amount.toLocaleString()} VND</strong>
                   </Descriptions.Item>
@@ -734,7 +762,7 @@ const Statistics = () => {
 
               {/* Hình ảnh accommodation */}
               <Card 
-                title="Accommodation Images"
+                title="Boarding House Images"
                 size="small"
                 loading={modalLoading}
               >
@@ -742,12 +770,12 @@ const Statistics = () => {
                   <div className="modal-loading">
                     <p>Loading accommodation images...</p>
                   </div>
-                ) : bookingDetails?.accommodation ? (
-                  <div>
-                    {/* Hiển thị hình ảnh accommodation */}
-                    {bookingDetails.accommodation.photos && bookingDetails.accommodation.photos.length > 0 ? (
+                ) : bookingDetails?.house ? (
+  <div>
+    {/* Hiển thị hình ảnh */}
+                    {bookingDetails.house.photos && bookingDetails.house.photos.length > 0 ? (
                       <div className="accommodation-images">
-                        {bookingDetails.accommodation.photos.slice(0, 4).map((photo, index) => (
+                        {bookingDetails.house.photos.slice(0, 4).map((photo, index) => (
                           <div key={index} className="accommodation-image">
                             <img
                               src={`http://localhost:5000${photo}`}
@@ -758,9 +786,9 @@ const Statistics = () => {
                             />
                           </div>
                         ))}
-                        {bookingDetails.accommodation.photos.length > 4 && (
+                        {bookingDetails.house.photos.length > 4 && (
                           <div className="accommodation-more-images">
-                            +{bookingDetails.accommodation.photos.length - 4} more
+                            +{bookingDetails.house.photos.length - 4} more
                           </div>
                         )}
                       </div>
@@ -770,28 +798,29 @@ const Statistics = () => {
                         No images available for this accommodation
                       </div>
                     )}
-                    <div className="accommodation-info">
-                      <strong>{bookingDetails.accommodation.title}</strong>
-                      <div className="accommodation-location">
-                        <EnvironmentOutlined style={{ marginRight: '4px', color: '#49735A' }} />
-                        {[
-                          bookingDetails.accommodation.location?.street,
-                          bookingDetails.accommodation.location?.district,
-                          bookingDetails.accommodation.location?.addressDetail
-                        ].filter(Boolean).join(', ')}
-                      </div>
-                      <div className="accommodation-price">
-                        <DollarOutlined style={{ marginRight: '4px', color: '#49735A' }} />
-                        {bookingDetails.accommodation.price?.toLocaleString()} VND/month
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="accommodation-details-error">
-                    <EyeOutlined />
-                    <p>Unable to load accommodation details.</p>
-                  </div>
-                )}
+
+
+    {/* Thông tin house */}
+    <div className="accommodation-info">
+      <strong>{selectedBooking.houseName || selectedBooking.name}</strong>
+      <div className="accommodation-location">
+        <EnvironmentOutlined style={{ marginRight: '4px', color: '#49735A' }} />
+        {[
+          bookingDetails.house.location?.street,
+          bookingDetails.house.location?.district,
+          bookingDetails.house.location?.addressDetail
+        ].filter(Boolean).join(', ')}
+      </div>
+     
+    </div>
+  </div>
+) : (
+  <div className="accommodation-details-error">
+    <EyeOutlined />
+    <p>Unable to load accommodation details.</p>
+  </div>
+)}
+               
               </Card>
             </div>
           )}

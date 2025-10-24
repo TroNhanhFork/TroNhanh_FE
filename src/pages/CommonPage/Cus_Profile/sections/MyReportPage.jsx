@@ -81,8 +81,8 @@ const MyReportsPage = () => {
         },
         {
             title: "Submitted At",
-            dataIndex: "createAt",
-            key: "createAt",
+            dataIndex: "createdAt",
+            key: "createdAt",
             render: (date) => new Date(date).toLocaleString(),
         },
     ];

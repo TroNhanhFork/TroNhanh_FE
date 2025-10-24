@@ -10,7 +10,11 @@ import {
   Card,
   Alert,
 } from "antd";
-import { createReport, getOwner, checkBookingHistory } from "../../../services/reportService";
+import {
+  createReport,
+  getOwner,
+  checkBookingHistory,
+} from "../../../services/reportService";
 import useUser from "../../../contexts/UserContext";
 import { ExclamationCircleOutlined, CheckCircleOutlined } from "@ant-design/icons";
 
@@ -28,7 +32,7 @@ const ReportPage = () => {
   const [isEligible, setIsEligible] = useState(null);
 
   useEffect(() => {
-    const fetchUsersAndCheck = async () => {
+    const fetchOwnersAndCheck = async () => {
       try {
         const res = await getOwner();
         const otherUsers = res.data.filter((u) => u._id !== user?._id);
@@ -44,12 +48,12 @@ const ReportPage = () => {
           setIsEligible(false);
         }
       } catch (error) {
-        console.error("❌ Failed to fetch users or check history", error);
+        console.error("❌ Failed to fetch owners or check history:", error);
         setIsEligible(false);
       }
     };
 
-    if (user) fetchUsersAndCheck();
+    if (user) fetchOwnersAndCheck();
   }, [user, form]);
 
   const handleReportedUserChange = async (value) => {
@@ -58,7 +62,6 @@ const ReportPage = () => {
       const res = await checkBookingHistory(value);
       setIsEligible(res.data?.hasHistory);
 
-
       if (res.data?.hasHistory) {
         const bookingList = res.data?.bookings || [];
         setBookings(bookingList);
@@ -66,7 +69,7 @@ const ReportPage = () => {
         if (bookingList.length > 0) {
           form.setFieldsValue({
             bookingId: bookingList[0]._id,
-            accommodationId: bookingList[0].propertyId,
+            boardingHouseId: bookingList[0].boardingHouseId, // ✅ dùng đúng key mới
           });
         }
       } else {
@@ -78,19 +81,26 @@ const ReportPage = () => {
       setBookings([]);
     }
   };
+
   const onFinish = async (values) => {
     try {
       setSubmitting(true);
-      const payload = { ...values };
+
+      const payload = {
+        ...values,
+        boardingHouseId: values.boardingHouseId || null,
+      };
+
       console.log("✔️ Payload sent:", payload);
+
       await createReport(payload);
       messageApi.open({
         type: "success",
         content: "Report submitted successfully!",
         icon: <CheckCircleOutlined style={{ color: "#52c41a" }} />,
       });
+
       form.resetFields();
-      setIsEligible(null);
       setIsEligible(null);
     } catch (error) {
       console.error("❌ Report submission failed:", error);
@@ -117,14 +127,31 @@ const ReportPage = () => {
   }
 
   return (
-    <div style={{ maxWidth: 650, margin: "0 auto", padding: 24, background: "#f9f9f9", minHeight: "100vh" }}>
+    <div
+      style={{
+        maxWidth: 650,
+        margin: "0 auto",
+        padding: 24,
+        background: "#f9f9f9",
+        minHeight: "100vh",
+      }}
+    >
       {contextHolder}
-      <Card bordered={false} style={{ background: "#fff", boxShadow: "0 4px 20px rgba(0,0,0,0.1)", borderRadius: 8 }}>
+      <Card
+        bordered={false}
+        style={{
+          background: "#fff",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+          borderRadius: 8,
+        }}
+      >
         <Title level={2} style={{ textAlign: "center", marginBottom: 0 }}>
           Submit a Report to Administrator
         </Title>
 
-        <Paragraph style={{ textAlign: "center", color: "#888", marginBottom: 24 }}>
+        <Paragraph
+          style={{ textAlign: "center", color: "#888", marginBottom: 24 }}
+        >
           If you encounter issues such as fraud, fake listings, or abusive landlords, please submit a report.
         </Paragraph>
 
@@ -174,7 +201,7 @@ const ReportPage = () => {
             />
           )}
 
-          {/* CHỈ HIỆN FORM KHI ĐỦ ĐIỀU KIỆN */}
+          {/* FORM CHỈ HIỆN NẾU ĐỦ ĐIỀU KIỆN */}
           {isEligible && (
             <>
               {/* LOẠI BÁO CÁO */}
@@ -199,14 +226,6 @@ const ReportPage = () => {
               >
                 <TextArea rows={4} placeholder="Describe the issue you encountered..." />
               </Form.Item>
-              {/* NỘI DUNG */}
-              <Form.Item
-                label="Report Details"
-                name="content"
-                rules={[{ required: true, message: "Please enter your report details." }]}
-              >
-                <TextArea rows={4} placeholder="Describe the issue you encountered..." />
-              </Form.Item>
 
               <Form.Item>
                 <Button
@@ -220,22 +239,10 @@ const ReportPage = () => {
               </Form.Item>
             </>
           )}
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              block
-              loading={submitting}
-            >
-              {submitting ? "Submitting..." : "Submit Report"}
-            </Button>
-          </Form.Item>
-
         </Form>
       </Card>
-    </div >
+    </div>
   );
-}
-
+};
 
 export default ReportPage;

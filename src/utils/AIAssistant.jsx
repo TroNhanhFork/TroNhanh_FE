@@ -31,9 +31,6 @@ const handleSend = async () => {
     const decoder = new TextDecoder();
     let partial = "";
 
-    // Thêm message mới cho typing, để không ghi đè "Đang suy nghĩ..."
-    setMessages((prev) => [...prev, { from: "bot", text: "", completed: false }]);
-
   while (true) {
   const { done, value } = await reader.read();
   if (done) break;
@@ -85,26 +82,26 @@ const handleSend = async () => {
         footer={null}
         closeIcon={<CloseOutlined />}
         centered
-        width={400}
+        width={600}
         bodyStyle={{ display: "flex", flexDirection: "column", height: 500, padding: 0 }}
         title="🤖 AI Assistant"
       >
         <div style={{ flex: 1, overflowY: "auto", padding: 10, background: "#fafafa" }}>
           {messages.map((msg, idx) => (
             <div key={idx} style={{ marginBottom: 8, textAlign: msg.from === "bot" ? "left" : "right" }}>
-              <span
-                style={{
-                  display: "inline-block",
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  background: msg.from === "bot" ? "#f0f0f0" : "#d9f7be",
-                  maxWidth: "80%",
-                  wordWrap: "break-word",
-                }}
-              >
-                {msg.text}
-                {!msg.completed && msg.from === "bot" ? "" : ""}
-              </span>
+             <div
+  style={{
+    display: "inline-block",
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: msg.from === "bot" ? "#f0f0f0" : "#d9f7be",
+    maxWidth: "80%",
+    wordWrap: "break-word",
+    textAlign: "left",
+  }}
+  dangerouslySetInnerHTML={{ __html: msg.text }}
+/>
+
             </div>
           ))}
         </div>

@@ -27,6 +27,8 @@ import {
   MessageOutlined,
   TagOutlined
 } from "@ant-design/icons";
+
+
 import axios from "axios";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import {
@@ -51,7 +53,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import Slider from "react-slick";
 import { getValidAccessToken } from "../../../services/authService";
 import VisitRequestModal from "./VisitRequestModal";
-
+dayjs.extend(relativeTime);
 const { Option } = Select;
 const { TextArea } = Input;
 
@@ -802,8 +804,8 @@ const PropertyDetails = () => {
                       </span>
                     </div>
                     <span className="review-time">
-                      • From {review.weeksAgo} weeks ago
-                    </span>
+  • {dayjs(review.createdAt).fromNow()}
+</span>
                   </div>
                 </div>
 
