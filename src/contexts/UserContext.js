@@ -21,6 +21,9 @@ export const UserProvider = ({ children }) => {
   const logout = async () => {
     setUser(null);
     localStorage.removeItem("token");
+      localStorage.removeItem("tokenExpire");
+  localStorage.removeItem("refreshToken");
+  console.log("[Auth] 🚪 Đã đăng xuất và xóa toàn bộ token");
   };
 
   useEffect(() => {

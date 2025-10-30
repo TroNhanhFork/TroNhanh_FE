@@ -5,6 +5,7 @@ import { EnvironmentOutlined, UserOutlined } from "@ant-design/icons";
 import { createReport, getMyReports } from "../../../services/reportService";
 import useUser from "../../../contexts/UserContext";
 import axios from "axios";
+import api from "../../../services/api";
 const { Option } = Select;
 
 const Report = () => {
@@ -23,78 +24,47 @@ const Report = () => {
     content: "",
     accommodationId: "", // Đổi về accommodationId thay vì bookingId
   });
+useEffect(() => {
+  if (bookedAccommodations.length > 0) {
+    fetchReports();
+  }
+}, [bookedAccommodations]);
 
   // Fetch reports khi component mount
-  useEffect(() => {
-    if (user?._id) {
-      const loadData = async () => {
-        await fetchBookedAccommodations();
-        await fetchReports();
-      };
-      loadData();
-    }
-  }, [user]);
+useEffect(() => {
+  if (user?._id) {
+    fetchBookedAccommodations();
+  }
+}, [user]);
+
 
   // Fetch accommodations đang ở trạng thái "Booked"
-  const fetchBookedAccommodations = async () => {
-    try {
-      // Lấy tất cả accommodations của owner có status = "Booked"
-      const accRes = await axios.get(`http://localhost:5000/api/boarding-house?ownerId=${user._id}`);
-      const ownerAccommodations = accRes.data;
-      
-      // Lọc chỉ những accommodation đang có status "Booked"
-      const bookedAccommodations = ownerAccommodations.filter(acc => acc.status === "Booked");
-      
-      // Nếu không có accommodation nào có status "Booked", test với Available accommodations có booking
-      let accommodationsToProcess = bookedAccommodations;
-      if (bookedAccommodations.length === 0) {
-        accommodationsToProcess = ownerAccommodations;
-      }
-      
-      // Lấy thông tin customer cho mỗi accommodation đã booked
-      const accommodationsWithCustomer = await Promise.all(
-        accommodationsToProcess.map(async (acc) => {
-          try {
-            // Lấy booking info để có thông tin customer
-            const bookingRes = await axios.get(`http://localhost:5000/api/booking/boarding-house/${acc._id}`);
-            
-            const latestBooking = bookingRes.data.find(booking => 
-              booking.status === "paid" || booking.status === "pending"
-            );
-            
-            // Nếu không có booking paid/pending, lấy booking mới nhất bất kỳ
-            const fallbackBooking = bookingRes.data.length > 0 ? bookingRes.data[0] : null;
-            const selectedBooking = latestBooking || fallbackBooking;
-            
-            // Lấy customer info từ customerId của booking (đã populated từ backend)
-            const customerInfo = selectedBooking?.customerId;
-            
-            // Thử trực tiếp lấy từ customerId nếu customerInfo bị undefined
-            const finalCustomerInfo = customerInfo || selectedBooking?.customerId;
-            
-            // Tạo object mới với customer info ghi đè - KHÔNG dùng spread
-            const result = Object.assign({}, acc, {
-              bookingInfo: selectedBooking,
-              customerId: selectedBooking?.customerId || null,
-              customer: finalCustomerInfo
-            });
-            
-            return result;
-          } catch (error) {
-            console.error(`❌ Failed to fetch booking for accommodation ${acc._id}:`, error);
-            return {
-              ...acc,
-              customer: null
-            };
-          }
-        })
-      );
-      
-      setBookedAccommodations(accommodationsWithCustomer);
-    } catch (error) {
-      console.error("❌ Failed to fetch booked accommodations:", error);
-    }
-  };
+const fetchBookedAccommodations = async () => {
+  try {
+    const res = await api.get("/bookings/owner/bookings");
+    const bookings = res.data.bookings;
+
+    // Map thành accommodations với customer info
+    const accommodationsWithCustomer = bookings.map(b => ({
+      _id: b.house?._id,                   // ID của house
+      title: b.house?.name,                // tên house
+      location: b.house?.location,         // object location
+        price: b.amount,               // giá house
+      status: b.status,                    // status booking
+      customer: b.customer ? {             // customer object
+        _id: b.customer._id,
+        name: b.customer.name,
+        email: b.customer.email
+      } : null,
+      bookingId: b._id                     // thêm bookingId để reference nếu cần
+    }));
+
+    setBookedAccommodations(accommodationsWithCustomer);
+  } catch (error) {
+    console.error("❌ Failed to fetch booked accommodations:", error);
+  }
+};
+
 
   const fetchReports = async () => {
     try {
@@ -102,36 +72,43 @@ const Report = () => {
       const response = await getMyReports();
       
       // Format data để hiển thị trong table
-      const formattedReports = response.data.map((report, index) => {
-        // Nếu report không có reportedUserId nhưng có accommodationId, 
-        // thử tìm customer từ accommodations data hiện tại
-        let customerName = null;
-        if (report.reportedUserId) {
-          customerName = report.reportedUserId.name || report.reportedUserId.email || report.reportedUserId;
-        } else if (report.accommodationId) {
-          // Tìm accommodation trong bookedAccommodations để lấy customer info
-          const matchedAcc = bookedAccommodations.find(acc => acc._id === report.accommodationId._id);
-          if (matchedAcc?.customer) {
-            customerName = matchedAcc.customer.name || matchedAcc.customer.email || 'Customer Found';
-          }
-        }
-        
-        return {
-          key: report._id || index,
-          type: report.type,
-          content: report.content,
-          relatedAccommodation: report.accommodationId ? {
-            title: report.accommodationId.title,
-            location: `${report.accommodationId.location?.street}, ${report.accommodationId.location?.district}`,
-            status: report.accommodationId.status,
-            customer: customerName // Thêm customer info vào accommodation object
-          } : null,
-          adminFeedback: report.adminFeedback || null,
-          reportedUser: customerName,
-          status: report.status,
-          submittedAt: new Date(report.createAt).toLocaleString(),
-        };
-      });
+const formattedReports = response.data.map((report, index) => {
+  // Tìm accommodation trong bookedAccommodations
+  const matchedAcc = bookedAccommodations.find(
+    acc => acc._id.toString() === (
+      report.boardingHouseId?._id 
+        ? report.boardingHouseId._id.toString()
+        : report.boardingHouseId?.toString()
+    )
+  );
+
+
+  // Lấy tên customer
+
+  const customerName = report.reportedUserId?.name ||
+                       report.reportedUserId?.email ||
+                       matchedAcc?.customer?.name ||
+                       matchedAcc?.customer?.email || null;
+
+return {
+    key: report._id || index,
+    type: report.type,
+    content: report.content,
+    relatedAccommodation: matchedAcc ? {
+      title: matchedAcc.title,
+      location: `${matchedAcc.location?.street || ""}, ${matchedAcc.location?.district || ""}`,
+      status: matchedAcc.status,
+      customer: matchedAcc.customer ? (matchedAcc.customer.name || matchedAcc.customer.email) : null,
+      price: matchedAcc.price
+    } : null,
+    adminFeedback: report.adminFeedback || null,
+    reportedUser: customerName,
+    status: report.status,
+    submittedAt: new Date(report.createdAt).toLocaleString()
+  };
+});
+
+
       
       setReportList(formattedReports);
     } catch (error) {
@@ -168,12 +145,13 @@ const Report = () => {
       
       // Gửi lên MongoDB thông qua API
       const payload = {
-        type,
-        content,
-        reporterId: user?._id,
-        ...(accommodationId && { accommodationId }),
-        ...(customerId && { reportedUserId: customerId }),
-      };
+  type,
+  content,
+  reporterId: user?._id,
+  ...(accommodationId && { boardingHouseId: accommodationId }),
+  ...(customerId && { reportedUserId: customerId }),
+};
+
       
       await createReport(payload);
 
@@ -366,7 +344,7 @@ const Report = () => {
                       fontWeight: "500"
                     }}>
                       <UserOutlined style={{ marginRight: "4px" }} />
-                      Customer: {acc.customerId.name || acc.customerId.email || 'Unknown'}
+                      Customer: {acc.customer.name || acc.customer.email || 'Unknown'}
                     </span>
                   )}
                   <span style={{ 
@@ -398,9 +376,10 @@ const Report = () => {
                     <strong>Location:</strong> {selected.location?.street}, {selected.location?.district}<br/>
                     <strong>Status:</strong> {selected.status}<br/>
                     <strong>Price:</strong> {selected.price?.toLocaleString()} VND<br/>
-                    {selected.customerId && (
-                      <><strong>Customer:</strong> {selected.customerId.name || selected.customerId.email || 'Unknown'}</>
-                    )}
+                 {selected.customer && (
+  <><strong>Customer:</strong> {selected.customer.name || selected.customer.email || 'Unknown'}</>
+)}
+
                   </>
                 ) : null;
               })()}

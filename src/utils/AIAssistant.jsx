@@ -1,14 +1,24 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import { MessageOutlined, CloseOutlined } from "@ant-design/icons";
 import { Modal, Input, Button } from "antd";
-
+import { getValidAccessToken } from "../services/authService";
+import { marked } from "marked";
 function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
+
+const [token, setToken] = useState(null);
   const [messages, setMessages] = useState([
     { from: "bot", text: "Xin chào 👋! Tôi là AI Assistant.", completed: true }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  useEffect(() => {
+  const fetchToken = async () => {
+    const t = await getValidAccessToken();
+    setToken(t);
+  };
+  fetchToken();
+}, []);
 const handleSend = async () => {
   if (!input.trim()) return;
 
@@ -24,7 +34,10 @@ const handleSend = async () => {
     const response = await fetch("http://localhost:5000/api/ai/chat", {
       method: "POST",
       body: JSON.stringify({ message: userMessage }),
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json",
+       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+       },
+        body: JSON.stringify({ message: userMessage }),
     });
 
     const reader = response.body.getReader();
@@ -99,7 +112,7 @@ const handleSend = async () => {
     wordWrap: "break-word",
     textAlign: "left",
   }}
-  dangerouslySetInnerHTML={{ __html: msg.text }}
+dangerouslySetInnerHTML={{ __html: marked.parse(msg.text) }}
 />
 
             </div>

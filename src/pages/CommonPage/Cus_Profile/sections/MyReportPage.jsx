@@ -67,6 +67,21 @@ const MyReportsPage = () => {
             },
         },
         {
+  title: "Land Lord",
+  dataIndex: "reportedUserId",
+  key: "reportedUserId",
+  render: (user) => {
+    if (!user) return <i>Unknown</i>;
+    return (
+      <div>
+        <strong>{user.name}</strong>
+        <br />
+        <span style={{ color: "gray" }}>{user.email}</span>
+      </div>
+    );
+  },
+},
+        {
             title: "Content",
             dataIndex: "content",
             key: "content",
