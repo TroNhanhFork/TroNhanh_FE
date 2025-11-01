@@ -76,28 +76,25 @@ const Membership = () => {
 
       if (!userId) {
         messageApi.warning("Bạn chưa đăng nhập!");
-        messageApi.warning("Bạn chưa đăng nhập!");
         return;
       }
 
       // ✅ Nếu đang dùng đúng gói này → cảnh báo
       if (String(currentPackageId) === String(pkg._id)) {
         messageApi.info("Bạn đã mua gói thành viên này rồi.");
-        messageApi.info("Bạn đã mua gói thành viên này rồi.");
         return;
       }
 
       // ✅ Nếu đang dùng gói khác → hiện confirmation để upgrade
-      // ✅ Nếu đang dùng gói khác → hiện confirmation để upgrade
       if (currentPackageId && String(currentPackageId) !== String(pkg._id)) {
         const currentPkg = packages.find(p => String(p._id) === String(currentPackageId));
-        
+
         const confirmUpgrade = window.confirm(
           `Bạn đang sử dụng gói "${currentPkg?.packageName}".\n\n` +
           `Bạn có muốn hủy gói hiện tại và nâng cấp lên gói "${pkg.packageName}" không?\n\n` +
           `⚠️ Lưu ý: Gói cũ sẽ bị hủy ngay lập tức và bạn sẽ chuyển sang gói mới.`
         );
-        
+
         if (!confirmUpgrade) {
           return; // User từ chối upgrade
         }
@@ -116,18 +113,19 @@ const Membership = () => {
     try {
       console.log("💡 Subscribing with userId:", userId);
       console.log("📦 Package:", pkg.packageName, "—", pkg.price);
+      console.log("type:", "membership");
 
-    // Gọi API backend để tạo PayOS payment
-    const res = await axios.post("http://localhost:5000/api/payment/create", {
-      packageId: pkg._id,
-      userId: userId,
-      type: "membership" // Hoặc "booking" nếu là booking
-    });
+      // Gọi API backend để tạo PayOS payment
+      const res = await axios.post("http://localhost:5000/api/payment/create", {
+        packageId: pkg._id,
+        userId: userId,
+        type: "membership" // Hoặc "booking" nếu là booking
+      });
 
       window.location.href = res.data.url;
     } catch (err) {
-      console.error("❌ Error creating VNPay URL:", err);
-      messageApi.error("Đã có lỗi xảy ra khi tạo thanh toán. Vui lòng thử lại.");
+      console.error("❌ Error creating PayOs URL:", err.response?.data || err.message);
+      messageApi.error(err.response?.data?.message || "Đã có lỗi xảy ra khi tạo thanh toán.");
     }
   };
 
@@ -164,20 +162,20 @@ const Membership = () => {
             )}
 
             <button
-              className="subscribe-btn" 
+              className="subscribe-btn"
               onClick={() => handleSubscribe(pkg)}
             >
-              {String(currentPackageId) === String(pkg._id) 
-                ? "Current Plan" 
+              {String(currentPackageId) === String(pkg._id)
+                ? "Current Plan"
                 : currentPackageId && String(currentPackageId) !== String(pkg._id)
-                ? "Upgrade" 
-                : "Subscribe"
+                  ? "Upgrade"
+                  : "Subscribe"
               }
-              {String(currentPackageId) === String(pkg._id) 
-                ? "Current Plan" 
+              {String(currentPackageId) === String(pkg._id)
+                ? "Current Plan"
                 : currentPackageId && String(currentPackageId) !== String(pkg._id)
-                ? "Upgrade" 
-                : "Subscribe"
+                  ? "Upgrade"
+                  : "Subscribe"
               }
             </button>
 

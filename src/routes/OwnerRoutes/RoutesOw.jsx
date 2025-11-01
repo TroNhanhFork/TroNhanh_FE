@@ -2,7 +2,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import OwnerLayout from "../../pages/OwnerPage/Components/Layout/OwnerLayout";
-import ProfilePage from "../../pages/CommonPage/Cus_Profile/Profile";
+import ProfilePage from "../../pages/OwnerPage/OwnerInfo/PersonalInfo";
 import Accommodation from "../../pages/OwnerPage/Accommodation/accommodation";
 import Statistics from "../../pages/OwnerPage/Statistics/Statistics";
 import Report from "../../pages/OwnerPage/Report/report";
@@ -28,9 +28,12 @@ const RoutesOw = () => {
         <Route path="rating/:id" element={<DetailRating />} />
         <Route path="communication" element={<Communication />} />
         <Route path="visit-requests" element={<OwnerVisitRequests />} />
-         <Route path="membership-result" element={<PaymentResult />} />
+        <Route path="membership-result" element={<PaymentResult />} />
         <Route path="membership" element={<Membership />} />
+        <Route path="statistics" element={<Statistics />} />
+
       </Route>
+
     </Routes>
   );
 };

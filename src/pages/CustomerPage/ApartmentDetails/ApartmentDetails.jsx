@@ -14,7 +14,9 @@ import {
   message,
   Modal,
   List,
-  Carousel
+  Spin,
+  Carousel,
+  Tabs
 } from "antd";
 import {
   UserOutlined,
@@ -42,7 +44,7 @@ import "./ApartmentDetails.css";
 import { useEffect, useState, useRef } from "react";
 import useUser from "../../../contexts/UserContext";
 import RoommatePostModal from "./RoommatePostModal";
-import { getRoommatePosts } from "../../../services/roommateAPI";
+import { getRoommatePosts, deleteRoommatePost } from "../../../services/roommateAPI";
 // riel-time messaging
 import { useSocket } from "../../../contexts/SocketContext";
 
@@ -55,8 +57,8 @@ import VisitRequestModal from "./VisitRequestModal";
 const { Option } = Select;
 const { TextArea } = Input;
 
-const RoomCard = ({ room, onBook, bookingStatus }) => (
-  <Card size="small" style={{ marginBottom: 12 }} bodyStyle={{ padding: "12px" }}>
+const RoomCard = ({ room, onBook, bookingStatus, onView }) => (
+  <Card size="small" style={{ marginBottom: 12, cursor: 'pointer' }} bodyStyle={{ padding: "12px" }}>
     <Row align="middle" justify="space-between" gutter={8}>
       <Col flex="auto">
         <p style={{ margin: 0, fontWeight: "bold" }}>Phòng {room.roomNumber}</p>
@@ -64,38 +66,51 @@ const RoomCard = ({ room, onBook, bookingStatus }) => (
       </Col>
 
       <Col>
-        <p
-          style={{
-            margin: 0,
-            color: "#004d40",
-            fontWeight: "bold",
-            whiteSpace: "nowrap",
-          }}
-        >
+        <p style={{ margin: 0, color: "#004d40", fontWeight: "bold", whiteSpace: "nowrap" }}>
           {room.price.toLocaleString("vi-VN")} VNĐ/tháng
         </p>
       </Col>
 
-      <Col>
+      <Col style={{ minWidth: 120, textAlign: 'right' }}> {/* Đặt chiều rộng tối thiểu cho cột */}
         {onBook ? (
-          <Button type="primary" onClick={() => onBook(room._id)}>
-            Đặt ngay
-          </Button>
+          // 1. Nếu có hàm onBook (phòng 'Available' VÀ user chưa đặt)
+          <>
+            <Button type="primary" onClick={() => onBook(room._id)} style={{ marginBottom: 8 }}>
+              Đặt ngay
+            </Button>
+            <Button onClick={() => onView && onView(room)} style={{ display: 'block' }}>Xem chi tiết</Button>
+          </>
         ) : bookingStatus ? (
-          <Tag
-            color={
-              bookingStatus === "Paid"
-                ? "green"
-                : bookingStatus === "Pending"
-                  ? "gold"
-                  : "default"
-            }
-          >
-            {bookingStatus}
-          </Tag>
-        ) : null}
-      </Col>
+          // 2. Nếu có bookingStatus (phòng này là của user, hoặc đã bị đặt, hoặc không có sẵn)
+          <>
+            <Tag color={
+              // Trạng thái booking CỦA BẠN
+              bookingStatus === "paid" ? "success" :
+                bookingStatus === "approved" ? "cyan" :
+                  bookingStatus === "pending_approval" ? "processing" :
 
+                    // Trạng thái chung CỦA PHÒNG (nếu không phải của bạn)
+                    bookingStatus === "Booked" ? "error" : // Đã bị người khác đặt
+                      bookingStatus === "Unavailable" ? "default" : // Không có sẵn
+                        "default"
+            }>
+              {/* Dịch trạng thái */}
+              {bookingStatus === "paid" ?
+                room.hasRoommatePost ? "Tìm bạn trọ" : "Đã đặt" :
+                bookingStatus === "approved" ? "Chờ thanh toán" :
+                  bookingStatus === "pending_approval" ? "Chờ duyệt" :
+                    bookingStatus === "Booked" ?
+                      room.hasRoommatePost ? "Tìm bạn trọ" : "Đã có người đặt" :
+                      bookingStatus === "Unavailable" ? "Không có sẵn" :
+                        bookingStatus} {/* Fallback */}
+            </Tag>
+            <Button onClick={() => onView && onView(room)} style={{ display: 'block', marginTop: 8 }}>Xem chi tiết</Button>
+          </>
+        ) : (
+          // Trường hợp không xác định: chỉ hiển thị nút xem
+          <Button onClick={() => onView && onView(room)}>Xem chi tiết</Button>
+        )}
+      </Col>
     </Row>
   </Card>
 );
@@ -108,9 +123,10 @@ const PropertyDetails = () => {
   const { socket, isConnected, onlineUsers } = useSocket();
   const [messageApi, contextHolder] = message.useMessage();
 
+  const [userBooking, setUserBooking] = useState(null);
+
   const [boardingHouse, setBoardingHouse] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [userHasBooking, setUserHasBooking] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [roommatePosts, setRoommatePosts] = useState([]);
@@ -126,6 +142,10 @@ const PropertyDetails = () => {
   const [editedReviewPurpose, setEditedReviewPurpose] = useState("");
   const [token, setToken] = useState('');
   const [isVisitModalVisible, setIsVisitModalVisible] = useState(false);
+  const [showRoommatePostModal, setShowRoommatePostModal] = useState(false);
+  // Room details modal
+  const [roomModalVisible, setRoomModalVisible] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
   // Tạo function riêng để fetch boarding-house data
   const fetchBoardingHouseData = async () => {
     try {
@@ -134,8 +154,10 @@ const PropertyDetails = () => {
       setBoardingHouse(data);
       const userToken = await getValidAccessToken();
       setToken(userToken);
+      return data; // return fetched data so callers can use freshest value immediately
     } catch (error) {
       console.log("Không tìm thấy nhà trọ!", error);
+      return null;
     }
   };
 
@@ -161,10 +183,10 @@ const PropertyDetails = () => {
     const checkUserBooking = async () => {
       if (!user || !boardingHouse?._id) return;
       try {
-        const booking = await getUserBookingForBoardingHouse(user._id, boardingHouse._id);
-        setUserHasBooking(!!booking);
+        const bookingData = await getUserBookingForBoardingHouse(user._id, boardingHouse._id);
+        setUserBooking(bookingData); // Lưu trữ booking
       } catch (error) {
-        setUserHasBooking(false);
+        setUserBooking(null); // Không tìm thấy booking
       }
     };
     checkUserBooking();
@@ -214,8 +236,84 @@ const PropertyDetails = () => {
       messageApi.warning("Vui lòng đăng nhập để đặt phòng!");
       return;
     }
-    navigate(`/customer/contract/${id}/${roomId}`);
-    // navigate("/customer/checkout", { state: { boardingHouseId: id, roomId } });
+    // New flow: go to Checkout first with boardingHouseId and roomId
+    navigate('/customer/checkout', { state: { boardingHouseId: id, roomId } });
+  };
+
+  const handleViewRoom = (room) => {
+    // Re-fetch the latest boarding house data so we have up-to-date roommate posts
+    (async () => {
+      try {
+        const freshBoardingHouse = await fetchBoardingHouseData();
+        // Use the freshly returned boarding house (not the stale state var)
+        let freshRoom = (freshBoardingHouse && freshBoardingHouse.rooms)
+          ? freshBoardingHouse.rooms.find(r => String(r._id) === String(room._id))
+          : room;
+
+        // Also fetch roommate posts and attach the matching one for this room
+        try {
+          const posts = await getRoommatePosts(freshBoardingHouse?._id || boardingHouse?._id);
+          if (posts && posts.length > 0) {
+            // Only attach posts that are explicitly linked to this room
+            const matchedPosts = posts.filter(
+              (p) => p.roomId && (String(p.roomId) === String(room._id) || String(p.roomId) === String(freshRoom?._id))
+            );
+            if (matchedPosts.length > 0) {
+              // If there are multiple matches for the room, pick the latest
+              const latest = matchedPosts.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+              freshRoom = {
+                ...(freshRoom || room),
+                hasRoommatePost: true,
+                roommatePost: latest,
+              };
+            }
+            // If no matchedPosts, do not attach any roommate post for this room
+          }
+        } catch (postErr) {
+          console.error('Error fetching roommate posts when opening room modal', postErr);
+        }
+
+        setSelectedRoom(freshRoom || room);
+      } catch (err) {
+        console.error('Error refreshing boarding house data before opening room modal', err);
+        setSelectedRoom(room);
+      } finally {
+        setRoomModalVisible(true);
+      }
+    })();
+  };
+
+  const handleRoomModalClose = () => {
+    setRoomModalVisible(false);
+    setSelectedRoom(null);
+  };
+
+  const handleEditRoommatePost = (post) => {
+    // TODO: Implement edit functionality
+    messageApi.info('Tính năng đang được phát triển');
+  };
+
+  const handleDeleteRoommatePost = async (postId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa bài đăng này?')) {
+      return;
+    }
+    try {
+      await deleteRoommatePost(postId);
+      // Cập nhật selectedRoom
+      if (selectedRoom) {
+        setSelectedRoom({
+          ...selectedRoom,
+          hasRoommatePost: false,
+          roommatePost: null
+        });
+      }
+      // Cập nhật lại toàn bộ dữ liệu
+      await fetchBoardingHouseData();
+      messageApi.success('Đã xóa bài đăng thành công');
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+      messageApi.error('Không thể xóa bài đăng. Vui lòng thử lại!');
+    }
   };
 
   const handleContactOwner = async () => {
@@ -273,91 +371,95 @@ const PropertyDetails = () => {
     setIsVisitModalVisible(false);
     messageApi.success("Your visit request has been sent to the owner!");
   };
-  // Render booking card hoặc booking info
-  const renderBookingSection = () => {
 
+  const renderBookingSection = () => {
+    // 1. Kiểm tra ban đầu
     if (!boardingHouse || !boardingHouse.rooms) return null;
 
+    // 2. Lấy dữ liệu cần thiết
     const rooms = boardingHouse.rooms;
+    const availableRooms = rooms.filter(room => room.status === 'Available');
+    const hasAvailableRooms = availableRooms.length > 0;
 
-    const availableRooms = boardingHouse.rooms.filter(room => room.status === 'Available');
+    // Lấy ID và trạng thái của phòng mà user đã đặt (nếu có)
+    const userBookedRoomId = userBooking?.roomId;
+    const userBookingStatus = userBooking?.contractStatus || userBooking?.status;
 
-    if (userHasBooking) {
-      return (
-        <Card className="booking-card">
-          <Result
-            status="success"
-            title="Bạn đã đặt một phòng tại đây!"
-            subTitle="Kiểm tra trang 'Chuyến đi của tôi' để xem chi tiết."
-          />
-          <Divider />
-          <Button
-            icon={<MessageOutlined />}
-            onClick={handleContactOwner}
-            style={{ width: '100%' }}
-            type="primary"
-          >
-            Liên hệ chủ nhà
-          </Button>
-        </Card>
-      );
-    }
-
-    if (rooms.every((room) => room.bookingStatus !== "Available")) {
-      return (
-        <Card className="booking-card">
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <h3 style={{ color: '#ff4d4f' }}>Đã hết phòng</h3>
-            <p>Rất tiếc, tất cả các phòng tại đây đã được đặt. Vui lòng quay lại sau!</p>
-          </div>
-          <Divider />
-          <Button
-            icon={<MessageOutlined />}
-            onClick={handleContactOwner}
-            style={{ width: '100%' }}
-            type="default"
-          >
-            Liên hệ chủ nhà
-          </Button>
-        </Card>
-      );
-    }
-
+    // 3. Render JSX
     return (
-      <div className="booking-card">
+      <Card className="booking-card">
         <h3 className="booking-price">
           {boardingHouse.minPrice?.toLocaleString("vi-VN")} -{" "}
           {boardingHouse.maxPrice?.toLocaleString("vi-VN")} VNĐ/tháng
         </h3>
         <Divider />
-        <h4>Chọn phòng:</h4>
 
-        <div
-          style={{
-            maxHeight: "300px",
-            overflowY: "auto",
-            paddingRight: "8px",
-          }}
-        >
-          {rooms.map((room) => (
-            <RoomCard
-              key={room._id}
-              room={room}
-              bookingStatus={room.bookingStatus !== "Available" ? room.bookingStatus : null}
-              onBook={room.bookingStatus === "Available" ? handleBookRoom : undefined}
-            />
-          ))}
+        {/* Hiển thị thông báo nếu user đã đặt */}
+        {userBooking && (
+          <Result
+            status="success"
+            title="Bạn đã có một yêu cầu cho nhà trọ này!"
+            subTitle="Kiểm tra trạng thái phòng của bạn bên dưới."
+            style={{ padding: '16px 0' }}
+          />
+        )}
 
+        {/* Hiển thị thông báo nếu hết phòng VÀ user chưa đặt */}
+        {!userBooking && !hasAvailableRooms && (
+          <Result
+            status="warning"
+            title="Đã hết phòng"
+            subTitle="Rất tiếc, tất cả các phòng tại đây đã được đặt."
+            style={{ padding: '16px 0' }}
+          />
+        )}
+
+        <h4>Danh sách phòng:</h4>
+        <div style={{ maxHeight: "300px", overflowY: "auto", paddingRight: "8px" }}>
+          {/* Lặp qua TẤT CẢ các phòng */}
+          {rooms.map((room) => {
+            let cardProps = {};
+
+            if (userBookedRoomId === room._id) {
+              // 1. Đây là phòng user đã đặt/yêu cầu
+              cardProps.bookingStatus = userBookingStatus;
+            } else if (room.status === 'Available') {
+              // 2. Phòng này còn trống
+              cardProps.onBook = handleBookRoom;
+            } else {
+              // 3. Phòng này đã bị người khác đặt ('Booked') hoặc 'Unavailable'
+              cardProps.bookingStatus = room.status;
+            }
+
+            return (
+              <RoomCard
+                key={room._id}
+                room={room}
+                onView={handleViewRoom}
+                {...cardProps}
+              />
+            );
+          })}
         </div>
+
+        <Divider />
 
         <Button
           icon={<MessageOutlined />}
+          onClick={handleScheduleVisitClick} // Giả sử hàm này tồn tại
+          style={{ width: "100%", marginTop: "8px" }}
+        >
+          Yêu cầu xem phòng
+        </Button>
+        <Button
+          icon={<MessageOutlined />}
           onClick={handleContactOwner}
-          style={{ width: "100%", marginTop: "16px" }}
+          style={{ width: '100%', marginTop: '8px' }}
+          type="primary"
         >
           Liên hệ chủ nhà
         </Button>
-      </div>
+      </Card>
     );
   };
   const sliderSettings = {
@@ -514,7 +616,7 @@ const PropertyDetails = () => {
   //     console.error("Fetch messages failed", err);
   //   }
   // };
-
+  console.log("KIỂM TRA BOOKING:", userBooking);
   return (
     <div>
       {contextHolder}
@@ -573,113 +675,26 @@ const PropertyDetails = () => {
         </MapContainer>
       </div>
 
-      <Divider />
-      <h1 className="text-heading">Tìm bạn cùng phòng</h1>
-      <Button onClick={() => setShowModal(true)} type="primary" style={{ marginBottom: "1rem" }}>
-        + Đăng bài tìm bạn
-      </Button>
-      {roommatePosts.length === 0 ? (
-        <p>Chưa có bài đăng tìm bạn cùng phòng nào.</p>
-      ) : (
-        <div style={{ position: "relative" }}>
-          <Slider {...sliderSettings} ref={sliderRef}>
-            {roommatePosts.map((post) => {
-              // Lấy thông tin người đăng bài
-              const author = post.userId;
 
-              return (
-                <div key={post._id} style={{ padding: "0 8px" }}> {/* Giảm padding ngang */}
-                  <Card
-                    className="roommate-card"
-                    hoverable
-                    style={{ height: '100%' }} // Để Card tự điều chỉnh chiều cao
-                    bodyStyle={{ padding: '16px' }} // Giảm padding body
-                  >
-                    {/* Phần thông tin người đăng */}
-                    <Card.Meta
-                      avatar={
-                        <Avatar
-                          size={48} // Kích thước avatar
-                          src={author?.avatar ? `http://localhost:5000${author.avatar}` : null} // ✅ Lấy avatar của người đăng bài
-                          style={{
-                            backgroundColor: author?.avatar ? 'transparent' : '#004d40', // Màu nền nếu không có avatar
-                            border: '1px solid #eee'
-                          }}
-                        >
-                          {/* Hiển thị chữ cái đầu nếu không có avatar */}
-                          {!author?.avatar && author?.name?.charAt(0).toUpperCase()}
-                        </Avatar>
-                      }
-                      title={author?.name || "Người dùng ẩn danh"}
-                      description={`Đăng ${dayjs(post.createdAt).fromNow()}`} // Hiển thị thời gian tương đối
-                      style={{ marginBottom: '12px' }}
-                    />
-
-                    {/* Phần nội dung bài đăng */}
-                    <div className="roommate-post-content">
-                      {/* Hiển thị ảnh nếu có */}
-                      {post.images?.length > 0 && (
-                        <Carousel autoplay dotPosition="bottom" style={{ marginBottom: '12px' }}>
-                          {post.images.map((img, idx) => (
-                            <div key={idx}>
-                              <img
-                                src={`http://localhost:5000${img}`} // Giả sử ảnh được lưu tương đối
-                                alt={`Giới thiệu ${idx + 1}`}
-                                style={{ width: "100%", height: 150, objectFit: "cover", borderRadius: 4 }}
-                              />
-                            </div>
-                          ))}
-                        </Carousel>
-                      )}
-
-                      {/* Phần giới thiệu */}
-                      <p style={{ fontStyle: 'italic', color: '#555', marginBottom: '10px' }}>"{post.intro}"</p>
-
-                      {/* Thông tin chi tiết */}
-                      <div className="roommate-details">
-                        <p>
-                          <UserOutlined style={{ marginRight: 8, color: '#004d40' }} />
-                          <strong>Giới tính mong muốn:</strong> {post.genderPreference || "Linh hoạt"}
-                        </p>
-                        {/* Hiển thị Habits dưới dạng Tag */}
-                        {post.habits && post.habits.length > 0 && (
-                          <p style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
-                            <TagOutlined style={{ marginRight: 8, color: '#004d40' }} />
-                            <strong>Thói quen:</strong>
-                            {post.habits.map((habit, i) => (
-                              <Tag key={i} color="blue">{habit}</Tag>
-                            ))}
-                          </p>
-                        )}
-                        {/* Nút liên hệ (ví dụ) */}
-                        <Button
-                          icon={<MessageOutlined />}
-                          style={{ marginTop: '12px', width: '100%' }}
-                          onClick={(e) => {
-                            e.stopPropagation(); // Ngăn Card kích hoạt link (nếu có)
-                            navigate(`/customer/chat/${author?._id}`);
-                          }}
-                        >
-                          Nhắn tin
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              );
-            })}
-          </Slider >
-          <div className="custom-carousel-buttons">
-            <button className="nav-button" onClick={() => sliderRef.current.slickPrev()}><LeftOutlined /></button>
-            <button className="nav-button" onClick={() => sliderRef.current.slickNext()}><RightOutlined /></button>
-          </div>
-        </div >
-      )}
       <RoommatePostModal
-        visible={showModal}
-        onClose={() => setShowModal(false)}
+        visible={showRoommatePostModal}
+        onClose={() => setShowRoommatePostModal(false)}
         boardingHouseId={boardingHouse._id}
-        onSuccess={fetchRoommates}
+        roomId={selectedRoom?._id}
+        onSuccess={async (newPost) => {
+          setShowRoommatePostModal(false);
+          // Cập nhật selectedRoom với bài đăng mới
+          if (selectedRoom && newPost) {
+            setSelectedRoom({
+              ...selectedRoom,
+              hasRoommatePost: true,
+              roommatePost: newPost
+            });
+          }
+          // Cập nhật lại toàn bộ dữ liệu boarding house
+          await fetchBoardingHouseData();
+          messageApi.success('Đã đăng bài tìm bạn trọ thành công!');
+        }}
       />
       <VisitRequestModal
         visible={isVisitModalVisible}
@@ -688,6 +703,151 @@ const PropertyDetails = () => {
         boardingHouseId={boardingHouse._id}
         ownerId={boardingHouse.ownerId?._id}
       />
+      {/* Room details modal */}
+      <Modal
+        open={roomModalVisible}
+        title={selectedRoom ? `Phòng ${selectedRoom.roomNumber}` : 'Chi tiết phòng'}
+        onCancel={handleRoomModalClose}
+        footer={null}
+        width={800}
+      >
+        {selectedRoom ? (
+          <div>
+            {/* Images */}
+            {selectedRoom.photos && selectedRoom.photos.length > 0 ? (
+              <Carousel autoplay>
+                {selectedRoom.photos.map((p, idx) => (
+                  <div key={idx} style={{ textAlign: 'center' }}>
+                    <img src={`http://localhost:5000${p}`} alt={`room-${idx}`} style={{ maxHeight: 360, width: '100%', objectFit: 'cover' }} />
+                  </div>
+                ))}
+              </Carousel>
+            ) : (
+              <img src="/image/default-image.jpg" alt="room" style={{ width: '100%', maxHeight: 360, objectFit: 'cover' }} />
+            )}
+
+            <div style={{ marginTop: 16 }}>
+              <Tabs defaultActiveKey="room" items={[
+                {
+                  key: 'room',
+                  label: 'Thông tin phòng',
+                  children: (
+                    <div>
+                      <p><strong>Diện tích:</strong> {selectedRoom.area} m²</p>
+                      <p><strong>Giá:</strong> {selectedRoom.price?.toLocaleString('vi-VN')} VNĐ/tháng</p>
+                      <p><strong>Trạng thái:</strong> {selectedRoom.status}</p>
+                      {selectedRoom.description && <p><strong>Mô tả:</strong> {selectedRoom.description}</p>}
+                      {selectedRoom.features && selectedRoom.features.length > 0 && (
+                        <p><strong>Tiện nghi:</strong> {selectedRoom.features.join(', ')}</p>
+                      )}
+                    </div>
+                  )
+                },
+                ...(selectedRoom.roommatePost || selectedRoom.hasRoommatePost ? [{
+                  key: 'roommate',
+                  label: (
+                    <span>
+                      Tìm bạn trọ
+                      <Tag color="blue" style={{ marginLeft: 8 }}>1</Tag>
+                    </span>
+                  ),
+                  children: (
+                    <div>
+                      {selectedRoom.roommatePost ? (
+                        <Card bordered={false}>
+                          <Card.Meta
+                            avatar={
+                              <Avatar
+                                size={64}
+                                src={selectedRoom.roommatePost.userId?.avatar ?
+                                  `http://localhost:5000${selectedRoom.roommatePost.userId.avatar}` : null}
+                                style={{
+                                  backgroundColor: selectedRoom.roommatePost.userId?.avatar ? 'transparent' : '#004d40',
+                                }}
+                              >
+                                {!selectedRoom.roommatePost.userId?.avatar &&
+                                  selectedRoom.roommatePost.userId?.name?.charAt(0).toUpperCase()}
+                              </Avatar>
+                            }
+                            title={selectedRoom.roommatePost.userId?.name || "Người dùng ẩn danh"}
+                            description={`Đăng ${dayjs(selectedRoom.roommatePost.createdAt).fromNow()}`}
+                          />
+                          <div style={{ marginTop: 16 }}>
+                            <p style={{ fontStyle: 'italic', marginBottom: 16 }}>
+                              "{selectedRoom.roommatePost.intro}"
+                            </p>
+                            <p>
+                              <strong>Giới tính mong muốn:</strong>{' '}
+                              {selectedRoom.roommatePost.genderPreference === 'male' ? 'Nam' :
+                                selectedRoom.roommatePost.genderPreference === 'female' ? 'Nữ' :
+                                  'Không quan trọng'}
+                            </p>
+                            {selectedRoom.roommatePost.habits && selectedRoom.roommatePost.habits.length > 0 && (
+                              <div style={{ marginTop: 8 }}>
+                                <strong>Thói quen:</strong><br />
+                                {selectedRoom.roommatePost.habits.map((habit, idx) => (
+                                  <Tag key={idx} color="blue" style={{ margin: '4px' }}>{habit}</Tag>
+                                ))}
+                              </div>
+                            )}
+                            {selectedRoom.roommatePost.note && (
+                              <div style={{ marginTop: 8 }}>
+                                <strong>Ghi chú:</strong>
+                                <p>{selectedRoom.roommatePost.note}</p>
+                              </div>
+                            )}
+                            <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                              {selectedRoom.roommatePost.userId?._id === user?._id ? (
+                                <>
+                                  <Button onClick={() => handleEditRoommatePost(selectedRoom.roommatePost)}>
+                                    Chỉnh sửa
+                                  </Button>
+                                  <Button danger onClick={() => handleDeleteRoommatePost(selectedRoom.roommatePost._id)}>
+                                    Xóa bài
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  type="primary"
+                                  icon={<MessageOutlined />}
+                                  onClick={() => navigate(`/customer/chat/${selectedRoom.roommatePost.userId._id}`)}
+                                >
+                                  Nhắn tin ngay
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '20px' }}>
+                          <Spin />
+                          <p>Đang tải thông tin...</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                }] : [])
+              ]} />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+              <Button onClick={handleRoomModalClose}>Đóng</Button>
+              {selectedRoom.status === 'Available' && (
+                <Button type="primary" onClick={() => { handleRoomModalClose(); handleBookRoom(selectedRoom._id); }}>
+                  Đặt ngay
+                </Button>
+              )}
+              {(userBooking?.roomId === selectedRoom._id || selectedRoom.status === 'Booked') && !selectedRoom.hasRoommatePost && (
+                <Button type="primary" onClick={() => setShowRoommatePostModal(true)}>
+                  Đăng bài tìm bạn trọ
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div>Đang tải...</div>
+        )}
+      </Modal>
       <Divider />
 
       <h1 className="text-heading">Reviews</h1>
@@ -699,50 +859,73 @@ const PropertyDetails = () => {
             <h2 className="leave-review-title">Leave a Review</h2>
 
             {user ? (
-              userHasBooking ? (
-                <div className="review-form-container">
-                  <div className="review-form-row">
-                    <label className="review-form-label">Your Review</label>
-                    <Input.TextArea
-                      rows={4}
-                      placeholder="Share your experience about this boardingHouse..."
-                      value={reviewContent}
-                      onChange={(e) => setReviewContent(e.target.value)}
-                      className="review-custom-textarea"
-                    />
-                  </div>
+              (userBooking && (userBooking.status === 'paid' || userBooking.status === 'completed' || userBooking.contractStatus === 'paid')) ? (
+                <>
+                  {(() => {
+                    const bookedRoom = boardingHouse.rooms.find(
+                      r => String(r._id) === String(userBooking.roomId._id)
+                    );
 
-                  <div className="review-form-row">
-                    <label className="review-form-label">Purpose</label>
-                    <Input
-                      placeholder="e.g., Business trip, Vacation, Study"
-                      value={reviewPurpose}
-                      onChange={(e) => setReviewPurpose(e.target.value)}
-                      className="review-custom-input"
-                    />
-                  </div>
+                    if (bookedRoom) {
+                      return (
+                        <Tag
+                          color="cyan"
+                          icon={<TagOutlined />}
+                          style={{ marginBottom: 16, fontSize: 15, padding: '4px 8px' }}
+                        >
+                          Đánh giá cho Phòng {bookedRoom.roomNumber}
+                        </Tag>
+                      );
+                    }
+                    return null;
+                  })()}
+                  {/* === KẾT THÚC LOGIC TÌM PHÒNG === */}
 
-                  <div className="review-form-row">
-                    <label className="review-form-label">Rating (1-5)</label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={5}
-                      placeholder="Rate from 1 to 5 stars"
-                      value={reviewRating}
-                      onChange={(e) => setReviewRating(Number(e.target.value))}
-                      className="review-custom-input"
-                    />
-                  </div>
+                  <div className="review-form-container">
+                    {/* ... Toàn bộ form review của bạn ... */}
+                    <div className="review-form-row">
+                      <label className="review-form-label">Your Review</label>
+                      <Input.TextArea
+                        rows={4}
+                        placeholder="Share your experience about this boardingHouse..."
+                        value={reviewContent}
+                        onChange={(e) => setReviewContent(e.target.value)}
+                        className="review-custom-textarea"
+                      />
+                    </div>
 
-                  <Button
-                    className="review-submit-button"
-                    onClick={handleSubmitReview}
-                    size="large"
-                  >
-                    Submit Review
-                  </Button>
-                </div>
+                    <div className="review-form-row">
+                      <label className="review-form-label">Purpose</label>
+                      <Input
+                        placeholder="e.g., Business trip, Vacation, Study"
+                        value={reviewPurpose}
+                        onChange={(e) => setReviewPurpose(e.target.value)}
+                        className="review-custom-input"
+                      />
+                    </div>
+
+                    <div className="review-form-row">
+                      <label className="review-form-label">Rating (1-5)</label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={5}
+                        placeholder="Rate from 1 to 5 stars"
+                        value={reviewRating}
+                        onChange={(e) => setReviewRating(Number(e.target.value))}
+                        className="review-custom-input"
+                      />
+                    </div>
+
+                    <Button
+                      className="review-submit-button"
+                      onClick={handleSubmitReview}
+                      size="large"
+                    >
+                      Submit Review
+                    </Button>
+                  </div>
+                </>
               ) : (
                 <div className="login-prompt-custom">
                   <div className="review-prompt-container">
@@ -772,117 +955,139 @@ const PropertyDetails = () => {
           </h2>
 
           {boardingHouse.reviews && boardingHouse.reviews.length > 0 ? (
-            boardingHouse.reviews.map((review, index) => (
-              <Card
-                key={index}
-                className="custom-review-card"
-                style={{ marginBottom: 16 }}
-              >
-                <div className="review-header">
-                  <Avatar
-                    size={48}
-                    style={{ backgroundColor: "#004d47", marginRight: 12 }}
-                  >
-                    {review.name?.[0]?.toUpperCase() ||
-                      review.user?.name?.[0]?.toUpperCase() ||
-                      review.customerId?.name?.[0]?.toUpperCase() ||
-                      "U"}{" "}
-                  </Avatar>
-                  <div className="review-meta">
-                    <div className="review-name-rating">
-                      <strong className="review-customer-name">
-                        {review.name || review.user?.name || review.customerId?.name || "Unknown User"}
-                      </strong>
-                      <span className="review-rating">
-                        <i
-                          className="bi bi-star-fill"
-                          style={{ color: "#004d40" }}
-                        />{" "}
-                        {review.rating}/5
-                      </span>
-                    </div>
-                    <span className="review-time">
-                      • From {review.weeksAgo} weeks ago
-                    </span>
-                  </div>
-                </div>
+            boardingHouse.reviews.map((review, index) => {
 
-                {editingReviewId === review._id ? (
-                  <>
-                    <Input.TextArea
-                      rows={3}
-                      value={editedReviewContent}
-                      onChange={(e) => setEditedReviewContent(e.target.value)}
-                      style={{ marginBottom: 8 }}
-                    />
-                    <Input
-                      type="number"
-                      min={1}
-                      max={5}
-                      placeholder="Rating (1-5 stars)"
-                      value={editedReviewRating}
-                      onChange={(e) =>
-                        setEditedReviewRating(Number(e.target.value))
-                      }
-                      style={{ marginBottom: 8 }}
-                    />
-                    <Input
-                      placeholder="Purpose"
-                      value={editedReviewPurpose}
-                      onChange={(e) => setEditedReviewPurpose(e.target.value)}
-                      style={{ marginBottom: 8 }}
-                    />
-                    <Button
-                      type="primary"
-                      onClick={() =>
-                        handleEditReview(review._id || review?.user?._id)
-                      }
+              // === TÌM PHÒNG TƯƠNG ỨNG VỚI REVIEW ===
+              const reviewedRoom = boardingHouse.rooms.find(
+                r => String(r._id) === String(review.roomId)
+              );
+              // === KẾT THÚC TÌM PHÒNG ===
+
+              return (
+                <Card
+                  key={index}
+                  className="custom-review-card"
+                  style={{ marginBottom: 16 }}
+                >
+                  <div className="review-header">
+                    <Avatar
+                      size={48}
+                      style={{ backgroundColor: "#004d47", marginRight: 12 }}
                     >
-                      Save
-                    </Button>
-                    <Button
-                      onClick={() => setEditingReviewId(null)}
-                      style={{ marginLeft: 8 }}
-                    >
-                      Cancel
-                    </Button>
-                  </>
-                ) : (
-                  <div className="review-body">
-                    <p>{review.comment}</p>
-                    <p>
-                      <strong>Purpose:</strong> {review.purpose}
-                    </p>
+                      {review.name?.[0]?.toUpperCase() ||
+                        review.user?.name?.[0]?.toUpperCase() ||
+                        review.customerId?.name?.[0]?.toUpperCase() ||
+                        "U"}{" "}
+                    </Avatar>
+                    <div className="review-meta">
+                      <div className="review-name-rating">
+                        <strong className="review-customer-name">
+                          {review.name || review.user?.name || review.customerId?.name || "Unknown User"}
+                        </strong>
+                        <span className="review-rating">
+                          <i
+                            className="bi bi-star-fill"
+                            style={{ color: "#004d40" }}
+                          />{" "}
+                          {review.rating}/5
+                        </span>
 
-                    {user &&
-                      (review.user?._id || review.customerId?._id) &&
-                      (String(review.user?._id || review.customerId?._id) === String(user._id)) && (
-                        <div className="review-action-buttons">
-                          <Button
-                            size="small"
-                            onClick={() => {
-                              setEditingReviewId(review._id);
-                              setEditedReviewContent(review.comment);
-                              setEditedReviewRating(review.rating);
-                              setEditedReviewPurpose(review.purpose);
-                            }}
-                          >
-                            Edit
-                          </Button>
-
-                          <Button
-                            size="small"
-                            onClick={() => handleDeleteReview(review._id)}
+                        {/* === HIỂN THỊ SỐ PHÒNG === */}
+                        {reviewedRoom && (
+                          <Tag
+                            icon={<TagOutlined />}
+                            color="blue"
                             style={{ marginLeft: 8 }}
                           >
-                            Delete
-                          </Button>
-                        </div>
-                      )}
+                            Phòng {reviewedRoom.roomNumber}
+                          </Tag>
+                        )}
+                        {/* === KẾT THÚC HIỂN THỊ SỐ PHÒNG === */}
+
+                      </div>
+                      <span className="review-time">
+                        • From {review.weeksAgo} weeks ago
+                      </span>
+                    </div>
                   </div>
-                )}
-              </Card>
-            ))
+
+                  {editingReviewId === review._id ? (
+                    <>
+                      <Input.TextArea
+                        rows={3}
+                        value={editedReviewContent}
+                        onChange={(e) => setEditedReviewContent(e.target.value)}
+                        style={{ marginBottom: 8 }}
+                      />
+                      <Input
+                        type="number"
+                        min={1}
+                        max={5}
+                        placeholder="Rating (1-5 stars)"
+                        value={editedReviewRating}
+                        onChange={(e) =>
+                          setEditedReviewRating(Number(e.target.value))
+                        }
+                        style={{ marginBottom: 8 }}
+                      />
+                      <Input
+                        placeholder="Purpose"
+                        value={editedReviewPurpose}
+                        onChange={(e) => setEditedReviewPurpose(e.target.value)}
+                        style={{ marginBottom: 8 }}
+                      />
+                      <Button
+                        type="primary"
+                        onClick={() =>
+                          handleEditReview(review._id || review?.user?._id)
+                        }
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        onClick={() => setEditingReviewId(null)}
+                        style={{ marginLeft: 8 }}
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="review-body">
+                      <p>{review.comment}</p>
+                      <p>
+                        <strong>Purpose:</strong> {review.purpose}
+                      </p>
+
+                      {user &&
+                        (review.user?._id || review.customerId?._id) &&
+                        (String(review.user?._id || review.customerId?._id) === String(user._id)) && (
+                          <div className="review-action-buttons">
+                            <Button
+                              size="small"
+                              onClick={() => {
+                                setEditingReviewId(review._id);
+                                setEditedReviewContent(review.comment);
+                                setEditedReviewRating(review.rating);
+                                setEditedReviewPurpose(review.purpose);
+                              }}
+                            >
+                              Edit
+                            </Button>
+
+                            <Button
+                              size="small"
+                              onClick={() => handleDeleteReview(review._id)}
+                              style={{ marginLeft: 8 }}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        )}
+                    </div>
+                  )}
+                </Card>
+              );
+            })
           ) : (
             <p>No reviews yet for this boarding-house.</p>
           )}

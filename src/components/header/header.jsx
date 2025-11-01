@@ -165,6 +165,9 @@ const HeaderComponent = () => {
               <Menu.Item key="contact">
                 <Link to="/customer/reports" onClick={() => console.log("Menu: /customer/reports")}>Contact & Reports</Link>
               </Menu.Item>
+              <Menu.Item key="profile">
+                <Link to="/customer/profile/personal-info" onClick={() => console.log("Menu: /customer/profile/personal-info")}>Profile</Link>
+              </Menu.Item>
             </>
           )}
 
@@ -184,9 +187,7 @@ const HeaderComponent = () => {
               <Link to="/admin/dashboard" onClick={() => console.log("Menu: /admin/dashboard")}>Dashboard</Link>
             </Menu.Item>
           )}
-          <Menu.Item key="profile">
-            <Link to="/customer/profile/personal-info" onClick={() => console.log("Menu: /customer/profile/personal-info")}>Profile</Link>
-          </Menu.Item>
+
           <Menu.Item key="room">
             <Link to="/customer/search" onClick={() => console.log("Menu: /customer/search")}>Room</Link>
           </Menu.Item>
