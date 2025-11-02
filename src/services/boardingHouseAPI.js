@@ -121,7 +121,7 @@ export const deleteRoom = async (roomId) => {
 
 export const getContractTemplateForHouse = async (boardingHouseId) => {
     const response = await axiosInstance.get(`${API_CONTRACT_URL}/boarding-houses/${boardingHouseId}/contract`);
-    return response.data;
+        return response.data;
 };
 
 export const getOwnerContractTemplate = async () => {
@@ -179,40 +179,27 @@ export const getBoardingHouseRatings = async (boardingHouseId) => { // Đổi t�
 };
 
 export const getOwnerStatistics = async () => {
-    // backend route: GET /api/owner/statistics
-    const response = await axiosInstance.get(`/owner/statistics`);
-    return response.data;
-};
-
-export const getOwnerRecentBookings = async (limit = 10) => {
-    // backend route: GET /api/owner/bookings/recent?limit=10
-    const response = await axiosInstance.get(`/boarding-houses/owner/recent-bookings?limit=${limit}`);
-    return response.data;
-};
-
-export const getOwnerTopBoardingHouses = async (limit = 5) => {
-    // backend route: GET /api/owner/boarding-houses/top?limit=5
-    // your backend implemented getOwnerTopAccommodations at /api/boarding-houses/owner/top-accommodations
-    // choose the route that your server actually exposes. Based on your code: getOwnerTopAccommodations => /api/boarding-houses/owner/top-accommodations
-    const response = await axiosInstance.get(`/boarding-houses/owner/top-accommodations?limit=${limit}`);
+    const response = await axiosInstance.get(`${API_BOARDING_HOUSE_URL}/owner/statistics`);
     return response.data;
 };
 
 export const getOwnerMonthlyRevenue = async (months = 6) => {
-    // backend route: GET /api/owner/revenue/monthly?months=6 OR GET /api/owner/monthly-revenue?months=6
-    // Based on your code: exports.getOwnerMonthlyRevenue is annotated @route GET /api/owner/revenue/monthly
-    const response = await axiosInstance.get(`/boarding-houses/owner/monthly-revenue?months=${months}`);
+    const response = await axiosInstance.get(`${API_BOARDING_HOUSE_URL}/owner/monthly-revenue?months=${months}`);
+    return response.data;
+};
+
+export const getOwnerRecentBookings = async (limit = 10) => {
+    const response = await axiosInstance.get(`${API_BOARDING_HOUSE_URL}/owner/recent-bookings?limit=${limit}`);
+    return response.data;
+};
+
+export const getOwnerTopBoardingHouses = async (limit = 5) => { // Đổi tên hàm cho nhất quán
+    const response = await axiosInstance.get(`${API_BOARDING_HOUSE_URL}/owner/top-accommodations?limit=${limit}`);
     return response.data;
 };
 
 export const getOwnerCurrentMembership = async () => {
-    // backend route: GET /api/boarding-houses/owner/current-membership (seems present)
-    const response = await axiosInstance.get(`/boarding-houses/owner/current-membership`);
-    return response.data;
-};
-
-export const getOwnerBoardingHousesWithRatings = async () => {
-    const response = await axiosInstance.get(`/owner/boarding-houses/ratings`);
+    const response = await axiosInstance.get(`${API_BOARDING_HOUSE_URL}/owner/current-membership`);
     return response.data;
 };
 

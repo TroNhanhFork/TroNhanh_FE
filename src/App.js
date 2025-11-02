@@ -91,11 +91,19 @@ function AppRoutes() {
 
 function AppWrapper() {
   return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <AppRoutes />
-      <AIAssistant />
-    </BrowserRouter>
+    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+      <BrowserRouter>
+        <UserProvider>
+          <SocketProvider>
+            <NotificationProvider>
+              <ScrollToTop />
+              <AppRoutes />
+              <AIAssistant />
+            </NotificationProvider>
+          </SocketProvider>
+        </UserProvider>
+      </BrowserRouter>
+    </GoogleOAuthProvider>
   );
 }
 

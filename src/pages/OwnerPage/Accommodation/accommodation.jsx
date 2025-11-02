@@ -14,11 +14,8 @@ import {
     deleteBoardingHouse,
     updateBoardingHouse,
     getBoardingHouseById,
-    addRoomsToBoardingHouse,
 } from "../../../services/boardingHouseAPI";
 import useUser from "../../../contexts/UserContext";
-import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../../../services/axiosInstance';
 
 // ✅ Hàm trợ giúp để lấy fileList từ event của Upload component
 const normFile = (e) => {
@@ -33,7 +30,6 @@ const ManageBoardingHouses = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const { user } = useUser();
     const [form] = Form.useForm();
-    const [manageForm] = Form.useForm();
 
     const [boardingHouses, setBoardingHouses] = useState([]);
     const [membershipInfo, setMembershipInfo] = useState(null);
@@ -42,12 +38,7 @@ const ManageBoardingHouses = () => {
     const [isViewModalVisible, setIsViewModalVisible] = useState(false);
     const [isUpdateModalVisible, setIsUpdateModalVisible] = useState(false);
     const [isAddModalVisible, setIsAddModalVisible] = useState(false);
-    // Manage rooms modal state
-    const [isManageRoomsModalVisible, setIsManageRoomsModalVisible] = useState(false);
-    const [manageExistingRooms, setManageExistingRooms] = useState([]); // existing rooms fetched
-    const [existingFilesMap, setExistingFilesMap] = useState({}); // { roomId: [File, ...] }
     const [editingBoardingHouse, setEditingBoardingHouse] = useState(null);
-    const navigate = useNavigate();
 
     useEffect(() => {
         if (user?._id) {
@@ -82,73 +73,6 @@ const ManageBoardingHouses = () => {
     const handleView = (record) => {
         setSelectedBoardingHouse(record);
         setIsViewModalVisible(true);
-    };
-
-    const openManageRoomsModal = async (boardingHouseId) => {
-        try {
-            const data = await getBoardingHouseById(boardingHouseId);
-            setManageExistingRooms(Array.isArray(data.rooms) ? data.rooms : []);
-            setExistingFilesMap({});
-            setIsManageRoomsModalVisible(true);
-        } catch (err) {
-            console.error('Failed to load rooms for manage modal', err);
-            messageApi.error('Không thể tải danh sách phòng');
-        }
-    };
-
-    const handleExistingUploadChange = (roomId, info) => {
-        const files = (info && info.fileList) ? info.fileList.map(f => f.originFileObj || f) : [];
-        setExistingFilesMap(prev => ({ ...prev, [roomId]: files }));
-    };
-
-    const handleManageRoomsSubmit = async (values) => {
-        try {
-            // 1) Create new rooms (if any)
-            const newRooms = values?.newRooms || [];
-            if (newRooms.length > 0) {
-                const fd = new FormData();
-                const roomsPayload = newRooms.map((r, idx) => ({ tempId: `nr_${Date.now()}_${idx}`, roomNumber: r.roomNumber, price: Number(r.price), area: Number(r.area), description: r.description }));
-                fd.append('rooms', JSON.stringify(roomsPayload));
-
-                const photosMap = {};
-                newRooms.forEach((r, idx) => {
-                    const tempId = roomsPayload[idx].tempId;
-                    const roomFiles = r.upload || [];
-                    if (Array.isArray(roomFiles) && roomFiles.length > 0) {
-                        photosMap[tempId] = roomFiles.map(f => f.name);
-                        roomFiles.forEach(f => { if (f.originFileObj) fd.append('files', f.originFileObj, f.name); });
-                    }
-                });
-                fd.append('photosMap', JSON.stringify(photosMap));
-
-                await addRoomsToBoardingHouse(selectedBoardingHouse._id, fd);
-            }
-
-            // 2) Upload photos for existing rooms
-            const entries = Object.entries(existingFilesMap || {});
-            if (entries.length > 0) {
-                await Promise.all(entries.map(async ([roomId, files]) => {
-                    if (!Array.isArray(files) || files.length === 0) return;
-                    const fd2 = new FormData();
-                    files.forEach(f => fd2.append('files', f, f.name || f.fileName || 'file'));
-                    await axiosInstance.post(`rooms/${roomId}/photos`, fd2, { headers: { 'Content-Type': 'multipart/form-data' } });
-                }));
-            }
-
-            messageApi.success('Cập nhật phòng thành công');
-            setIsManageRoomsModalVisible(false);
-            setExistingFilesMap({});
-            manageForm.resetFields();
-            // refresh details
-            if (selectedBoardingHouse) {
-                const data = await getBoardingHouseById(selectedBoardingHouse._id);
-                setDetailedHouse(data);
-                fetchBoardingHouses();
-            }
-        } catch (err) {
-            console.error('Error managing rooms', err);
-            messageApi.error(err.response?.data?.message || 'Lỗi khi cập nhật phòng');
-        }
     };
 
     const handleRemove = async (id) => {
@@ -241,28 +165,12 @@ const ManageBoardingHouses = () => {
             formData.append("location", JSON.stringify({ ...location, ...coords }));
             formData.append("rooms", JSON.stringify(rooms || [])); // Đảm bảo rooms là mảng
 
-            // ✅ Logic xử lý file ảnh (nhà trọ) và ảnh từng phòng
+            // ✅ Logic xử lý file ảnh
             if (values.upload && values.upload.length > 0) {
                 values.upload.forEach(file => {
                     formData.append('photos', file.originFileObj);
                 });
             }
-
-            // Build photosMap from rooms' upload fields: key by roomNumber
-            const photosMap = {};
-            if (rooms && Array.isArray(rooms)) {
-                rooms.forEach((r, idx) => {
-                    const roomFiles = r.upload || [];
-                    if (Array.isArray(roomFiles) && roomFiles.length > 0) {
-                        photosMap[String(r.roomNumber || idx)] = roomFiles.map(f => f.name);
-                        roomFiles.forEach(f => {
-                            if (f.originFileObj) formData.append('files', f.originFileObj, f.name);
-                        });
-                    }
-                });
-            }
-
-            formData.append('photosMap', JSON.stringify(photosMap));
 
             await createBoardingHouse(formData);
             messageApi.success("Thêm nhà trọ thành công!");
@@ -408,12 +316,6 @@ const ManageBoardingHouses = () => {
                                             <Form.Item {...restField} name={[name, 'area']} rules={[{ required: true, message: 'Nhập diện tích' }]}>
                                                 <InputNumber placeholder="Diện tích (m²)" />
                                             </Form.Item>
-                                            {/* Upload ảnh riêng cho từng phòng */}
-                                            <Form.Item {...restField} name={[name, 'upload']} valuePropName="fileList" getValueFromEvent={normFile}>
-                                                <Upload listType="picture" beforeUpload={() => false} multiple maxCount={5}>
-                                                    <Button>Chọn ảnh phòng</Button>
-                                                </Upload>
-                                            </Form.Item>
                                             <MinusCircleOutlined onClick={() => remove(name)} />
                                         </Space>
                                     ))}
@@ -469,9 +371,6 @@ const ManageBoardingHouses = () => {
                             <p><strong>Địa chỉ:</strong> {`${detailedHouse.location.addressDetail}, ${detailedHouse.location.street}, ${detailedHouse.location.district}`}</p>
 
                             <h4>Danh sách phòng:</h4>
-                            <div style={{ marginBottom: 12 }}>
-                                <Button type="primary" onClick={() => openManageRoomsModal(selectedBoardingHouse._id)}>Thêm/Quản lý phòng</Button>
-                            </div>
                             <Table
                                 dataSource={detailedHouse.rooms}
                                 rowKey={(record) => record._id}
@@ -488,70 +387,6 @@ const ManageBoardingHouses = () => {
                     ) : (
                         <p>Đang tải dữ liệu...</p>
                     )}
-                </Modal>
-
-                {/* MODAL QUẢN LÝ / THÊM PHÒNG (nội bộ, thay thế route riêng) */}
-                <Modal
-                    title="Thêm / Quản lý phòng"
-                    open={isManageRoomsModalVisible}
-                    onCancel={() => { setIsManageRoomsModalVisible(false); setExistingFilesMap({}); manageForm.resetFields(); }}
-                    onOk={() => manageForm.submit()}
-                    width={900}
-                    okText="Lưu"
-                    cancelText="Huỷ"
-                >
-                    <div style={{ marginBottom: 12 }}>
-                        <h4>Ảnh cho phòng hiện có</h4>
-                        {manageExistingRooms.length === 0 && <p>Không có phòng nào.</p>}
-                        {manageExistingRooms.map(room => (
-                            <div key={room._id} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                                <div style={{ flex: 1 }}>
-                                    <strong>Phòng {room.roomNumber}</strong>
-                                    <div style={{ color: '#666' }}>{room.price?.toLocaleString ? `${room.price.toLocaleString()} VNĐ` : ''} - {room.area ? `${room.area} m²` : ''}</div>
-                                </div>
-                                <div style={{ width: 320 }}>
-                                    <Upload listType="picture" beforeUpload={() => false} multiple maxCount={5} onChange={(info) => handleExistingUploadChange(room._id, info)}>
-                                        <Button>Chọn ảnh để thêm</Button>
-                                    </Upload>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <hr />
-                    <Form form={manageForm} layout="vertical" onFinish={handleManageRoomsSubmit}>
-                        <h4>Thêm phòng mới</h4>
-                        <Form.List name="newRooms">
-                            {(fields, { add, remove }) => (
-                                <>
-                                    {fields.map(({ key, name, ...restField }) => (
-                                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                                            <Form.Item {...restField} name={[name, 'roomNumber']} rules={[{ required: true, message: 'Nhập số phòng' }]}>
-                                                <Input placeholder="Số phòng" />
-                                            </Form.Item>
-                                            <Form.Item {...restField} name={[name, 'price']} rules={[{ required: true, message: 'Nhập giá' }]}>
-                                                <InputNumber placeholder="Giá (VND)" style={{ width: '100%' }} />
-                                            </Form.Item>
-                                            <Form.Item {...restField} name={[name, 'area']} rules={[{ required: true, message: 'Nhập diện tích' }]}>
-                                                <InputNumber placeholder="Diện tích (m²)" />
-                                            </Form.Item>
-                                            <Form.Item {...restField} name={[name, 'upload']} valuePropName="fileList" getValueFromEvent={normFile}>
-                                                <Upload listType="picture" beforeUpload={() => false} multiple maxCount={5}>
-                                                    <Button>Chọn ảnh phòng</Button>
-                                                </Upload>
-                                            </Form.Item>
-                                            <MinusCircleOutlined onClick={() => remove(name)} />
-                                        </Space>
-                                    ))}
-                                    <Form.Item>
-                                        <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                                            Thêm phòng
-                                        </Button>
-                                    </Form.Item>
-                                </>
-                            )}
-                        </Form.List>
-                    </Form>
                 </Modal>
 
                 {/* MODAL CẬP NHẬT NHÀ TRỌ */}
