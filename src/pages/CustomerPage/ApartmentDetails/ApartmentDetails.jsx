@@ -27,7 +27,7 @@ import {
   RightOutlined,
   CheckCircleOutlined,
   MessageOutlined,
-  TagOutlined
+  TagOutlined,CheckOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -146,6 +146,17 @@ const PropertyDetails = () => {
   // Room details modal
   const [roomModalVisible, setRoomModalVisible] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const AmenitiesList = ({ amenities }) => {
+  let parsedAmenities = [];
+
+  try {
+    parsedAmenities = Array.isArray(amenities)
+      ? amenities
+      : JSON.parse(amenities || "[]");
+  } catch (error) {
+    parsedAmenities = []; // Nếu parse lỗi thì để rỗng
+  }
+}
   // Tạo function riêng để fetch boarding-house data
   const fetchBoardingHouseData = async () => {
     try {
@@ -651,15 +662,46 @@ const PropertyDetails = () => {
       </Row>
 
       <Divider />
-      <h1 className="text-heading">Tiện ích</h1>
-      <Row gutter={[24, 24]} className="boardingHouse-amenities">
-        {boardingHouse.amenities?.map((amenity, index) => (
-          <Col xs={12} sm={8} md={6} key={index} className="amenity-item">
-            <CheckCircleOutlined className="amenity-icon" />
-            <div><strong>{amenity}</strong></div>
-          </Col>
-        ))}
-      </Row>
+<h1 className="text-heading mb-3">Tiện ích</h1>
+<Row gutter={[8, 8]} justify="start">
+  {(() => {
+    const amenities = boardingHouse?.amenities || [];
+    let data = [];
+
+    try {
+      if (Array.isArray(amenities) && typeof amenities[0] === "string") {
+        data = JSON.parse(amenities[0]);
+      } else if (Array.isArray(amenities)) {
+        data = amenities;
+      }
+    } catch (e) {
+      console.warn("❌ Lỗi khi parse amenities:", e);
+    }
+
+    return data.map((item, index) => (
+      <Tag
+        key={index}
+        color="green"
+        style={{
+          fontSize: "16px",       // 👈 phóng to chữ
+          padding: "8px 16px",    // 👈 tăng kích thước tag
+          borderRadius: "10px",   // 👈 bo tròn đẹp hơn
+          marginBottom: "8px",
+          marginRight: "8px",
+          background: "#f6ffed",  // 👈 nền nhạt
+          border: "1px solid #b7eb8f",
+          color: "#389e0d",       // 👈 màu xanh lá chủ đạo
+          fontWeight: "500",
+        }}
+      >
+        🌿 {item}
+      </Tag>
+    ));
+  })()}
+</Row>
+
+
+
 
       <Divider />
       <h1 className="text-heading">Vị trí</h1>
