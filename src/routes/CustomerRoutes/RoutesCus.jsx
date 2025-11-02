@@ -23,7 +23,7 @@ const RoutesCus = () => {
         <Route path="booking-result" element={<BookingResult />} />
         <Route path="profile/*" element={<ProfilePage />} />
         <Route path="reports" element={<ReportPage />} />
-        <Route path="communication" element={<Communication />} />
+        <Route path="chat/:id" element={<Communication />} />
       </Route>
     </Routes>
   );
