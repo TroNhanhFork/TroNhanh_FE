@@ -1,20 +1,24 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import { Input, Button, message as antMessage, Badge, Modal } from "antd";
+import { Input, Button, message as antMessage, Badge, Modal, Avatar } from "antd";
 import { IoVideocamOutline, IoSendOutline, IoChatbubblesOutline, IoEllipse, IoEllipseOutline } from "react-icons/io5";
 import { useSocket } from "../../../contexts/SocketContext";
 import useUser from "../../../contexts/UserContext";
 import { getUserChatById } from "../../../services/userService";
 import "./Communication.css";
+import { useLocation } from "react-router-dom";
 
 const { Search } = Input;
 
 const Communication = ({ role = "customer" }) => {
     const { id: initialOtherUserId } = useParams();
+    const location = useLocation();
     const { user } = useUser();
     const { socket, onlineUsers } = useSocket();
     const chatBodyRef = useRef(null);
+
+    const name = user?.name || "Tên Owner";
 
     const [chatList, setChatList] = useState([]);
     const [messages, setMessages] = useState([]);
@@ -85,14 +89,44 @@ const Communication = ({ role = "customer" }) => {
 
                 setChatList(transformed);
 
-                // Auto-load if routed with ?id
-                if (initialOtherUserId && !autoloadedRef.current) {
-                    const targetChat = transformed.find(
-                        (c) => c.otherUser.userId === initialOtherUserId
-                    );
-                    if (targetChat) {
-                        loadChat(targetChat.otherUser);
+                // Auto-load if routed via params or navigation state (roommate feed)
+                if (!autoloadedRef.current) {
+                    // prefer location.state.otherUserId (coming from roommate feed)
+                    const stateOther = location?.state?.otherUserId;
+                    const stateChatId = location?.state?.chatId;
+
+                    if (stateOther) {
+                        // load or create chat with other user id
+                        const otherUserObj = {
+                            userId: stateOther,
+                            name: location?.state?.otherUserName,
+                            avatar: location?.state?.otherUserAvatar,
+                        };
+                        await loadChat(otherUserObj);
                         autoloadedRef.current = true;
+                    } else if (initialOtherUserId) {
+                        const targetChat = transformed.find((c) => c.otherUser.userId === initialOtherUserId);
+                        if (targetChat) {
+                            await loadChat(targetChat.otherUser);
+                            autoloadedRef.current = true;
+                        }
+                    } else if (stateChatId) {
+                        const targetChat = transformed.find((c) => c._id === stateChatId);
+                        if (targetChat) {
+                            await loadChat(targetChat.otherUser);
+                            autoloadedRef.current = true;
+                        } else {
+                            // fallback: join room and fetch messages for chatId
+                            try {
+                                setChatId(stateChatId);
+                                socket?.emit?.("joinRoom", stateChatId);
+                                const { data: msgs } = await axios.get(`${API}/chats/${stateChatId}/messages`);
+                                setMessages(msgs);
+                                autoloadedRef.current = true;
+                            } catch (e) {
+                                console.warn('Failed to load chat by id from state', e);
+                            }
+                        }
                     }
                 }
             } catch (err) {
@@ -101,7 +135,7 @@ const Communication = ({ role = "customer" }) => {
         };
 
         fetchChats();
-    }, [user?._id, initialOtherUserId]);
+    }, [user?._id, initialOtherUserId, location?.state]);
 
     // SOCKET events
     useEffect(() => {
@@ -112,44 +146,48 @@ const Communication = ({ role = "customer" }) => {
         const handleConnect = () => setConnected(true);
         const handleDisconnect = () => setConnected(false);
         const handleNewMessage = (msg) => {
-            if (msg.roomId === chatId) {
-                setMessages((prev) => [...prev, msg.message]);
+            const roomId = msg.roomId;
+            const incomingMsg = msg.message || msg; // normalize
+
+            // Update chat list: update lastMessage, updatedAt and move to top
+            setChatList((prev) => {
+                const idx = prev.findIndex((c) => c._id === roomId);
+                const updatedAt = incomingMsg.time || new Date().toISOString();
+                const lastMessageText = incomingMsg.content || incomingMsg.text || "";
+
+                if (idx === -1) {
+                    // If we don't have this chat in list, optionally prepend a minimal item
+                    return [
+                        {
+                            _id: roomId,
+                            otherUser: { userId: null, name: "Unknown" },
+                            lastMessage: lastMessageText,
+                            updatedAt,
+                        },
+                        ...prev,
+                    ];
+                }
+
+                const updated = { ...prev[idx], lastMessage: lastMessageText, updatedAt };
+                const others = prev.slice(0, idx).concat(prev.slice(idx + 1));
+                return [updated, ...others];
+            });
+
+            // If message is for currently opened chat -> append to messages
+            if (roomId === chatId) {
+                setMessages((prev) => [...prev, incomingMsg]);
                 scrollToBottom();
+            } else {
+                // optional: toast / notification for other conversations
+                // antMessage.info(`New message from ${msg.fromName || "someone"}`);
             }
         };
+
         const handleTyping = ({ userId, isTyping: typing }) => {
             if (userId === selectedUser?.userId) setIsTyping(typing);
         };
 
-        const handleWebRTCOffer = async ({ fromUserId, offer }) => {
-            setCallerId(fromUserId);
-            setIncomingCall(true);
-
-            peerConnectionRef.current = createPeerConnection();
-            await peerConnectionRef.current.setRemoteDescription(
-                new RTCSessionDescription(offer)
-            );
-
-            // preload local camera so remote stream can be negotiated
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            localStreamRef.current = stream;
-            if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-            stream.getTracks().forEach((t) => peerConnectionRef.current.addTrack(t, stream));
-        };
-
-        const handleWebRTCAnswer = async ({ answer }) => {
-            if (peerConnectionRef.current)
-                await peerConnectionRef.current.setRemoteDescription(
-                    new RTCSessionDescription(answer)
-                );
-        };
-
-        const handleICECandidate = async ({ candidate }) => {
-            if (peerConnectionRef.current && candidate)
-                await peerConnectionRef.current.addIceCandidate(
-                    new RTCIceCandidate(candidate)
-                );
-        };
+        // WebRTC handlers are defined below (simplified implementation)
 
         const handleEndCall = ({ fromUserId }) => {
             console.log("📴 Call ended by", fromUserId);
@@ -160,20 +198,29 @@ const Communication = ({ role = "customer" }) => {
         socket.on("disconnect", handleDisconnect);
         socket.on("newMessage", handleNewMessage);
         socket.on("typing", handleTyping);
-        socket.on("webrtc-offer", handleWebRTCOffer);
-        socket.on("webrtc-answer", handleWebRTCAnswer);
-        socket.on("webrtc-ice-candidate", handleICECandidate);
         socket.on("end-call", handleEndCall);
+
+        // Also listen to browser-level events forwarded by SocketContext. This
+        // ensures the Communication component receives WebRTC signaling events
+        // even if the socket instance identity or lifecycle changes.
+        const onOffer = (e) => handleWebRTCOfferLocal(e.detail || {});
+        const onAnswer = (e) => handleWebRTCAnswerLocal(e.detail || {});
+        const onIce = (e) => handleICECandidateLocal(e.detail || {});
+
+        window.addEventListener("webrtc-offer", onOffer);
+        window.addEventListener("webrtc-answer", onAnswer);
+        window.addEventListener("webrtc-ice-candidate", onIce);
 
         return () => {
             socket.off("connect", handleConnect);
             socket.off("disconnect", handleDisconnect);
             socket.off("newMessage", handleNewMessage);
             socket.off("typing", handleTyping);
-            socket.off("webrtc-offer", handleWebRTCOffer);
-            socket.off("webrtc-answer", handleWebRTCAnswer);
-            socket.off("webrtc-ice-candidate", handleICECandidate);
             socket.off("end-call", handleEndCall);
+
+            window.removeEventListener("webrtc-offer", onOffer);
+            window.removeEventListener("webrtc-answer", onAnswer);
+            window.removeEventListener("webrtc-ice-candidate", onIce);
         };
     }, [socket, chatId, selectedUser?.userId]);
 
@@ -194,15 +241,52 @@ const Communication = ({ role = "customer" }) => {
         };
     }, [selectedUser]);
 
+    // Attach local stream to local <video> element after call UI mounts to avoid race
+    useEffect(() => {
+        if (inCall && localStreamRef.current) {
+            if (localVideoRef.current) {
+                try {
+                    localVideoRef.current.srcObject = localStreamRef.current;
+                } catch (e) {
+                    console.warn("Failed to attach local stream to video:", e);
+                }
+            }
+        }
+
+        // detach when leaving call (defensive)
+        return () => {
+            if (!inCall && localVideoRef.current && localVideoRef.current.srcObject) {
+                try {
+                    localVideoRef.current.srcObject = null;
+                } catch (e) {
+                    /* ignore */
+                }
+            }
+        };
+    }, [inCall]);
+
     const loadChat = async (otherUser) => {
         try {
-            setSelectedUser(otherUser);
+            // allow passing either a user object ({ userId, name }) or a raw userId string
+            const otherUserId = typeof otherUser === "string" ? otherUser : otherUser?.userId;
+            const otherUserName = typeof otherUser === "string" ? undefined : otherUser?.name;
+
+            if (!otherUserId) {
+                antMessage.error("Invalid user to open chat");
+                return;
+            }
+
+            // set a minimal selectedUser so UI updates immediately
+            setSelectedUser({ userId: otherUserId, name: otherUserName || "Unknown" });
+
             const { data: chat } = await axios.post(`${API}/chats/get-or-create`, {
                 user1Id: user._id,
-                user2Id: otherUser.userId,
+                user2Id: otherUserId,
             });
+
             setChatId(chat._id);
-            socket?.emit("joinRoom", chat._id);
+            socket?.emit?.("joinRoom", chat._id);
+
             const { data: msgs } = await axios.get(`${API}/chats/${chat._id}/messages`);
             setMessages(msgs);
         } catch (err) {
@@ -230,6 +314,13 @@ const Communication = ({ role = "customer" }) => {
         return time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
     };
 
+    // force periodic re-render so relative timestamps update in real-time
+    const [timeTick, setTimeTick] = useState(0);
+    useEffect(() => {
+        const interval = setInterval(() => setTimeTick(t => t + 1), 10000); // every 10s
+        return () => clearInterval(interval);
+    }, []);
+
     const sendMessage = async () => {
         if (!newMessage.trim() || !chatId) return;
         try {
@@ -241,6 +332,29 @@ const Communication = ({ role = "customer" }) => {
             socket?.emit("sendMessage", { roomId: chatId, message: data });
             setNewMessage("");
             scrollToBottom();
+            // Update chatList after sending so sidebar reflects new timestamp/message immediately
+            setChatList((prev) => {
+                const idx = prev.findIndex((c) => c._id === chatId);
+                const updatedAt = data.time || new Date().toISOString();
+                const lastMessageText = data.content || data.text || newMessage;
+
+                if (idx === -1) {
+                    // If chat not present, create a minimal entry
+                    return [
+                        {
+                            _id: chatId,
+                            otherUser: selectedUser || { userId: null, name: "Unknown" },
+                            lastMessage: lastMessageText,
+                            updatedAt,
+                        },
+                        ...prev,
+                    ];
+                }
+
+                const updated = { ...prev[idx], lastMessage: lastMessageText, updatedAt };
+                const others = prev.slice(0, idx).concat(prev.slice(idx + 1));
+                return [updated, ...others];
+            });
         } catch {
             antMessage.error("Failed to send");
         }
@@ -256,7 +370,9 @@ const Communication = ({ role = "customer" }) => {
         );
     };
 
-    // WebRTC functions
+    // WebRTC functions (simplified and rebuilt)
+    const incomingOfferRef = useRef(null);
+
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
             iceServers: [
@@ -266,11 +382,14 @@ const Communication = ({ role = "customer" }) => {
         });
 
         pc.onicecandidate = (event) => {
-            if (event.candidate && selectedUser) {
-                socket.emit("webrtc-ice-candidate", {
-                    toUserId: selectedUser.userId,
-                    candidate: event.candidate,
-                });
+            if (event.candidate) {
+                const targetId = callerId || selectedUser?.userId;
+                if (targetId) {
+                    socket?.emit?.("webrtc-ice-candidate", {
+                        toUserId: targetId,
+                        candidate: event.candidate,
+                    });
+                }
             }
         };
 
@@ -286,41 +405,28 @@ const Communication = ({ role = "customer" }) => {
 
     const startCall = async () => {
         try {
-            if (!selectedUser) {
-                return antMessage.warning("Please select someone to call");
-            }
+            if (!selectedUser) return antMessage.warning("Please select someone to call");
 
-            console.log("🎥 Starting call with:", selectedUser.name);
+            // allow ending new call sessions
+            setCallEnded(false);
 
-            // Create peer connection
             peerConnectionRef.current = createPeerConnection();
 
-            // Request camera + mic permissions
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localStreamRef.current = stream;
+            if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+            stream.getTracks().forEach((t) => peerConnectionRef.current.addTrack(t, stream));
 
-            // Show local stream in UI
-            if (localVideoRef.current) {
-                localVideoRef.current.srcObject = stream;
-            }
-
-            // Add local tracks to peer connection
-            stream.getTracks().forEach((track) => {
-                peerConnectionRef.current.addTrack(track, stream);
-            });
-
-            // Create offer and set as local description
             const offer = await peerConnectionRef.current.createOffer();
             await peerConnectionRef.current.setLocalDescription(offer);
 
-            // Emit offer via socket to other user
-            socket.emit("webrtc-offer", {
+            socket?.emit?.("webrtc-offer", {
                 toUserId: selectedUser.userId,
                 roomId: chatId,
                 offer,
             });
 
-            // Show call modal
+            // show call UI (video modal) after offer is sent — effect below will attach
             setInCall(true);
         } catch (err) {
             console.error("❌ Error starting call:", err);
@@ -328,27 +434,45 @@ const Communication = ({ role = "customer" }) => {
         }
     };
 
+    const handleWebRTCOfferLocal = async ({ fromUserId, offer }) => {
+        console.log("📞 [COMM] incoming offer stored for:", fromUserId);
+        // remember caller and incoming offer, show incoming modal
+        const callerFromList = chatList.find((c) => c.otherUser?.userId === fromUserId);
+        const callerName = callerFromList?.otherUser?.name || "Caller";
+        setSelectedUser({ userId: fromUserId, name: callerName });
+        setCallerId(fromUserId);
+        incomingOfferRef.current = offer;
+        setIncomingCall(true);
+    };
+
     const acceptCall = async () => {
         try {
+            // accept new call: clear previous ended-flag and show call UI
             setIncomingCall(false);
+            setCallEnded(false);
             setInCall(true);
+
+            peerConnectionRef.current = createPeerConnection();
 
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localStreamRef.current = stream;
             if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+            stream.getTracks().forEach((t) => peerConnectionRef.current.addTrack(t, stream));
 
-            stream.getTracks().forEach((track) => {
-                peerConnectionRef.current.addTrack(track, stream);
-            });
+            if (incomingOfferRef.current) {
+                await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(incomingOfferRef.current));
+            }
 
             const answer = await peerConnectionRef.current.createAnswer();
             await peerConnectionRef.current.setLocalDescription(answer);
 
-            socket.emit("webrtc-answer", {
+            socket?.emit?.("webrtc-answer", {
                 toUserId: callerId,
                 roomId: chatId,
                 answer,
             });
+
+            incomingOfferRef.current = null;
         } catch (err) {
             console.error("❌ Error accepting call:", err);
         }
@@ -356,8 +480,24 @@ const Communication = ({ role = "customer" }) => {
 
     const rejectCall = () => {
         setIncomingCall(false);
-        peerConnectionRef.current?.close();
-        peerConnectionRef.current = null;
+        incomingOfferRef.current = null;
+    };
+
+    const handleWebRTCAnswerLocal = async ({ answer }) => {
+        console.log("📞 [COMM] received answer, applying to PC");
+        if (peerConnectionRef.current && answer) {
+            await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+    };
+
+    const handleICECandidateLocal = async ({ candidate }) => {
+        if (peerConnectionRef.current && candidate) {
+            try {
+                await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (err) {
+                console.warn("Failed to add remote ICE candidate:", err);
+            }
+        }
     };
 
     const endCall = (fromRemote = false) => {
@@ -369,7 +509,6 @@ const Communication = ({ role = "customer" }) => {
         setInCall(false);
         setIncomingCall(false);
 
-        // stop both local and remote streams properly
         if (peerConnectionRef.current) {
             peerConnectionRef.current.ontrack = null;
             peerConnectionRef.current.onicecandidate = null;
@@ -392,9 +531,8 @@ const Communication = ({ role = "customer" }) => {
             localStreamRef.current = null;
         }
 
-        // Only emit if you are the one who ended the call manually
         if (!fromRemote && selectedUser?.userId) {
-            socket.emit("end-call", { toUserId: selectedUser.userId, roomId: chatId });
+            socket?.emit?.("end-call", { toUserId: selectedUser.userId, roomId: chatId });
         }
     };
 
@@ -466,11 +604,21 @@ const Communication = ({ role = "customer" }) => {
                                 onClick={() => loadChat(chat.otherUser)}
                             >
                                 <div className="chat-avatar">
-                                    <img
-                                        src={chat.otherUser?.avatar || "/default-avatar.png"}
-                                        alt="avatar"
-                                        style={{ width: 45, height: 45, borderRadius: "50%" }}
-                                    />
+                                    <Avatar
+                                        size={39}
+                                        src={user?.avatar || null}
+                                        style={{
+                                            fontSize: 19,
+                                            color: "white",
+                                            background: user?.avatar
+                                                ? "transparent"
+                                                : "linear-gradient(to right, #064749, #c4f7d8)",
+                                            border: "2px solid white",
+                                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                                        }}
+                                    >
+                                        {!user?.avatar && name?.charAt(0)}
+                                    </Avatar>
                                 </div>
 
                                 <div className="chat-info">
@@ -478,6 +626,7 @@ const Communication = ({ role = "customer" }) => {
                                         <div className="chat-name">{chat.otherUser.name}</div>
                                         <div className="chat-time" style={{ fontSize: "0.75rem", color: "#999" }}>
                                             {formatRelativeTime(chat.updatedAt)}
+                                            <span style={{ display: "none" }}>{timeTick}</span>
                                         </div>
                                     </div>
 
@@ -509,11 +658,6 @@ const Communication = ({ role = "customer" }) => {
                     <>
                         <div className="chat-header">
                             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <img
-                                    src={selectedUser.avatar || "/default-avatar.png"}
-                                    alt="avatar"
-                                    style={{ width: 40, height: 40, borderRadius: "50%" }}
-                                />
                                 <div>
                                     <div style={{ fontWeight: 600 }}>{selectedUser.name}</div>
                                     <div
@@ -554,7 +698,10 @@ const Communication = ({ role = "customer" }) => {
                                 return (
                                     <div key={idx} className={`message ${isMe ? "me" : "other"}`}>
                                         <div className="message-content">{msg.content}</div>
-                                        <div className="message-time">{formatRelativeTime(msg.time)}</div>
+                                        <div className="message-time">
+                                            {formatRelativeTime(msg.time)}
+                                            <span style={{ display: "none" }}>{timeTick}</span>
+                                        </div>
                                     </div>
                                 );
                             })}

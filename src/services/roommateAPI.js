@@ -4,6 +4,9 @@ import axiosInstance from './axiosInstance';
 export const createRoommatePost = async (data) => {
   try {
     console.log('[roommateAPI] createRoommatePost payload:', data);
+    // If caller provided a FormData (contains files), axios will set the correct
+    // multipart/form-data headers automatically. Otherwise send JSON body.
+    const isForm = typeof FormData !== 'undefined' && data instanceof FormData;
     const res = await axiosInstance.post('/roommates', data);
     console.log('[roommateAPI] createRoommatePost response:', res.data);
     // Prefer to return the created post object when the server returns { message, post }
@@ -16,11 +19,13 @@ export const createRoommatePost = async (data) => {
   }
 };
 
+// fetch posts for a specific boardingHouseId OR fetch all posts when no id provided
 export const getRoommatePosts = async (boardingHouseId) => {
-  const res = await axiosInstance.get(`/roommates/${boardingHouseId}`);
-  return res.data.posts;
+  const url = boardingHouseId ? `/roommates/${boardingHouseId}` : `/roommates`;
+  const res = await axiosInstance.get(url);
+  // server returns { posts } — normalize to array
+  return res.data.posts || [];
 };
-
 export const deleteRoommatePost = async (postId) => {
   const res = await axiosInstance.delete(`/roommates/post/${postId}`);
   return res.data;

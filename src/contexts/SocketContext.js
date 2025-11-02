@@ -26,6 +26,11 @@ export const SocketProvider = ({ children }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
 
   // === SOCKET EVENT HANDLERS ===
+  useEffect(() => {
+    console.log("SocketProvider mounted");
+    return () => console.log("SocketProvider unmounted");
+  }, []);
+
   const registerSocketEvents = (socket) => {
     socket.on("connect", () => {
       setIsConnected(true);
@@ -71,15 +76,29 @@ export const SocketProvider = ({ children }) => {
     );
 
     // --- WebRTC Events ---
-    socket.on("webrtc-offer", ({ fromUserId }) =>
-      console.log(`📞 [SOCKET] Received offer from ${fromUserId}`)
-    );
-    socket.on("webrtc-answer", ({ fromUserId }) =>
-      console.log(`📞 [SOCKET] Received answer from ${fromUserId}`)
-    );
-    socket.on("webrtc-ice-candidate", ({ fromUserId }) =>
-      console.log(`🧊 [SOCKET] Received ICE candidate from ${fromUserId}`)
-    );
+    socket.on("webrtc-offer", (payload) => {
+      console.log(`📞 [SOCKET] Received offer from ${payload?.fromUserId}`);
+      try {
+        // dispatch a browser-level event so UI components can listen reliably
+        window.dispatchEvent(new CustomEvent("webrtc-offer", { detail: payload }));
+      } catch (e) {
+        /* ignore in non-browser env */
+      }
+    });
+
+    socket.on("webrtc-answer", (payload) => {
+      console.log(`📞 [SOCKET] Received answer from ${payload?.fromUserId}`);
+      try {
+        window.dispatchEvent(new CustomEvent("webrtc-answer", { detail: payload }));
+      } catch (e) { }
+    });
+
+    socket.on("webrtc-ice-candidate", (payload) => {
+      console.log(`🧊 [SOCKET] Received ICE candidate from ${payload?.fromUserId}`);
+      try {
+        window.dispatchEvent(new CustomEvent("webrtc-ice-candidate", { detail: payload }));
+      } catch (e) { }
+    });
     socket.on("end-call", ({ fromUserId }) =>
       console.log(`📴 [SOCKET] Call ended by ${fromUserId}`)
     );

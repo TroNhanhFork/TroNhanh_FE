@@ -779,6 +779,11 @@ const PropertyDetails = () => {
           // Cập nhật lại toàn bộ dữ liệu boarding house
           await fetchBoardingHouseData();
           messageApi.success('Đã đăng bài tìm bạn trọ thành công!');
+
+          // close modal and redirect to community feed so user sees their post in context
+          setShowRoommatePostModal(false);
+          messageApi.success('Đã đăng bài tìm bạn trọ thành công! Chuyển hướng tới bảng tin.');
+          navigate('/customer/roommates');
         }}
       />
       <VisitRequestModal
