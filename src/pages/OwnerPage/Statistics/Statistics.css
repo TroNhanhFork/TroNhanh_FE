@@ -393,6 +393,83 @@
   text-align: center;
   padding: 40px 20px;
   color: #999;
+
+/* BoardingHouse images in modal: enforce consistent size and prevent broken/stretching */
+.boardingHouse-images {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.boardingHouse-image {
+  width: 120px; /* fixed box size */
+  height: 90px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f6f6f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ececec;
+}
+
+.boardingHouse-image {
+  /* support background-image fallback rendering (cover) */
+  background-size: cover !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+}
+
+.boardingHouse-image img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important; /* preserve aspect, crop if needed */
+  display: block !important;
+}
+
+/* New: use AntD Image thumbnails container */
+.boardingHouse-image-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.boardingHouse-thumb {
+  width: 120px;
+  height: 90px;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid #ececec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f6f6f6;
+}
+
+.boardingHouse-thumb .ant-image-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.boardingHouse-more-images {
+  width: 120px;
+  height: 90px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  font-weight: 600;
+  border: 1px dashed #ddd;
+}
+
+.boardingHouse-info {
+  margin-top: 12px;
+}
 }
 
 /* Tables */

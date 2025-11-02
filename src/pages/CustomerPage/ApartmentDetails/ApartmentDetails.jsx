@@ -24,8 +24,13 @@ import {
   LeftOutlined,
   RightOutlined,
   CheckCircleOutlined,
+  WifiOutlined,
+  CarOutlined,
+  SkinOutlined,
+  SecurityScanOutlined,
+  BulbOutlined,
   MessageOutlined,
-  TagOutlined
+  TagOutlined, CheckOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -98,6 +103,22 @@ const PropertyDetails = () => {
   const [editedReviewPurpose, setEditedReviewPurpose] = useState("");
   const [token, setToken] = useState('');
   const [isVisitModalVisible, setIsVisitModalVisible] = useState(false);
+  const [showRoommatePostModal, setShowRoommatePostModal] = useState(false);
+  // Room details modal
+  const [roomModalVisible, setRoomModalVisible] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const AmenitiesList = ({ amenities }) => {
+    let parsedAmenities = [];
+
+    try {
+      parsedAmenities = Array.isArray(amenities)
+        ? amenities
+        : JSON.parse(amenities || "[]");
+    } catch (error) {
+      parsedAmenities = []; // Nếu parse lỗi thì để rỗng
+    }
+  }
+
   // Tạo function riêng để fetch boarding-house data
   const fetchBoardingHouseData = async () => {
     try {
@@ -449,15 +470,84 @@ const PropertyDetails = () => {
       </Row>
 
       <Divider />
-      <h1 className="text-heading">Tiện ích</h1>
-      <Row gutter={[24, 24]} className="boardingHouse-amenities">
-        {boardingHouse.amenities?.map((amenity, index) => (
-          <Col xs={12} sm={8} md={6} key={index} className="amenity-item">
-            <CheckCircleOutlined className="amenity-icon" />
-            <div><strong>{amenity}</strong></div>
-          </Col>
-        ))}
+      <h1 className="text-heading mb-3">Tiện ích</h1>
+      <Row gutter={[16, 16]} justify="center"> {/* ✅ Căn giữa và tăng khoảng cách */}
+        {(() => {
+          const amenities = boardingHouse?.amenities || [];
+          let data = [];
+
+          try {
+            if (
+              Array.isArray(amenities) &&
+              typeof amenities[0] === "string" &&
+              amenities[0].startsWith("[")
+            ) {
+              data = JSON.parse(amenities[0]);
+            } else if (Array.isArray(amenities)) {
+              data = amenities;
+            }
+          } catch (e) {
+            console.warn("❌ Lỗi khi parse amenities:", e);
+          }
+
+          // ✅ Helper để lấy icon tương ứng
+          const getAmenityIcon = (item) => {
+            const lowerItem = item.toLowerCase();
+            if (lowerItem.includes("wifi")) return <WifiOutlined />;
+            if (lowerItem.includes("máy lạnh")) return <BulbOutlined />; // Tượng trưng
+            if (lowerItem.includes("giữ xe")) return <CarOutlined />;
+            if (lowerItem.includes("giặt")) return <SkinOutlined />; // Tượng trưng
+            if (lowerItem.includes("camera") || lowerItem.includes("an ninh")) {
+              return <SecurityScanOutlined />;
+            }
+            return <CheckOutlined />; // Icon mặc định
+          };
+
+          // ✅ Định nghĩa style một lần bên ngoài
+          const tagStyle = {
+            fontSize: "15px",
+            padding: "8px 14px",
+            borderRadius: "10px",
+            background: "#f6ffed",
+            border: "1px solid #b7eb8f",
+            color: "#389e0d",
+            fontWeight: "500",
+            display: "flex",       // Để căn icon và chữ
+            alignItems: "center",  //
+            gap: "6px",            // Khoảng cách giữa icon và chữ
+          };
+
+          // ✅ Xử lý trường hợp không có tiện ích
+          if (data.length === 0) {
+            return (
+              <Tag style={{
+                fontSize: "15px",
+                padding: "8px 14px",
+                borderRadius: "10px",
+                background: "#fafafa",
+                border: "1px solid #d9d9d9",
+                color: "#888"
+              }}>
+                Chưa cập nhật tiện ích
+              </Tag>
+            )
+          }
+
+          // ✅ Render danh sách
+          return data.map((item, index) => (
+            <Tag
+              key={index}
+              icon={getAmenityIcon(item)} // ✅ Dùng prop 'icon'
+              style={tagStyle}
+            >
+              {item}
+            </Tag>
+          ));
+        })()}
       </Row>
+
+
+
 
       <Divider />
       <h1 className="text-heading">Vị trí</h1>

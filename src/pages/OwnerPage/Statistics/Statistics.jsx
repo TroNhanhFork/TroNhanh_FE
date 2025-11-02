@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Table, Tag, Progress, message, Modal, Descriptions } from 'antd';
+import { Card, Row, Col, Statistic, Table, Tag, Progress, message, Modal, Descriptions, Image } from 'antd';
 import {
   HomeOutlined,
   DollarOutlined,
@@ -9,7 +9,8 @@ import {
   EyeOutlined,
   InfoCircleOutlined,
   CameraOutlined,
-  EnvironmentOutlined
+  EnvironmentOutlined,
+  AreaChartOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
 import useUser from '../../../contexts/UserContext';
@@ -496,7 +497,7 @@ const Statistics = () => {
             <Card className="stat-card">
               <Statistic
                 title="Booked"
-                value={stats.bookedAccommodations}
+                value={`${stats.bookedRooms} / ${stats.totalRooms}`}
                 prefix={<UserOutlined className="stat-icon" />}
                 valueStyle={{ color: '#49735A' }}
               />
@@ -711,8 +712,8 @@ const Statistics = () => {
                   <Descriptions.Item label="Booking ID">
                     <code>{selectedBooking.bookingId || selectedBooking.key}</code>
                   </Descriptions.Item>
-                  <Descriptions.Item label="Accommodation">
-                    {selectedBooking.accommodationTitle}
+                  <Descriptions.Item label="BoardingHouse">
+                    {selectedBooking.boardingHouseName}
                   </Descriptions.Item>
                   <Descriptions.Item label="Booking Date">
                     {new Date(selectedBooking.bookingDate).toLocaleDateString('vi-VN')} {new Date(selectedBooking.bookingDate).toLocaleTimeString('vi-VN')}
@@ -744,25 +745,32 @@ const Statistics = () => {
                   </div>
                 ) : bookingDetails?.accommodation ? (
                   <div>
-                    {/* Hiển thị hình ảnh accommodation */}
-                    {bookingDetails.accommodation.photos && bookingDetails.accommodation.photos.length > 0 ? (
-                      <div className="accommodation-images">
-                        {bookingDetails.accommodation.photos.slice(0, 4).map((photo, index) => (
-                          <div key={index} className="accommodation-image">
-                            <img
-                              src={`http://localhost:5000${photo}`}
-                              alt={`Accommodation ${index + 1}`}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                              }}
-                            />
-                          </div>
-                        ))}
-                        {bookingDetails.accommodation.photos.length > 4 && (
-                          <div className="accommodation-more-images">
-                            +{bookingDetails.accommodation.photos.length - 4} more
-                          </div>
-                        )}
+                    {/* Hiển thị hình ảnh boardingHouse */}
+                    {bookingDetails.boardingHouse.photos && bookingDetails.boardingHouse.photos.length > 0 ? (
+                      <div className="boardingHouse-image-container">
+                        <Image.PreviewGroup>
+                          {bookingDetails.boardingHouse.photos.slice(0, 4).map((photo, index) => {
+                            const src = `http://localhost:5000${photo}`;
+                            return (
+                              <div key={index} className="boardingHouse-thumb">
+                                <Image
+                                  src={src}
+                                  alt={`BoardingHouse ${index + 1}`}
+                                  width={120}
+                                  height={90}
+                                  style={{ objectFit: 'cover' }}
+                                  fallback="/avatar.jpg"
+                                />
+                              </div>
+                            );
+                          })}
+
+                          {bookingDetails.boardingHouse.photos.length > 4 && (
+                            <div className="boardingHouse-more-images">
+                              +{bookingDetails.boardingHouse.photos.length - 4} more
+                            </div>
+                          )}
+                        </Image.PreviewGroup>
                       </div>
                     ) : (
                       <div className="no-images-placeholder">
@@ -780,9 +788,13 @@ const Statistics = () => {
                           bookingDetails.accommodation.location?.addressDetail
                         ].filter(Boolean).join(', ')}
                       </div>
-                      <div className="accommodation-price">
+                      <div className="boardingHouse-price">
+                        <AreaChartOutlined style={{ marginRight: '4px', color: '#49735A' }} />
+                        {bookingDetails.room.area?.toLocaleString()} m²
+                      </div>
+                      <div className="boardingHouse-price">
                         <DollarOutlined style={{ marginRight: '4px', color: '#49735A' }} />
-                        {bookingDetails.accommodation.price?.toLocaleString()} VND/month
+                        {bookingDetails.room.price?.toLocaleString()} VND/month
                       </div>
                     </div>
                   </div>
