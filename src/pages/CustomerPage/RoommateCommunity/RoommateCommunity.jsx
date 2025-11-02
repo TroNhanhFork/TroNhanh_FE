@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, Avatar, Tag, List, Button, Spin, message, Divider, Space } from "antd";
+import { Card, Avatar, Tag, List, Button, Spin, message, Divider, Space, Image } from "antd";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -115,10 +115,38 @@ const RoommateCommunity = () => {
                                             </div>
                                         </div>
                                     }
+                                    cover={
+                                        post.images && post.images.length > 0 ? (
+                                            <img
+                                                src={`http://localhost:5000${post.images[0]}`}
+                                                alt="post"
+                                                style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+                                            />
+                                        ) : null
+                                    }
                                 >
                                     <p style={{ fontStyle: "italic", color: "#444", marginBottom: 12 }}>
                                         {post.intro || "Không có giới thiệu."}
                                     </p>
+
+                                    {post.images && post.images.length > 0 && (
+                                        <div style={{ marginBottom: 12 }}>
+                                            <Image.PreviewGroup>
+                                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                                    {post.images.map((img, idx) => (
+                                                        <Image
+                                                            key={idx}
+                                                            src={`http://localhost:5000${img}`}
+                                                            width={90}
+                                                            height={60}
+                                                            style={{ objectFit: 'cover', borderRadius: 6 }}
+                                                            alt={`roommate-${idx}`}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </Image.PreviewGroup>
+                                        </div>
+                                    )}
 
                                     <Divider style={{ margin: "8px 0" }} />
 

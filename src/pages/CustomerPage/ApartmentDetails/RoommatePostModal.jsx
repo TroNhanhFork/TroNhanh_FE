@@ -1,5 +1,6 @@
 // components/RoommatePostModal.jsx
-import { Modal, Form, Input, Select, Checkbox, Button, message } from 'antd';
+import { Modal, Form, Input, Select, Checkbox, Button, message, Upload } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 import { createRoommatePost } from '../../../services/roommateAPI';
 
@@ -17,6 +18,7 @@ const HABIT_OPTIONS = [
 const RoommatePostModal = ({ visible, onClose, boardingHouseId, roomId, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  const [fileList, setFileList] = useState([]);
 
   const handleFinish = async (values) => {
     if (!roomId) {
@@ -26,14 +28,31 @@ const RoommatePostModal = ({ visible, onClose, boardingHouseId, roomId, onSucces
 
     setLoading(true);
     try {
-      console.log('[RoommatePostModal] submit payload:', { ...values, boardingHouseId, roomId });
-      const newPost = await createRoommatePost({
-        ...values,
-        boardingHouseId,
-        roomId,
+      console.log('[RoommatePostModal] submit payload:', { ...values, boardingHouseId, roomId, files: fileList });
+
+      // Build FormData to include files
+      const formData = new FormData();
+      formData.append('boardingHouseId', boardingHouseId);
+      formData.append('roomId', roomId);
+      formData.append('intro', values.intro || '');
+      formData.append('genderPreference', values.genderPreference || 'other');
+      formData.append('note', values.note || '');
+
+      // append habits - send multiple fields with same name so multer can parse into array
+      if (values.habits && Array.isArray(values.habits)) {
+        values.habits.forEach((h) => formData.append('habits', h));
+      }
+
+      // append image files
+      (fileList || []).forEach((file) => {
+        // file.originFileObj is the actual File object from input
+        if (file && file.originFileObj) formData.append('images', file.originFileObj);
       });
+
+      const newPost = await createRoommatePost(formData);
       message.success('Đăng bài thành công!');
       form.resetFields();
+      setFileList([]);
       onSuccess?.(newPost); // Trả về dữ liệu bài đăng mới
     } catch (error) {
       console.error("Failed to post roommate", error);
@@ -63,6 +82,24 @@ const RoommatePostModal = ({ visible, onClose, boardingHouseId, roomId, onSucces
     } finally {
       setLoading(false);
     }
+  };
+
+  const beforeUpload = (file) => {
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      message.error('Chỉ cho phép hình ảnh.');
+    }
+    const isLt5M = file.size / 1024 / 1024 < 5;
+    if (!isLt5M) {
+      message.error('Ảnh phải nhỏ hơn 5MB!');
+    }
+    // Prevent auto upload by returning false
+    return isImage && isLt5M ? false : Upload.LIST_IGNORE;
+  };
+
+  const handleChange = ({ fileList: nextList }) => {
+    // limit to 6 files
+    setFileList(nextList.slice(0, 6));
   };
 
   return (
@@ -124,6 +161,35 @@ const RoommatePostModal = ({ visible, onClose, boardingHouseId, roomId, onSucces
             placeholder="Những yêu cầu hoặc thông tin khác muốn chia sẻ..."
             rows={3}
           />
+        </Form.Item>
+
+        <Form.Item label="Hình ảnh (tùy chọn)">
+          <Upload
+            multiple
+            listType="picture-card"
+            fileList={fileList}
+            beforeUpload={beforeUpload}
+            onChange={handleChange}
+            onPreview={async (file) => {
+              let src = file.url;
+              if (!src) {
+                src = await new Promise((resolve) => {
+                  const reader = new FileReader();
+                  reader.readAsDataURL(file.originFileObj);
+                  reader.onload = () => resolve(reader.result);
+                });
+              }
+              const imgWindow = window.open(src);
+              imgWindow?.document.write(`<img src="${src}" style="max-width:100%">`);
+            }}
+          >
+            {fileList.length >= 6 ? null : (
+              <div>
+                <PlusOutlined />
+                <div style={{ marginTop: 8 }}>Upload</div>
+              </div>
+            )}
+          </Upload>
         </Form.Item>
 
         <div style={{ textAlign: 'right', marginTop: 24 }}>

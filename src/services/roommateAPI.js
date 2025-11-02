@@ -4,6 +4,9 @@ import axiosInstance from './axiosInstance';
 export const createRoommatePost = async (data) => {
   try {
     console.log('[roommateAPI] createRoommatePost payload:', data);
+    // If caller provided a FormData (contains files), axios will set the correct
+    // multipart/form-data headers automatically. Otherwise send JSON body.
+    const isForm = typeof FormData !== 'undefined' && data instanceof FormData;
     const res = await axiosInstance.post('/roommates', data);
     console.log('[roommateAPI] createRoommatePost response:', res.data);
     // Prefer to return the created post object when the server returns { message, post }
