@@ -7,6 +7,7 @@ import ProfilePage from "../../pages/CommonPage/Cus_Profile/Profile";
 import CheckoutPage from "../../pages/CustomerPage/Checkout/CheckoutPage";
 import BookingResult from "../../pages/CustomerPage/Checkout/BookingResult";
 import ReportPage from "../../pages/CustomerPage/Report/ReportPage";
+import RoommateCommunity from "../../pages/CustomerPage/RoommateCommunity/RoommateCommunity";
 import Communication from "../../pages/CustomerPage/Communication/communication";
 import RentalContract from "../../pages/CustomerPage/Contract/RentalContract";
 import MyBookings from "../../pages/CustomerPage/CustomerBooking/MyBookings";
@@ -24,6 +25,7 @@ const RoutesCus = () => {
         <Route path="profile/*" element={<ProfilePage />} />
         <Route path="reports" element={<ReportPage />} />
         <Route path="communication" element={<Communication />} />
+        <Route path="roommates" element={<RoommateCommunity />} />
       </Route>
     </Routes>
   );

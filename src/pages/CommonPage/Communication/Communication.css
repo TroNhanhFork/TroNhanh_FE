@@ -3,8 +3,8 @@
     height: calc(100vh - 100px);
     font-family: "Segoe UI", sans-serif;
     background: #f5f5f5;
-    margin-left: -38px;
-    margin-right: -10px;
+    margin-left: 10%;
+    margin-right: 10%;
 }
 
 /* Sidebar */

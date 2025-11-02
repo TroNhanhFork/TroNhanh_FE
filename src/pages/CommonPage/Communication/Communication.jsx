@@ -1,20 +1,25 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import { Input, Button, message as antMessage, Badge, Modal } from "antd";
+import { Input, Button, message as antMessage, Badge, Modal, Avatar } from "antd";
 import { IoVideocamOutline, IoSendOutline, IoChatbubblesOutline, IoEllipse, IoEllipseOutline } from "react-icons/io5";
 import { useSocket } from "../../../contexts/SocketContext";
 import useUser from "../../../contexts/UserContext";
 import { getUserChatById } from "../../../services/userService";
 import "./Communication.css";
+import { useLocation } from "react-router-dom";
+import { formatTimeAgo } from "../../../utils/time";
 
 const { Search } = Input;
 
 const Communication = ({ role = "customer" }) => {
     const { id: initialOtherUserId } = useParams();
+    const location = useLocation();
     const { user } = useUser();
     const { socket, onlineUsers } = useSocket();
     const chatBodyRef = useRef(null);
+
+    const name = user?.name || "Tên Owner";
 
     const [chatList, setChatList] = useState([]);
     const [messages, setMessages] = useState([]);
@@ -85,14 +90,44 @@ const Communication = ({ role = "customer" }) => {
 
                 setChatList(transformed);
 
-                // Auto-load if routed with ?id
-                if (initialOtherUserId && !autoloadedRef.current) {
-                    const targetChat = transformed.find(
-                        (c) => c.otherUser.userId === initialOtherUserId
-                    );
-                    if (targetChat) {
-                        loadChat(targetChat.otherUser);
+                // Auto-load if routed via params or navigation state (roommate feed)
+                if (!autoloadedRef.current) {
+                    // prefer location.state.otherUserId (coming from roommate feed)
+                    const stateOther = location?.state?.otherUserId;
+                    const stateChatId = location?.state?.chatId;
+
+                    if (stateOther) {
+                        // load or create chat with other user id
+                        const otherUserObj = {
+                            userId: stateOther,
+                            name: location?.state?.otherUserName,
+                            avatar: location?.state?.otherUserAvatar,
+                        };
+                        await loadChat(otherUserObj);
                         autoloadedRef.current = true;
+                    } else if (initialOtherUserId) {
+                        const targetChat = transformed.find((c) => c.otherUser.userId === initialOtherUserId);
+                        if (targetChat) {
+                            await loadChat(targetChat.otherUser);
+                            autoloadedRef.current = true;
+                        }
+                    } else if (stateChatId) {
+                        const targetChat = transformed.find((c) => c._id === stateChatId);
+                        if (targetChat) {
+                            await loadChat(targetChat.otherUser);
+                            autoloadedRef.current = true;
+                        } else {
+                            // fallback: join room and fetch messages for chatId
+                            try {
+                                setChatId(stateChatId);
+                                socket?.emit?.("joinRoom", stateChatId);
+                                const { data: msgs } = await axios.get(`${API}/chats/${stateChatId}/messages`);
+                                setMessages(msgs);
+                                autoloadedRef.current = true;
+                            } catch (e) {
+                                console.warn('Failed to load chat by id from state', e);
+                            }
+                        }
                     }
                 }
             } catch (err) {
@@ -101,7 +136,7 @@ const Communication = ({ role = "customer" }) => {
         };
 
         fetchChats();
-    }, [user?._id, initialOtherUserId]);
+    }, [user?._id, initialOtherUserId, location?.state]);
 
     // SOCKET events
     useEffect(() => {
@@ -112,11 +147,43 @@ const Communication = ({ role = "customer" }) => {
         const handleConnect = () => setConnected(true);
         const handleDisconnect = () => setConnected(false);
         const handleNewMessage = (msg) => {
-            if (msg.roomId === chatId) {
-                setMessages((prev) => [...prev, msg.message]);
+            const roomId = msg.roomId;
+            const incomingMsg = msg.message || msg; // normalize
+
+            // Update chat list: update lastMessage, updatedAt and move to top
+            setChatList((prev) => {
+                const idx = prev.findIndex((c) => c._id === roomId);
+                const updatedAt = incomingMsg.time || new Date().toISOString();
+                const lastMessageText = incomingMsg.content || incomingMsg.text || "";
+
+                if (idx === -1) {
+                    // If we don't have this chat in list, optionally prepend a minimal item
+                    return [
+                        {
+                            _id: roomId,
+                            otherUser: { userId: null, name: "Unknown" },
+                            lastMessage: lastMessageText,
+                            updatedAt,
+                        },
+                        ...prev,
+                    ];
+                }
+
+                const updated = { ...prev[idx], lastMessage: lastMessageText, updatedAt };
+                const others = prev.slice(0, idx).concat(prev.slice(idx + 1));
+                return [updated, ...others];
+            });
+
+            // If message is for currently opened chat -> append to messages
+            if (roomId === chatId) {
+                setMessages((prev) => [...prev, incomingMsg]);
                 scrollToBottom();
+            } else {
+                // optional: toast / notification for other conversations
+                // antMessage.info(`New message from ${msg.fromName || "someone"}`);
             }
         };
+
         const handleTyping = ({ userId, isTyping: typing }) => {
             if (userId === selectedUser?.userId) setIsTyping(typing);
         };
@@ -196,13 +263,26 @@ const Communication = ({ role = "customer" }) => {
 
     const loadChat = async (otherUser) => {
         try {
-            setSelectedUser(otherUser);
+            // allow passing either a user object ({ userId, name }) or a raw userId string
+            const otherUserId = typeof otherUser === "string" ? otherUser : otherUser?.userId;
+            const otherUserName = typeof otherUser === "string" ? undefined : otherUser?.name;
+
+            if (!otherUserId) {
+                antMessage.error("Invalid user to open chat");
+                return;
+            }
+
+            // set a minimal selectedUser so UI updates immediately
+            setSelectedUser({ userId: otherUserId, name: otherUserName || "Unknown" });
+
             const { data: chat } = await axios.post(`${API}/chats/get-or-create`, {
                 user1Id: user._id,
-                user2Id: otherUser.userId,
+                user2Id: otherUserId,
             });
+
             setChatId(chat._id);
-            socket?.emit("joinRoom", chat._id);
+            socket?.emit?.("joinRoom", chat._id);
+
             const { data: msgs } = await axios.get(`${API}/chats/${chat._id}/messages`);
             setMessages(msgs);
         } catch (err) {
@@ -230,6 +310,13 @@ const Communication = ({ role = "customer" }) => {
         return time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
     };
 
+    // force periodic re-render so relative timestamps update in real-time
+    const [timeTick, setTimeTick] = useState(0);
+    useEffect(() => {
+        const interval = setInterval(() => setTimeTick(t => t + 1), 10000); // every 10s
+        return () => clearInterval(interval);
+    }, []);
+
     const sendMessage = async () => {
         if (!newMessage.trim() || !chatId) return;
         try {
@@ -241,6 +328,29 @@ const Communication = ({ role = "customer" }) => {
             socket?.emit("sendMessage", { roomId: chatId, message: data });
             setNewMessage("");
             scrollToBottom();
+            // Update chatList after sending so sidebar reflects new timestamp/message immediately
+            setChatList((prev) => {
+                const idx = prev.findIndex((c) => c._id === chatId);
+                const updatedAt = data.time || new Date().toISOString();
+                const lastMessageText = data.content || data.text || newMessage;
+
+                if (idx === -1) {
+                    // If chat not present, create a minimal entry
+                    return [
+                        {
+                            _id: chatId,
+                            otherUser: selectedUser || { userId: null, name: "Unknown" },
+                            lastMessage: lastMessageText,
+                            updatedAt,
+                        },
+                        ...prev,
+                    ];
+                }
+
+                const updated = { ...prev[idx], lastMessage: lastMessageText, updatedAt };
+                const others = prev.slice(0, idx).concat(prev.slice(idx + 1));
+                return [updated, ...others];
+            });
         } catch {
             antMessage.error("Failed to send");
         }
@@ -466,11 +576,21 @@ const Communication = ({ role = "customer" }) => {
                                 onClick={() => loadChat(chat.otherUser)}
                             >
                                 <div className="chat-avatar">
-                                    <img
-                                        src={chat.otherUser?.avatar || "/default-avatar.png"}
-                                        alt="avatar"
-                                        style={{ width: 45, height: 45, borderRadius: "50%" }}
-                                    />
+                                    <Avatar
+                                        size={39}
+                                        src={user?.avatar || null}
+                                        style={{
+                                            fontSize: 19,
+                                            color: "white",
+                                            background: user?.avatar
+                                                ? "transparent"
+                                                : "linear-gradient(to right, #064749, #c4f7d8)",
+                                            border: "2px solid white",
+                                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
+                                        }}
+                                    >
+                                        {!user?.avatar && name?.charAt(0)}
+                                    </Avatar>
                                 </div>
 
                                 <div className="chat-info">
@@ -478,6 +598,7 @@ const Communication = ({ role = "customer" }) => {
                                         <div className="chat-name">{chat.otherUser.name}</div>
                                         <div className="chat-time" style={{ fontSize: "0.75rem", color: "#999" }}>
                                             {formatRelativeTime(chat.updatedAt)}
+                                            <span style={{ display: "none" }}>{timeTick}</span>
                                         </div>
                                     </div>
 
@@ -509,11 +630,6 @@ const Communication = ({ role = "customer" }) => {
                     <>
                         <div className="chat-header">
                             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                                <img
-                                    src={selectedUser.avatar || "/default-avatar.png"}
-                                    alt="avatar"
-                                    style={{ width: 40, height: 40, borderRadius: "50%" }}
-                                />
                                 <div>
                                     <div style={{ fontWeight: 600 }}>{selectedUser.name}</div>
                                     <div
@@ -554,7 +670,10 @@ const Communication = ({ role = "customer" }) => {
                                 return (
                                     <div key={idx} className={`message ${isMe ? "me" : "other"}`}>
                                         <div className="message-content">{msg.content}</div>
-                                        <div className="message-time">{formatRelativeTime(msg.time)}</div>
+                                        <div className="message-time">
+                                            {formatRelativeTime(msg.time)}
+                                            <span style={{ display: "none" }}>{timeTick}</span>
+                                        </div>
                                     </div>
                                 );
                             })}

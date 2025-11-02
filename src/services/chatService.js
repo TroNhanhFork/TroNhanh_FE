@@ -14,3 +14,6 @@ export const getMessagesByConversationId = (conversationId) =>
 
 // send a message
 export const sendMessage = (data) => API.post(`/messages`, data);
+
+export const getOrCreateChat = (user1Id, user2Id) =>
+  API.post(`/chats/get-or-create`, { user1Id, user2Id });

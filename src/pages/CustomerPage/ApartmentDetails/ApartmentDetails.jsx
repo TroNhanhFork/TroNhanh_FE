@@ -71,7 +71,7 @@ const RoomCard = ({ room, onBook, bookingStatus, onView }) => (
         </p>
       </Col>
 
-      <Col style={{ minWidth: 120, textAlign: 'right' }}> {/* Đặt chiều rộng tối thiểu cho cột */}
+      <Col style={{ minWidth: 120, textAlign: 'right' }}>
         {onBook ? (
           // 1. Nếu có hàm onBook (phòng 'Available' VÀ user chưa đặt)
           <>
@@ -694,6 +694,11 @@ const PropertyDetails = () => {
           // Cập nhật lại toàn bộ dữ liệu boarding house
           await fetchBoardingHouseData();
           messageApi.success('Đã đăng bài tìm bạn trọ thành công!');
+
+          // close modal and redirect to community feed so user sees their post in context
+          setShowRoommatePostModal(false);
+          messageApi.success('Đã đăng bài tìm bạn trọ thành công! Chuyển hướng tới bảng tin.');
+          navigate('/customer/roommates');
         }}
       />
       <VisitRequestModal

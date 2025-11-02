@@ -26,13 +26,14 @@ const RoutesOw = () => {
         <Route path="report" element={<Report />} />
         <Route path="rating" element={<Rating />} />
         <Route path="rating/:id" element={<DetailRating />} />
-        <Route path="communication" element={<Communication />} />
         <Route path="visit-requests" element={<OwnerVisitRequests />} />
         <Route path="membership-result" element={<PaymentResult />} />
         <Route path="membership" element={<Membership />} />
         <Route path="statistics" element={<Statistics />} />
 
       </Route>
+      <Route path="communication" element={<Communication />} />
+
 
     </Routes>
   );

@@ -16,11 +16,13 @@ export const createRoommatePost = async (data) => {
   }
 };
 
+// fetch posts for a specific boardingHouseId OR fetch all posts when no id provided
 export const getRoommatePosts = async (boardingHouseId) => {
-  const res = await axiosInstance.get(`/roommates/${boardingHouseId}`);
-  return res.data.posts;
+  const url = boardingHouseId ? `/roommates/${boardingHouseId}` : `/roommates`;
+  const res = await axiosInstance.get(url);
+  // server returns { posts } — normalize to array
+  return res.data.posts || [];
 };
-
 export const deleteRoommatePost = async (postId) => {
   const res = await axiosInstance.delete(`/roommates/post/${postId}`);
   return res.data;
