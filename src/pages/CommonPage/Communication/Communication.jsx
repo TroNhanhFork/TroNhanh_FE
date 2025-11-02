@@ -188,35 +188,7 @@ const Communication = ({ role = "customer" }) => {
             if (userId === selectedUser?.userId) setIsTyping(typing);
         };
 
-        const handleWebRTCOffer = async ({ fromUserId, offer }) => {
-            setCallerId(fromUserId);
-            setIncomingCall(true);
-
-            peerConnectionRef.current = createPeerConnection();
-            await peerConnectionRef.current.setRemoteDescription(
-                new RTCSessionDescription(offer)
-            );
-
-            // preload local camera so remote stream can be negotiated
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            localStreamRef.current = stream;
-            if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-            stream.getTracks().forEach((t) => peerConnectionRef.current.addTrack(t, stream));
-        };
-
-        const handleWebRTCAnswer = async ({ answer }) => {
-            if (peerConnectionRef.current)
-                await peerConnectionRef.current.setRemoteDescription(
-                    new RTCSessionDescription(answer)
-                );
-        };
-
-        const handleICECandidate = async ({ candidate }) => {
-            if (peerConnectionRef.current && candidate)
-                await peerConnectionRef.current.addIceCandidate(
-                    new RTCIceCandidate(candidate)
-                );
-        };
+        // WebRTC handlers are defined below (simplified implementation)
 
         const handleEndCall = ({ fromUserId }) => {
             console.log("📴 Call ended by", fromUserId);
@@ -227,20 +199,29 @@ const Communication = ({ role = "customer" }) => {
         socket.on("disconnect", handleDisconnect);
         socket.on("newMessage", handleNewMessage);
         socket.on("typing", handleTyping);
-        socket.on("webrtc-offer", handleWebRTCOffer);
-        socket.on("webrtc-answer", handleWebRTCAnswer);
-        socket.on("webrtc-ice-candidate", handleICECandidate);
         socket.on("end-call", handleEndCall);
+
+        // Also listen to browser-level events forwarded by SocketContext. This
+        // ensures the Communication component receives WebRTC signaling events
+        // even if the socket instance identity or lifecycle changes.
+        const onOffer = (e) => handleWebRTCOfferLocal(e.detail || {});
+        const onAnswer = (e) => handleWebRTCAnswerLocal(e.detail || {});
+        const onIce = (e) => handleICECandidateLocal(e.detail || {});
+
+        window.addEventListener("webrtc-offer", onOffer);
+        window.addEventListener("webrtc-answer", onAnswer);
+        window.addEventListener("webrtc-ice-candidate", onIce);
 
         return () => {
             socket.off("connect", handleConnect);
             socket.off("disconnect", handleDisconnect);
             socket.off("newMessage", handleNewMessage);
             socket.off("typing", handleTyping);
-            socket.off("webrtc-offer", handleWebRTCOffer);
-            socket.off("webrtc-answer", handleWebRTCAnswer);
-            socket.off("webrtc-ice-candidate", handleICECandidate);
             socket.off("end-call", handleEndCall);
+
+            window.removeEventListener("webrtc-offer", onOffer);
+            window.removeEventListener("webrtc-answer", onAnswer);
+            window.removeEventListener("webrtc-ice-candidate", onIce);
         };
     }, [socket, chatId, selectedUser?.userId]);
 
@@ -260,6 +241,30 @@ const Communication = ({ role = "customer" }) => {
             }
         };
     }, [selectedUser]);
+
+    // Attach local stream to local <video> element after call UI mounts to avoid race
+    useEffect(() => {
+        if (inCall && localStreamRef.current) {
+            if (localVideoRef.current) {
+                try {
+                    localVideoRef.current.srcObject = localStreamRef.current;
+                } catch (e) {
+                    console.warn("Failed to attach local stream to video:", e);
+                }
+            }
+        }
+
+        // detach when leaving call (defensive)
+        return () => {
+            if (!inCall && localVideoRef.current && localVideoRef.current.srcObject) {
+                try {
+                    localVideoRef.current.srcObject = null;
+                } catch (e) {
+                    /* ignore */
+                }
+            }
+        };
+    }, [inCall]);
 
     const loadChat = async (otherUser) => {
         try {
@@ -366,7 +371,9 @@ const Communication = ({ role = "customer" }) => {
         );
     };
 
-    // WebRTC functions
+    // WebRTC functions (simplified and rebuilt)
+    const incomingOfferRef = useRef(null);
+
     const createPeerConnection = () => {
         const pc = new RTCPeerConnection({
             iceServers: [
@@ -376,11 +383,14 @@ const Communication = ({ role = "customer" }) => {
         });
 
         pc.onicecandidate = (event) => {
-            if (event.candidate && selectedUser) {
-                socket.emit("webrtc-ice-candidate", {
-                    toUserId: selectedUser.userId,
-                    candidate: event.candidate,
-                });
+            if (event.candidate) {
+                const targetId = callerId || selectedUser?.userId;
+                if (targetId) {
+                    socket?.emit?.("webrtc-ice-candidate", {
+                        toUserId: targetId,
+                        candidate: event.candidate,
+                    });
+                }
             }
         };
 
@@ -396,41 +406,28 @@ const Communication = ({ role = "customer" }) => {
 
     const startCall = async () => {
         try {
-            if (!selectedUser) {
-                return antMessage.warning("Please select someone to call");
-            }
+            if (!selectedUser) return antMessage.warning("Please select someone to call");
 
-            console.log("🎥 Starting call with:", selectedUser.name);
+            // allow ending new call sessions
+            setCallEnded(false);
 
-            // Create peer connection
             peerConnectionRef.current = createPeerConnection();
 
-            // Request camera + mic permissions
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localStreamRef.current = stream;
+            if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+            stream.getTracks().forEach((t) => peerConnectionRef.current.addTrack(t, stream));
 
-            // Show local stream in UI
-            if (localVideoRef.current) {
-                localVideoRef.current.srcObject = stream;
-            }
-
-            // Add local tracks to peer connection
-            stream.getTracks().forEach((track) => {
-                peerConnectionRef.current.addTrack(track, stream);
-            });
-
-            // Create offer and set as local description
             const offer = await peerConnectionRef.current.createOffer();
             await peerConnectionRef.current.setLocalDescription(offer);
 
-            // Emit offer via socket to other user
-            socket.emit("webrtc-offer", {
+            socket?.emit?.("webrtc-offer", {
                 toUserId: selectedUser.userId,
                 roomId: chatId,
                 offer,
             });
 
-            // Show call modal
+            // show call UI (video modal) after offer is sent — effect below will attach
             setInCall(true);
         } catch (err) {
             console.error("❌ Error starting call:", err);
@@ -438,27 +435,45 @@ const Communication = ({ role = "customer" }) => {
         }
     };
 
+    const handleWebRTCOfferLocal = async ({ fromUserId, offer }) => {
+        console.log("📞 [COMM] incoming offer stored for:", fromUserId);
+        // remember caller and incoming offer, show incoming modal
+        const callerFromList = chatList.find((c) => c.otherUser?.userId === fromUserId);
+        const callerName = callerFromList?.otherUser?.name || "Caller";
+        setSelectedUser({ userId: fromUserId, name: callerName });
+        setCallerId(fromUserId);
+        incomingOfferRef.current = offer;
+        setIncomingCall(true);
+    };
+
     const acceptCall = async () => {
         try {
+            // accept new call: clear previous ended-flag and show call UI
             setIncomingCall(false);
+            setCallEnded(false);
             setInCall(true);
+
+            peerConnectionRef.current = createPeerConnection();
 
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localStreamRef.current = stream;
             if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+            stream.getTracks().forEach((t) => peerConnectionRef.current.addTrack(t, stream));
 
-            stream.getTracks().forEach((track) => {
-                peerConnectionRef.current.addTrack(track, stream);
-            });
+            if (incomingOfferRef.current) {
+                await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(incomingOfferRef.current));
+            }
 
             const answer = await peerConnectionRef.current.createAnswer();
             await peerConnectionRef.current.setLocalDescription(answer);
 
-            socket.emit("webrtc-answer", {
+            socket?.emit?.("webrtc-answer", {
                 toUserId: callerId,
                 roomId: chatId,
                 answer,
             });
+
+            incomingOfferRef.current = null;
         } catch (err) {
             console.error("❌ Error accepting call:", err);
         }
@@ -466,8 +481,24 @@ const Communication = ({ role = "customer" }) => {
 
     const rejectCall = () => {
         setIncomingCall(false);
-        peerConnectionRef.current?.close();
-        peerConnectionRef.current = null;
+        incomingOfferRef.current = null;
+    };
+
+    const handleWebRTCAnswerLocal = async ({ answer }) => {
+        console.log("📞 [COMM] received answer, applying to PC");
+        if (peerConnectionRef.current && answer) {
+            await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+    };
+
+    const handleICECandidateLocal = async ({ candidate }) => {
+        if (peerConnectionRef.current && candidate) {
+            try {
+                await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (err) {
+                console.warn("Failed to add remote ICE candidate:", err);
+            }
+        }
     };
 
     const endCall = (fromRemote = false) => {
@@ -479,7 +510,6 @@ const Communication = ({ role = "customer" }) => {
         setInCall(false);
         setIncomingCall(false);
 
-        // stop both local and remote streams properly
         if (peerConnectionRef.current) {
             peerConnectionRef.current.ontrack = null;
             peerConnectionRef.current.onicecandidate = null;
@@ -502,9 +532,8 @@ const Communication = ({ role = "customer" }) => {
             localStreamRef.current = null;
         }
 
-        // Only emit if you are the one who ended the call manually
         if (!fromRemote && selectedUser?.userId) {
-            socket.emit("end-call", { toUserId: selectedUser.userId, roomId: chatId });
+            socket?.emit?.("end-call", { toUserId: selectedUser.userId, roomId: chatId });
         }
     };
 

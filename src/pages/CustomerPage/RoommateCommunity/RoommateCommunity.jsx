@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, Avatar, Tag, List, Button, Spin, message } from "antd";
+import { Card, Avatar, Tag, List, Button, Spin, message, Divider, Space } from "antd";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -44,20 +44,9 @@ const RoommateCommunity = () => {
         const postUserId = post.userId?._id || post.userId;
         setCreatingChatFor(postUserId);
         try {
-            // create or get existing chat between current user and the post author
             const { data: chat } = await getOrCreateChat(user._id, postUserId);
+            socket?.emit?.("joinRoom", chat._id);
 
-            // join socket room (server should accept this event)
-            try {
-                // emit primitive id to match Communication's joinRoom usage
-                socket?.emit?.("joinRoom", chat._id);
-                console.log("Emitted joinRoom", chat._id);
-            } catch (e) {
-                console.warn("Socket joinRoom emit failed", e);
-            }
-
-            // navigate to communication page and pass chatId / otherUserId in state
-            // include other user's name/avatar so Communication can show it immediately
             navigate("/customer/communication", {
                 state: {
                     chatId: chat._id,
@@ -76,7 +65,8 @@ const RoommateCommunity = () => {
 
     return (
         <div style={{ padding: 20 }}>
-            <h2>Bảng tin tìm bạn trọ</h2>
+            <h2 style={{ marginBottom: 20 }}>Bảng tin tìm bạn trọ</h2>
+
             {loading ? (
                 <div style={{ textAlign: "center", padding: 40 }}>
                     <Spin />
@@ -89,54 +79,133 @@ const RoommateCommunity = () => {
                     renderItem={(post) => {
                         const postAuthorId = post.userId?._id || post.userId;
                         const isAuthor = user && postAuthorId === user._id;
+
+                        const now = dayjs();
+                        const created = dayjs(post.createdAt);
+                        const diffHours = now.diff(created, "hour");
+                        let timeDisplay = "";
+                        if (diffHours < 1) {
+                            const diffMinutes = now.diff(created, "minute");
+                            timeDisplay = diffMinutes < 1 ? "Vừa xong" : `${diffMinutes} phút trước`;
+                        } else if (diffHours < 24) {
+                            timeDisplay = `${diffHours} tiếng trước`;
+                        } else {
+                            timeDisplay = created.format("DD/MM/YYYY [lúc] hh:mm A");
+                        }
+
                         return (
-                        <List.Item key={post._id}>
-                            <Card
-                                hoverable
-                                title={
-                                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                        <Avatar
-                                            src={post.userId?.avatar ? `http://localhost:5000${post.userId.avatar}` : undefined}
-                                            style={{ backgroundColor: "#004d40" }}
-                                        >
-                                            {!post.userId?.avatar && post.userId?.name?.[0]?.toUpperCase()}
-                                        </Avatar>
-                                        <div>
-                                            <div style={{ fontWeight: 700 }}>{post.userId?.name || "Người dùng ẩn danh"}</div>
-                                            <div style={{ fontSize: 12, color: "#666" }}>{dayjs(post.createdAt).fromNow()}</div>
+                            <List.Item key={post._id}>
+                                <Card
+                                    hoverable
+                                    style={{
+                                        borderRadius: 12,
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                                    }}
+                                    title={
+                                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                            <Avatar
+                                                src={post.userId?.avatar ? `http://localhost:5000${post.userId.avatar}` : undefined}
+                                                style={{ backgroundColor: "#004d40" }}
+                                            >
+                                                {!post.userId?.avatar && post.userId?.name?.[0]?.toUpperCase()}
+                                            </Avatar>
+                                            <div>
+                                                <div style={{ fontWeight: 700 }}>{post.userId?.name || "Người dùng ẩn danh"}</div>
+                                                <div style={{ fontSize: 12, color: "#666" }}>{timeDisplay}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                }
-                            >
-                                <p style={{ fontStyle: "italic" }}>{post.intro}</p>
+                                    }
+                                >
+                                    <p style={{ fontStyle: "italic", color: "#444", marginBottom: 12 }}>
+                                        {post.intro || "Không có giới thiệu."}
+                                    </p>
 
-                                <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
-                                    <Tag color="blue">{post.genderPreference === "male" ? "Nam" : post.genderPreference === "female" ? "Nữ" : "Không quan tâm"}</Tag>
-                                    {post.habits?.map((h, idx) => (
-                                        <Tag key={idx}>{h}</Tag>
-                                    ))}
-                                </div>
+                                    <Divider style={{ margin: "8px 0" }} />
 
-                                <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                                    {post.boardingHouseId && (
-                                        <Button size="small" onClick={() => navigate(`/customer/property/${post.boardingHouseId}`)}>
-                                            Xem nhà trọ
-                                        </Button>
-                                    )}
-                                    {/* Hide message button for the author of the post */}
-                                    {!isAuthor && (
-                                        <Button
-                                            type="primary"
-                                            size="small"
-                                            onClick={() => handleMessage(post)}
-                                            loading={creatingChatFor === post.userId?._id}
+                                    {/* gender preference */}
+                                    <div style={{ marginBottom: 8 }}>
+                                        <div style={{ fontWeight: 600, marginBottom: 4 }}>Giới tính mong muốn:</div>
+                                        <Tag
+                                            color={
+                                                post.genderPreference === "male"
+                                                    ? "geekblue"
+                                                    : post.genderPreference === "female"
+                                                        ? "magenta"
+                                                        : "default"
+                                            }
+                                            style={{ fontSize: 13, padding: "2px 8px" }}
                                         >
-                                            Nhắn tin
-                                        </Button>
+                                            {post.genderPreference === "male"
+                                                ? "Nam"
+                                                : post.genderPreference === "female"
+                                                    ? "Nữ"
+                                                    : "Không quan tâm"}
+                                        </Tag>
+                                    </div>
+
+                                    {/* living habits */}
+                                    {post.habits?.length > 0 && (
+                                        <div>
+                                            <div style={{ fontWeight: 600, marginBottom: 4 }}>Thói quen sinh hoạt:</div>
+                                            <Space wrap>
+                                                {post.habits.map((h, idx) => (
+                                                    <Tag key={idx} color="green" style={{ fontSize: 13, padding: "2px 8px" }}>
+                                                        {h}
+                                                    </Tag>
+                                                ))}
+                                            </Space>
+                                        </div>
                                     )}
-                                </div>
-                            </Card>
-                        </List.Item>
+
+                                    <Divider style={{ margin: "12px 0" }} />
+
+                                    {/* Actions */}
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "flex-end",
+                                            gap: 10,
+                                            marginTop: 16,
+                                        }}
+                                    >
+                                        {post.boardingHouseId && (
+                                            <Button
+                                                type="primary"
+                                                size="middle"
+                                                style={{
+                                                    background: "linear-gradient(90deg, #576b33 0%, #5576b33 100%)",
+                                                    borderColor: "#adc6ff",
+                                                    borderRadius: 8,
+                                                    fontWeight: 500,
+                                                    boxShadow: "0 1px 4px rgba(0, 0, 0, 0.05)",
+                                                }}
+                                                onClick={() =>
+                                                    navigate(`/customer/property/${post.boardingHouseId?._id || post.boardingHouseId}`)
+                                                }
+                                            >
+                                                Xem nhà trọ
+                                            </Button>
+                                        )}
+
+                                        {!isAuthor && (
+                                            <Button
+                                                type="primary"
+                                                size="middle"
+                                                style={{
+                                                    borderRadius: 8,
+                                                    background: "linear-gradient(90deg, #999fa8ff 0%, #5576b33 100%)",
+                                                    fontWeight: 500,
+                                                    boxShadow: "0 2px 6px rgba(22, 119, 255, 0.25)",
+                                                }}
+                                                onClick={() => handleMessage(post)}
+                                                loading={creatingChatFor === post.userId?._id}
+                                            >
+                                                Nhắn tin
+                                            </Button>
+                                        )}
+                                    </div>
+                                </Card>
+                            </List.Item>
                         );
                     }}
                 />
