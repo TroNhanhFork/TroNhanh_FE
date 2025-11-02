@@ -9,7 +9,8 @@ import {
   EyeOutlined,
   InfoCircleOutlined,
   CameraOutlined,
-  EnvironmentOutlined
+  EnvironmentOutlined,
+  AreaChartOutlined
 } from '@ant-design/icons';
 import axios from 'axios';
 import useUser from '../../../contexts/UserContext';
@@ -480,7 +481,7 @@ const Statistics = () => {
             <Card className="stat-card">
               <Statistic
                 title="Booked"
-                value={`${stats.bookedBoardingHouses} / ${stats.totalRooms}`}
+                value={`${stats.bookedRooms} / ${stats.totalRooms}`}
                 prefix={<UserOutlined className="stat-icon" />}
                 valueStyle={{ color: '#49735A' }}
               />
@@ -709,7 +710,7 @@ const Statistics = () => {
                     <code>{selectedBooking.bookingId || selectedBooking.key}</code>
                   </Descriptions.Item>
                   <Descriptions.Item label="BoardingHouse">
-                    {selectedBooking.boardingHouseTitle}
+                    {selectedBooking.boardingHouseName}
                   </Descriptions.Item>
                   <Descriptions.Item label="Booking Date">
                     {new Date(selectedBooking.bookingDate).toLocaleDateString('vi-VN')} {new Date(selectedBooking.bookingDate).toLocaleTimeString('vi-VN')}
@@ -785,8 +786,12 @@ const Statistics = () => {
                         ].filter(Boolean).join(', ')}
                       </div>
                       <div className="boardingHouse-price">
+                        <AreaChartOutlined style={{ marginRight: '4px', color: '#49735A' }} />
+                        {bookingDetails.room.area?.toLocaleString()} m²
+                      </div>
+                      <div className="boardingHouse-price">
                         <DollarOutlined style={{ marginRight: '4px', color: '#49735A' }} />
-                        {bookingDetails.boardingHouse.price?.toLocaleString()} VND/month
+                        {bookingDetails.room.price?.toLocaleString()} VND/month
                       </div>
                     </div>
                   </div>
