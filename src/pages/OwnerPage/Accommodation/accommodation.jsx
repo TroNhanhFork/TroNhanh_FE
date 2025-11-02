@@ -27,6 +27,7 @@ import {
     deleteBoardingHouse,
     updateBoardingHouse,
     getBoardingHouseById,
+    addRoomsToBoardingHouse,
 } from "../../../services/boardingHouseAPI";
 import useUser from "../../../contexts/UserContext";
 import { useNavigate } from "react-router-dom";
@@ -44,6 +45,7 @@ const ManageBoardingHouses = () => {
     const [messageApi, contextHolder] = message.useMessage();
     const { user } = useUser();
     const [form] = Form.useForm();
+    const [manageForm] = Form.useForm();
 
     const [boardingHouses, setBoardingHouses] = useState([]);
     const [membershipInfo, setMembershipInfo] = useState(null);
@@ -58,6 +60,7 @@ const ManageBoardingHouses = () => {
     const [manageExistingRooms, setManageExistingRooms] = useState([]); // existing rooms fetched
     const [existingFilesMap, setExistingFilesMap] = useState({}); // { roomId: [File, ...] }
     const [editingBoardingHouse, setEditingBoardingHouse] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (user?._id) {
@@ -178,7 +181,7 @@ const ManageBoardingHouses = () => {
         }
     };
 
-  const handleRemove = async (id) => {
+    const handleRemove = async (id) => {
         if (
             window.confirm(
                 "Bạn có chắc chắn muốn xóa nhà trọ này không? Mọi phòng bên trong cũng sẽ bị xóa."
@@ -290,8 +293,6 @@ const ManageBoardingHouses = () => {
             formData.append("ownerId", user._id);
             formData.append("location", JSON.stringify({ ...location, ...coords }));
             formData.append("rooms", JSON.stringify(rooms || [])); // Đảm bảo rooms là mảng
-
-            // ✅ Logic xử lý file ảnh
             if (values.amenities && values.amenities.length > 0) {
                 formData.append("amenities", JSON.stringify(values.amenities));
             }
@@ -529,7 +530,6 @@ const ManageBoardingHouses = () => {
                                             >
                                                 <InputNumber placeholder="Diện tích (m²)" />
                                             </Form.Item>
-
                                             {/* Upload ảnh riêng cho từng phòng */}
                                             <Form.Item
                                                 {...restField}

@@ -18,8 +18,8 @@ import {
 import {
   updateUserInfo,
   changePassword
-} from '../../../../services/profileServices';
-import useUser from '../../../../contexts/UserContext';
+} from '../../../services/profileServices';
+import useUser from '../../../contexts/UserContext';
 import './PersonalInfo.css';
 const capitalize = (str) => str && typeof str === 'string'
   ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()

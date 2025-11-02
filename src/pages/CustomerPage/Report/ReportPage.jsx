@@ -199,14 +199,6 @@ const ReportPage = () => {
               >
                 <TextArea rows={4} placeholder="Describe the issue you encountered..." />
               </Form.Item>
-              {/* NỘI DUNG */}
-              <Form.Item
-                label="Report Details"
-                name="content"
-                rules={[{ required: true, message: "Please enter your report details." }]}
-              >
-                <TextArea rows={4} placeholder="Describe the issue you encountered..." />
-              </Form.Item>
 
               <Form.Item>
                 <Button
@@ -220,16 +212,6 @@ const ReportPage = () => {
               </Form.Item>
             </>
           )}
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              block
-              loading={submitting}
-            >
-              {submitting ? "Submitting..." : "Submit Report"}
-            </Button>
-          </Form.Item>
 
         </Form>
       </Card>
