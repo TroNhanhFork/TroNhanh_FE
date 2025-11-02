@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Statistic, Table, Tag, Progress, message, Modal, Descriptions } from 'antd';
+import { Card, Row, Col, Statistic, Table, Tag, Progress, message, Modal, Descriptions, Image } from 'antd';
 import {
   HomeOutlined,
   DollarOutlined,
@@ -743,23 +743,30 @@ const Statistics = () => {
                   <div>
                     {/* Hiển thị hình ảnh boardingHouse */}
                     {bookingDetails.boardingHouse.photos && bookingDetails.boardingHouse.photos.length > 0 ? (
-                      <div className="boardingHouse-images">
-                        {bookingDetails.boardingHouse.photos.slice(0, 4).map((photo, index) => (
-                          <div key={index} className="boardingHouse-image">
-                            <img
-                              src={`http://localhost:5000${photo}`}
-                              alt={`BoardingHouse ${index + 1}`}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                              }}
-                            />
-                          </div>
-                        ))}
-                        {bookingDetails.boardingHouse.photos.length > 4 && (
-                          <div className="boardingHouse-more-images">
-                            +{bookingDetails.boardingHouse.photos.length - 4} more
-                          </div>
-                        )}
+                      <div className="boardingHouse-image-container">
+                        <Image.PreviewGroup>
+                          {bookingDetails.boardingHouse.photos.slice(0, 4).map((photo, index) => {
+                            const src = `http://localhost:5000${photo}`;
+                            return (
+                              <div key={index} className="boardingHouse-thumb">
+                                <Image
+                                  src={src}
+                                  alt={`BoardingHouse ${index + 1}`}
+                                  width={120}
+                                  height={90}
+                                  style={{ objectFit: 'cover' }}
+                                  fallback="/avatar.jpg"
+                                />
+                              </div>
+                            );
+                          })}
+
+                          {bookingDetails.boardingHouse.photos.length > 4 && (
+                            <div className="boardingHouse-more-images">
+                              +{bookingDetails.boardingHouse.photos.length - 4} more
+                            </div>
+                          )}
+                        </Image.PreviewGroup>
                       </div>
                     ) : (
                       <div className="no-images-placeholder">
