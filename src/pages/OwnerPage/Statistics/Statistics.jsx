@@ -26,10 +26,10 @@ const Statistics = () => {
   const [messageApi, contextHolder] = message.useMessage();
   const { user } = useUser();
   const [stats, setStats] = useState({
-    totalAccommodations: 0,
-    availableAccommodations: 0,
-    bookedAccommodations: 0,
-    unavailableAccommodations: 0,
+    totalBoardingHouses: 0,
+    availableBoardingHouses: 0,
+    bookedBoardingHouses: 0,
+    unavailableBoardingHouses: 0,
     totalRevenue: 0,
     totalBookings: 0,
     monthlyRevenue: 0
@@ -40,10 +40,10 @@ const Statistics = () => {
     expiredAt: null
   });
   const [recentBookings, setRecentBookings] = useState([]);
-  const [topAccommodations, setTopAccommodations] = useState([]);
+  const [topBoardingHouses, setTopBoardingHouses] = useState([]);
   const [monthlyRevenueData, setMonthlyRevenueData] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   // Modal states
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -54,47 +54,52 @@ const Statistics = () => {
     if (user?._id) {
       fetchStatistics();
       fetchRecentBookings();
-      fetchTopAccommodations();
+      fetchTopBoardingHouses();
       fetchMonthlyRevenue();
       fetchCurrentMembership();
     }
   }, [user]);
 
   // Force chart color after data loads
-  useEffect(() => {
-    // Không cần nữa vì dùng custom chart
-  }, [monthlyRevenueData]);
 
   const fetchStatistics = async () => {
     try {
       setLoading(true);
-      
-      // Sử dụng API mới để lấy statistics tổng hợp
       const statisticsRes = await getOwnerStatistics();
-      
       if (statisticsRes.success) {
-        setStats(statisticsRes.statistics);
+        // Map backend keys -> frontend state keys
+        const s = statisticsRes.statistics;
+        setStats({
+          totalBoardingHouses: s.totalBoardingHouses || 0,
+          availableRooms: s.availableRooms ?? 0,   // backend: availableRooms
+          bookedRooms: s.bookedRooms ?? 0,        // backend: bookedRooms
+          totalRooms: s.totalRooms ?? 0,
+          unavailableBoardingHouses: (s.totalRooms ?? 0) - (s.availableRooms ?? 0 + s.bookedRooms ?? 0),
+          totalRevenue: s.totalRevenue ?? 0,
+          totalBookings: s.totalBookings ?? 0,
+          monthlyRevenue: s.monthlyRevenue ?? 0
+        });
       } else {
         // Fallback to old method if API fails
-        const accommodationsRes = await axios.get(`http://localhost:5000/api/accommodation?ownerId=${user._id}`);
-        const accommodations = accommodationsRes.data;
+        const boardingHousesRes = await axios.get(`http://localhost:5000/api/boardingHouse?ownerId=${user._id}`);
+        const boardingHouses = boardingHousesRes.data;
 
-        const totalAccommodations = accommodations.length;
-        const availableAccommodations = accommodations.filter(acc => acc.status === 'Available').length;
-        const bookedAccommodations = accommodations.filter(acc => acc.status === 'Booked').length;
-        const unavailableAccommodations = accommodations.filter(acc => acc.status === 'Unavailable').length;
+        const totalBoardingHouses = boardingHouses.length;
+        const availableBoardingHouses = boardingHouses.filter(acc => acc.status === 'Available').length;
+        const bookedBoardingHouses = boardingHouses.filter(acc => acc.status === 'Booked').length;
+        const unavailableBoardingHouses = boardingHouses.filter(acc => acc.status === 'Unavailable').length;
 
         // Calculate revenue (fallback calculation)
-        const totalRevenue = bookedAccommodations * 2500000;
+        const totalRevenue = bookedBoardingHouses * 2500000;
         const monthlyRevenue = totalRevenue * 0.3;
 
         setStats({
-          totalAccommodations,
-          availableAccommodations,
-          bookedAccommodations,
-          unavailableAccommodations,
+          totalBoardingHouses,
+          availableBoardingHouses,
+          bookedBoardingHouses,
+          unavailableBoardingHouses,
           totalRevenue,
-          totalBookings: bookedAccommodations,
+          totalBookings: bookedBoardingHouses,
           monthlyRevenue
         });
       }
@@ -109,7 +114,7 @@ const Statistics = () => {
   const fetchRecentBookings = async () => {
     try {
       const bookingsRes = await getOwnerRecentBookings(10); // Lấy 10 booking gần nhất
-      
+      console.log('📒 recent bookingsRes:', bookingsRes.bookings);
       if (bookingsRes.success) {
         setRecentBookings(bookingsRes.bookings);
       } else {
@@ -122,61 +127,52 @@ const Statistics = () => {
     }
   };
 
-  const fetchTopAccommodations = async () => {
+  const fetchTopBoardingHouses = async () => {
     try {
-      const topAccommodationsRes = await getOwnerTopBoardingHouses(5); // Lấy top 5
-      
-      if (topAccommodationsRes.success) {
-        setTopAccommodations(topAccommodationsRes.accommodations);
+      const topBoardingHousesRes = await getOwnerTopBoardingHouses(5); // Lấy top 5
+
+      if (topBoardingHousesRes.success) {
+        setTopBoardingHouses(topBoardingHousesRes.boardingHouses);
       } else {
-        console.error('Failed to fetch top accommodations');
-        setTopAccommodations([]);
+        console.error('Failed to fetch top boardingHouses');
+        setTopBoardingHouses([]);
       }
     } catch (error) {
-      console.error('Error fetching top accommodations:', error);
-      setTopAccommodations([]);
+      console.error('Error fetching top boardingHouses:', error);
+      setTopBoardingHouses([]);
     }
   };
 
   const fetchMonthlyRevenue = async () => {
     try {
-      const monthlyRevenueRes = await getOwnerMonthlyRevenue(6); // Lấy 6 tháng gần nhất
-      
-      if (monthlyRevenueRes.success) {
-        // Validate và clean data trước khi set state
-        const cleanedData = monthlyRevenueRes.monthlyRevenue.map(item => {
-          // Đảm bảo revenue là number và không bị mất giá trị
-          let cleanRevenue = 0;
-          if (typeof item.revenue === 'number' && !isNaN(item.revenue)) {
-            cleanRevenue = item.revenue;
-          } else if (typeof item.revenue === 'string' && !isNaN(parseFloat(item.revenue))) {
-            cleanRevenue = parseFloat(item.revenue);
-          }
-          
-          return {
-            month: String(item.month || 'Unknown'),
-            revenue: cleanRevenue,
-            bookingsCount: typeof item.bookingsCount === 'number' ? item.bookingsCount : 0,
-            year: item.year || new Date().getFullYear(),
-            monthNumber: item.monthNumber || 1
-          };
-        });
-        
+      const monthlyRevenueRes = await getOwnerMonthlyRevenue(6);
+      console.log("📊 API monthlyRevenueRes:", monthlyRevenueRes);
+
+      if (monthlyRevenueRes.success && Array.isArray(monthlyRevenueRes.monthlyRevenue)) {
+        const cleanedData = monthlyRevenueRes.monthlyRevenue.map(item => ({
+          month: String(item.month || 'Unknown'),
+          revenue: parseFloat(item.revenue) || 0,
+          bookingsCount: typeof item.bookingsCount === 'number' ? item.bookingsCount : 0,
+          year: item.year || new Date().getFullYear(),
+          monthNumber: item.monthNumber || 1
+        }));
+        console.log("✅ Cleaned revenue data:", cleanedData);
         setMonthlyRevenueData(cleanedData);
       } else {
-        console.error('Failed to fetch monthly revenue');
+        console.warn("⚠️ monthlyRevenueRes missing or invalid format");
         setMonthlyRevenueData([]);
       }
     } catch (error) {
-      console.error('Error fetching monthly revenue:', error);
+      console.error("❌ Error fetching monthly revenue:", error);
       setMonthlyRevenueData([]);
     }
   };
 
+
   const fetchCurrentMembership = async () => {
     try {
       const membershipRes = await getOwnerCurrentMembership();
-      
+
       if (membershipRes.success) {
         setMembership(membershipRes.membership);
       } else {
@@ -197,41 +193,47 @@ const Statistics = () => {
     }
   };
 
-  // Function để fetch chi tiết accommodation cho modal
-  const fetchAccommodationDetails = async (accommodationId) => {
+  // Function để fetch chi tiết boardingHouse cho modal
+  const fetchBoardingHouseDetailsByBooking = async (bookingId) => {
     try {
       setModalLoading(true);
-      
-      // Chỉ cần fetch thông tin accommodation và ảnh
-      const accommodationResponse = await axios.get(`http://localhost:5000/api/accommodation/${accommodationId}?viewAs=owner`);
-      
-      setBookingDetails({
-        accommodation: accommodationResponse.data
-      });
-    } catch (error) {
-      console.error('Error fetching accommodation details:', error);
-      messageApi.error(`Unable to load accommodation details! Error: ${error.message}`);
-      setBookingDetails({ accommodation: null });
+      const res = await axios.get(`http://localhost:5000/api/boarding-houses/booking/${bookingId}/details`);
+
+      // Kiểm tra dữ liệu trả về
+      if (res.data?.success && res.data?.boardingHouse) {
+        setBookingDetails(res.data);
+      } else {
+        console.warn("⚠️ BoardingHouse details not found or invalid format:", res.data);
+        setBookingDetails({ boardingHouse: null });
+      }
+    } catch (err) {
+      console.error("❌ Error fetching boarding house details:", err.response?.data || err.message);
+      setBookingDetails({ boardingHouse: null });
     } finally {
       setModalLoading(false);
     }
   };
 
+
+
   // Function để handle click vào row trong bảng Recent Bookings
   const handleRowClick = (record) => {
-    setSelectedBooking(record);
-    setIsModalVisible(true);
-    
-    // Fetch chi tiết accommodation từ accommodation ID
-    if (record.accommodationId) {
-      fetchAccommodationDetails(record.accommodationId);
-    } else if (record.key) {
-      fetchAccommodationDetails(record.key);
-    } else {
-      console.error('No accommodation ID found in record');
-      setBookingDetails({ accommodation: null });
-    }
-  };
+  setSelectedBooking(record);
+  setIsModalVisible(true);
+
+  const bookingId = record.key || record.bookingId || record._id;
+  console.log("🟢 Selected Booking ID:", bookingId);
+
+  if (bookingId) {
+    fetchBoardingHouseDetailsByBooking(bookingId);
+  } else {
+    console.error("❌ Missing booking ID in record:", record);
+    setBookingDetails({ boardingHouse: null });
+  }
+};
+
+
+
 
   const handleCloseModal = () => {
     setIsModalVisible(false);
@@ -246,9 +248,14 @@ const Statistics = () => {
       key: 'customerName',
     },
     {
-      title: 'Accommodation',
-      dataIndex: 'accommodationTitle',
-      key: 'accommodationTitle',
+      title: 'BoardingHouse',
+      dataIndex: 'boardingHouseName',
+      key: 'boardingHouseName',
+    },
+    {
+      title: 'Room',
+      dataIndex: 'roomNumber',
+      key: 'roomNumber',
     },
     {
       title: 'Booking Date',
@@ -269,8 +276,8 @@ const Statistics = () => {
       render: (status) => {
         let color = 'default';
         let text = status;
-        
-        switch(status) {
+
+        switch (status) {
           case 'paid':
             color = 'green';
             text = 'Paid';
@@ -287,53 +294,30 @@ const Statistics = () => {
             color = 'default';
             text = status.charAt(0).toUpperCase() + status.slice(1);
         }
-        
+
         return <Tag color={color}>{text}</Tag>;
       },
     },
   ];
 
-  const topAccommodationsColumns = [
+  const topBoardingHousesColumns = [
+    { title: 'BoardingHouse', dataIndex: 'name', key: 'name' }, // use 'name' from backend
+    { title: 'Bookings Count', dataIndex: 'bookings', key: 'bookings', render: b => `${b} bookings` },
+    { title: 'Revenue', dataIndex: 'revenue', key: 'revenue', render: r => `${(r || 0).toLocaleString()} VND` },
     {
-      title: 'Accommodation',
-      dataIndex: 'title',
-      key: 'title',
-    },
-    {
-      title: 'Bookings Count',
-      dataIndex: 'bookings',
-      key: 'bookings',
-      render: (bookings) => `${bookings} bookings`,
-    },
-    {
-      title: 'Revenue',
-      dataIndex: 'revenue',
-      key: 'revenue',
-      render: (revenue) => `${revenue.toLocaleString()} VND`,
-    },
-    {
-      title: 'Rating',
-      dataIndex: 'rating',
-      key: 'rating',
-      render: (rating) => (
+      title: 'Rating', dataIndex: 'rating', key: 'rating', render: (rating) => (
         <div className="rating-display">
           <TrophyOutlined style={{ color: '#49735A', marginRight: '4px' }} />
           {rating}/5
         </div>
       ),
-    },
+    }
   ];
 
+
   // Chart data for monthly revenue column chart - sử dụng dữ liệu thực từ API
-  const columnChartData = monthlyRevenueData.length > 0 ? monthlyRevenueData : [
-    // Sample data để test chart
-    { month: 'thg 2 2025', revenue: 0, bookingsCount: 0 },
-    { month: 'thg 3 2025', revenue: 0, bookingsCount: 0 },
-    { month: 'thg 4 2025', revenue: 0, bookingsCount: 0 },
-    { month: 'thg 5 2025', revenue: 0, bookingsCount: 0 },
-    { month: 'thg 6 2025', revenue: 0, bookingsCount: 0 },
-    { month: 'thg 7 2025', revenue: 1738271, bookingsCount: 1 }
-  ];
+  const columnChartData = monthlyRevenueData;
+
 
   // Custom chart component
   const CustomColumnChart = ({ data }) => {
@@ -346,7 +330,7 @@ const Statistics = () => {
     }
 
     const maxRevenue = Math.max(...data.map(item => item.revenue || 0));
-    
+
     const chartHeight = 250;
     const chartPadding = 60;
     const availableHeight = chartHeight - chartPadding;
@@ -360,27 +344,27 @@ const Statistics = () => {
             <div className="grid-line" style={{ bottom: '50%' }}></div>
             <div className="grid-line" style={{ top: '20px' }}></div>
           </div>
-          
+
           {data.map((item, index) => {
             let barHeight = 0;
-            
+
             if (item.revenue > 0 && maxRevenue > 0) {
               barHeight = Math.max((item.revenue / maxRevenue) * availableHeight, 10); // Min 10px height
             } else if (item.revenue === 0) {
               barHeight = 5; // Show small bar for 0 values
             }
-            
+
             const percentage = item.revenue > 0 ? (item.revenue / 1000000).toFixed(1) : '0';
-            
+
             return (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="chart-column"
                 style={{ '--index': index }}
               >
                 <div className="column-wrapper">
                   {/* Value label */}
-                  <div className="column-label" style={{ 
+                  <div className="column-label" style={{
                     fontSize: '11px',
                     fontWeight: 'bold',
                     color: '#000',
@@ -389,18 +373,18 @@ const Statistics = () => {
                   }}>
                     {item.revenue > 0 ? `${percentage}M` : '0'}
                   </div>
-                  
+
                   {/* Column bar */}
-                  <div 
-                    className="column-bar" 
-                    style={{ 
+                  <div
+                    className="column-bar"
+                    style={{
                       height: barHeight + 'px'
                     }}
                     title={`${item.month}: ${item.revenue.toLocaleString()} VND`}
                   />
-                  
+
                   {/* Month label */}
-                  <div className="month-label" style={{ 
+                  <div className="month-label" style={{
                     fontSize: '12px',
                     color: '#666',
                     textAlign: 'center',
@@ -413,12 +397,12 @@ const Statistics = () => {
             );
           })}
         </div>
-        
+
         {/* Y-axis labels - chỉ có title */}
         <div className="y-axis-labels">
           <div className="y-axis-title">Revenue (VND)</div>
         </div>
-        
+
         {/* X-axis title */}
         <div className="x-axis-title" style={{ textAlign: 'center', marginTop: '10px', color: '#666' }}>
           Month
@@ -427,23 +411,23 @@ const Statistics = () => {
     );
   };
 
-  const occupancyRate = stats.totalAccommodations > 0 
-    ? Math.round((stats.bookedAccommodations / stats.totalAccommodations) * 100) 
+  const occupancyRate = stats.totalBoardingHouses > 0
+    ? Math.round((stats.bookedBoardingHouses / stats.totalBoardingHouses) * 100)
     : 0;
 
   // Chart data with all 3 statuses
   const occupancyData = [
     {
       type: 'Booked',
-      value: stats.bookedAccommodations,
+      value: stats.bookedBoardingHouses,
     },
     {
-      type: 'Available', 
-      value: stats.availableAccommodations,
+      type: 'Available',
+      value: stats.availableBoardingHouses,
     },
     {
       type: 'Unavailable',
-      value: stats.unavailableAccommodations,
+      value: stats.unavailableBoardingHouses,
     }
   ].filter(item => item.value > 0); // Only show statuses that have values
 
@@ -470,7 +454,7 @@ const Statistics = () => {
           fontWeight: 'bold',
           color: '#333',
         },
-        content: `${stats.totalAccommodations}`,
+        content: `${stats.totalBoardingHouses}`,
       },
     },
   };
@@ -479,14 +463,14 @@ const Statistics = () => {
     <>
       {contextHolder}
       <div className="statistics-wrapper">
-        
+
         {/* Overview Cards */}
         <Row gutter={[24, 24]} className="stats-cards">
           <Col xs={24} sm={12} lg={6}>
             <Card className="stat-card">
               <Statistic
-                title="Total Accommodations"
-                value={stats.totalAccommodations}
+                title="Total BoardingHouses"
+                value={stats.totalBoardingHouses}
                 prefix={<HomeOutlined className="stat-icon" />}
                 valueStyle={{ color: '#49735A' }}
               />
@@ -496,7 +480,7 @@ const Statistics = () => {
             <Card className="stat-card">
               <Statistic
                 title="Booked"
-                value={stats.bookedAccommodations}
+                value={`${stats.bookedBoardingHouses} / ${stats.totalRooms}`}
                 prefix={<UserOutlined className="stat-icon" />}
                 valueStyle={{ color: '#49735A' }}
               />
@@ -508,7 +492,7 @@ const Statistics = () => {
                 title={`Membership: ${membership.packageName}`}
                 value={membership.isActive ? "Active" : "Inactive"}
                 prefix={<UserOutlined className="stat-icon" />}
-                valueStyle={{ 
+                valueStyle={{
                   color: membership.isActive ? '#52c41a' : '#ff4d4f',
                   fontSize: '18px'
                 }}
@@ -547,114 +531,127 @@ const Statistics = () => {
             </Card>
           </Col>
           <Col xs={24} lg={8}>
-            <Card className="chart-card" title={
-              <div className="card-title">
-                <CalendarOutlined /> Occupancy Rate
-              </div>
-            }>
+            <Card
+              className="chart-card"
+              title={
+                <div className="card-title">
+                  <CalendarOutlined /> Occupancy Overview
+                </div>
+              }
+            >
               <div className="occupancy-container">
-                {stats.totalAccommodations > 0 ? (
+                {stats.totalBoardingHouses > 0 || stats.totalRooms > 0 ? (
                   <div className="occupancy-chart-container">
                     <div className="occupancy-chart-svg">
-                      <svg width="160" height="160" viewBox="0 0 160 160">
-                        <defs>
+                      <svg width="180" height="180" viewBox="0 0 180 180">
+                        {/* Background for houses */}
+                        <circle cx="90" cy="90" r="75" fill="none" stroke="#f0f0f0" strokeWidth="10" />
+
+                        {/* Houses - booked */}
+                        {stats.bookedBoardingHouses > 0 && (
                           <circle
-                            id="circle"
-                            cx="80"
-                            cy="80"
-                            r="70"
-                            fill="none"
-                            strokeWidth="12"
-                          />
-                        </defs>
-                        
-                        {/* Background circle */}
-                        <circle
-                          cx="80"
-                          cy="80"
-                          r="70"
-                          fill="none"
-                          stroke="#f0f0f0"
-                          strokeWidth="12"
-                        />
-                        
-                        {/* Booked segment */}
-                        {stats.bookedAccommodations > 0 && (
-                          <circle
-                            cx="80"
-                            cy="80"
-                            r="70"
+                            cx="90"
+                            cy="90"
+                            r="75"
                             fill="none"
                             stroke="#1890ff"
-                            strokeWidth="12"
-                            strokeDasharray={`${(stats.bookedAccommodations / stats.totalAccommodations) * 440} ${440 - (stats.bookedAccommodations / stats.totalAccommodations) * 440}`}
+                            strokeWidth="10"
+                            strokeDasharray={`${(stats.bookedBoardingHouses / stats.totalBoardingHouses) * 470} ${470 - (stats.bookedBoardingHouses / stats.totalBoardingHouses) * 470
+                              }`}
                             strokeDashoffset="0"
-                            transform="rotate(-90 80 80)"
+                            transform="rotate(-90 90 90)"
                           />
                         )}
-                        
-                        {/* Available segment */}
-                        {stats.availableAccommodations > 0 && (
+
+                        {/* Houses - available */}
+                        {stats.availableBoardingHouses > 0 && (
                           <circle
-                            cx="80"
-                            cy="80"
-                            r="70"
+                            cx="90"
+                            cy="90"
+                            r="75"
                             fill="none"
                             stroke="#52c41a"
-                            strokeWidth="12"
-                            strokeDasharray={`${(stats.availableAccommodations / stats.totalAccommodations) * 440} ${440 - (stats.availableAccommodations / stats.totalAccommodations) * 440}`}
-                            strokeDashoffset={`-${(stats.bookedAccommodations / stats.totalAccommodations) * 440}`}
-                            transform="rotate(-90 80 80)"
+                            strokeWidth="10"
+                            strokeDasharray={`${(stats.availableBoardingHouses / stats.totalBoardingHouses) * 470} ${470 - (stats.availableBoardingHouses / stats.totalBoardingHouses) * 470
+                              }`}
+                            strokeDashoffset={`-${(stats.bookedBoardingHouses / stats.totalBoardingHouses) * 470}`}
+                            transform="rotate(-90 90 90)"
                           />
                         )}
-                        
-                        {/* Unavailable segment */}
-                        {stats.unavailableAccommodations > 0 && (
+
+                        {/* Inner circle for rooms */}
+                        <circle cx="90" cy="90" r="55" fill="none" stroke="#f0f0f0" strokeWidth="10" />
+
+                        {/* Rooms - booked */}
+                        {stats.bookedRooms > 0 && (
                           <circle
-                            cx="80"
-                            cy="80"
-                            r="70"
+                            cx="90"
+                            cy="90"
+                            r="55"
                             fill="none"
-                            stroke="#ff4d4f"
-                            strokeWidth="12"
-                            strokeDasharray={`${(stats.unavailableAccommodations / stats.totalAccommodations) * 440} ${440 - (stats.unavailableAccommodations / stats.totalAccommodations) * 440}`}
-                            strokeDashoffset={`-${((stats.bookedAccommodations + stats.availableAccommodations) / stats.totalAccommodations) * 440}`}
-                            transform="rotate(-90 80 80)"
+                            stroke="#faad14"
+                            strokeWidth="10"
+                            strokeDasharray={`${(stats.bookedRooms / stats.totalRooms) * 345} ${345 - (stats.bookedRooms / stats.totalRooms) * 345
+                              }`}
+                            strokeDashoffset="0"
+                            transform="rotate(-90 90 90)"
+                          />
+                        )}
+
+                        {/* Rooms - available */}
+                        {stats.availableRooms > 0 && (
+                          <circle
+                            cx="90"
+                            cy="90"
+                            r="55"
+                            fill="none"
+                            stroke="#13c2c2"
+                            strokeWidth="10"
+                            strokeDasharray={`${(stats.availableRooms / stats.totalRooms) * 345} ${345 - (stats.availableRooms / stats.totalRooms) * 345
+                              }`}
+                            strokeDashoffset={`-${(stats.bookedRooms / stats.totalRooms) * 345}`}
+                            transform="rotate(-90 90 90)"
                           />
                         )}
                       </svg>
-                      
+
                       {/* Center text */}
                       <div className="occupancy-chart-center">
-                        <div className="occupancy-chart-center-title">Total</div>
+                        <div className="occupancy-chart-center-title">Houses</div>
                         <div className="occupancy-chart-center-value">
-                          {stats.totalAccommodations}
+                          {stats.totalBoardingHouses}
+                        </div>
+                        <div className="occupancy-chart-center-subtitle">
+                          Rooms: {stats.totalRooms}
                         </div>
                       </div>
                     </div>
+
+                    {/* Legend */}
                     <div className="occupancy-legend">
                       <div className="occupancy-legend-item">
-                        <span className="occupancy-legend-dot booked"></span>
-                        <span className="occupancy-legend-text">Booked ({stats.bookedAccommodations})</span>
+                        <span className="occupancy-legend-dot" style={{ backgroundColor: '#1890ff' }}></span>
+                        <span className="occupancy-legend-text">Total House ({stats.totalBoardingHouses})</span>
                       </div>
                       <div className="occupancy-legend-item">
-                        <span className="occupancy-legend-dot available"></span>
-                        <span className="occupancy-legend-text">Available ({stats.availableAccommodations})</span>
+                        <span className="occupancy-legend-dot" style={{ backgroundColor: '#13c2c2' }}></span>
+                        <span className="occupancy-legend-text">Rooms Available ({stats.availableRooms})</span>
                       </div>
                       <div className="occupancy-legend-item">
-                        <span className="occupancy-legend-dot unavailable"></span>
-                        <span className="occupancy-legend-text">Unavailable ({stats.unavailableAccommodations})</span>
+                        <span className="occupancy-legend-dot" style={{ backgroundColor: '#faad14' }}></span>
+                        <span className="occupancy-legend-text">Rooms Booked ({stats.bookedRooms})</span>
                       </div>
                     </div>
                   </div>
                 ) : (
                   <div className="no-data">
-                    <p>No accommodation data available</p>
+                    <p>No data available</p>
                   </div>
                 )}
               </div>
             </Card>
           </Col>
+
         </Row>
 
         {/* Recent Bookings */}
@@ -688,7 +685,7 @@ const Statistics = () => {
           title={
             <div className="modal-title">
               <InfoCircleOutlined />
-              Booking Details - {selectedBooking?.accommodationTitle}
+              Booking Details - {selectedBooking?.boardingHouseName}
             </div>
           }
           open={isModalVisible}
@@ -699,9 +696,9 @@ const Statistics = () => {
           {selectedBooking && (
             <div>
               {/* Thông tin booking chính */}
-              <Card 
-                title="Booking Information" 
-                size="small" 
+              <Card
+                title="Booking Information"
+                size="small"
                 className="booking-info-card"
               >
                 <Descriptions column={2} size="small">
@@ -711,20 +708,20 @@ const Statistics = () => {
                   <Descriptions.Item label="Booking ID">
                     <code>{selectedBooking.bookingId || selectedBooking.key}</code>
                   </Descriptions.Item>
-                  <Descriptions.Item label="Accommodation">
-                    {selectedBooking.accommodationTitle}
+                  <Descriptions.Item label="BoardingHouse">
+                    {selectedBooking.boardingHouseTitle}
                   </Descriptions.Item>
                   <Descriptions.Item label="Booking Date">
                     {new Date(selectedBooking.bookingDate).toLocaleDateString('vi-VN')} {new Date(selectedBooking.bookingDate).toLocaleTimeString('vi-VN')}
                   </Descriptions.Item>
-                                    <Descriptions.Item label="Amount">
+                  <Descriptions.Item label="Amount">
                     <strong style={{ color: '#49735A' }}>{selectedBooking.amount.toLocaleString()} VND</strong>
                   </Descriptions.Item>
                   <Descriptions.Item label="Status">
                     <Tag color={
                       selectedBooking.status === 'paid' ? 'green' :
-                      selectedBooking.status === 'pending' ? 'orange' :
-                      selectedBooking.status === 'completed' ? 'blue' : 'default'
+                        selectedBooking.status === 'pending' ? 'orange' :
+                          selectedBooking.status === 'completed' ? 'blue' : 'default'
                     }>
                       {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
                     </Tag>
@@ -732,64 +729,64 @@ const Statistics = () => {
                 </Descriptions>
               </Card>
 
-              {/* Hình ảnh accommodation */}
-              <Card 
-                title="Accommodation Images"
+              {/* Hình ảnh boardingHouse */}
+              <Card
+                title="BoardingHouse Images"
                 size="small"
                 loading={modalLoading}
               >
                 {modalLoading ? (
                   <div className="modal-loading">
-                    <p>Loading accommodation images...</p>
+                    <p>Loading boardingHouse images...</p>
                   </div>
-                ) : bookingDetails?.accommodation ? (
+                ) : bookingDetails?.boardingHouse ? (
                   <div>
-                    {/* Hiển thị hình ảnh accommodation */}
-                    {bookingDetails.accommodation.photos && bookingDetails.accommodation.photos.length > 0 ? (
-                      <div className="accommodation-images">
-                        {bookingDetails.accommodation.photos.slice(0, 4).map((photo, index) => (
-                          <div key={index} className="accommodation-image">
+                    {/* Hiển thị hình ảnh boardingHouse */}
+                    {bookingDetails.boardingHouse.photos && bookingDetails.boardingHouse.photos.length > 0 ? (
+                      <div className="boardingHouse-images">
+                        {bookingDetails.boardingHouse.photos.slice(0, 4).map((photo, index) => (
+                          <div key={index} className="boardingHouse-image">
                             <img
                               src={`http://localhost:5000${photo}`}
-                              alt={`Accommodation ${index + 1}`}
+                              alt={`BoardingHouse ${index + 1}`}
                               onError={(e) => {
                                 e.target.style.display = 'none';
                               }}
                             />
                           </div>
                         ))}
-                        {bookingDetails.accommodation.photos.length > 4 && (
-                          <div className="accommodation-more-images">
-                            +{bookingDetails.accommodation.photos.length - 4} more
+                        {bookingDetails.boardingHouse.photos.length > 4 && (
+                          <div className="boardingHouse-more-images">
+                            +{bookingDetails.boardingHouse.photos.length - 4} more
                           </div>
                         )}
                       </div>
                     ) : (
                       <div className="no-images-placeholder">
                         <CameraOutlined />
-                        No images available for this accommodation
+                        No images available for this boardingHouse
                       </div>
                     )}
-                    <div className="accommodation-info">
-                      <strong>{bookingDetails.accommodation.title}</strong>
-                      <div className="accommodation-location">
+                    <div className="boardingHouse-info">
+                      <strong>{bookingDetails.boardingHouse.title}</strong>
+                      <div className="boardingHouse-location">
                         <EnvironmentOutlined style={{ marginRight: '4px', color: '#49735A' }} />
                         {[
-                          bookingDetails.accommodation.location?.street,
-                          bookingDetails.accommodation.location?.district,
-                          bookingDetails.accommodation.location?.addressDetail
+                          bookingDetails.boardingHouse.location?.street,
+                          bookingDetails.boardingHouse.location?.district,
+                          bookingDetails.boardingHouse.location?.addressDetail
                         ].filter(Boolean).join(', ')}
                       </div>
-                      <div className="accommodation-price">
+                      <div className="boardingHouse-price">
                         <DollarOutlined style={{ marginRight: '4px', color: '#49735A' }} />
-                        {bookingDetails.accommodation.price?.toLocaleString()} VND/month
+                        {bookingDetails.boardingHouse.price?.toLocaleString()} VND/month
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="accommodation-details-error">
+                  <div className="boardingHouse-details-error">
                     <EyeOutlined />
-                    <p>Unable to load accommodation details.</p>
+                    <p>Unable to load boardingHouse details.</p>
                   </div>
                 )}
               </Card>

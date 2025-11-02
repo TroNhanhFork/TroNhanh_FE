@@ -37,7 +37,7 @@ const VisitRequests = () => {
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(true);
 
- 
+
     const fetchVisitRequests = async () => {
         setLoading(true);
         try {
@@ -82,17 +82,17 @@ const VisitRequests = () => {
                     <List.Item>
                         <Card
                             hoverable
-             style={{ minHeight: 520, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                            style={{ minHeight: 520, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                             title={
-                                <Link to={`/accommodation/${item.accommodationId?._id}`}>
-                                    {item.accommodationId?.title || 'Accommodation đã bị xóa'}
+                                <Link to={`/boardingHouse/${item.boardingHouseId?._id}`}>
+                                    {item.boardingHouseId.name || 'Accommodation đã bị xóa'}
                                 </Link>
                             }
                             cover={
-                                item.accommodationId?.photos?.[0] && (
+                                item.boardingHouseId?.photos?.[0] && (
                                     <img
-                                        alt="accommodation"
-                                        src={`http://localhost:5000${item.accommodationId.photos[0]}`}
+                                        alt="boardingHouse"
+                                        src={`http://localhost:5000${item.boardingHouseId.photos[0]}`}
                                         style={{ height: 200, objectFit: 'cover' }}
                                     />
                                 )

@@ -3,16 +3,16 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useSocket } from "./SocketContext";
 import useUser from "./UserContext";
 import { message } from "antd";
-import api from "../services/api"; 
+import api from "../services/api";
 
 const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
-  const socket = useSocket();
+  const { socket } = useSocket();
   const { user } = useUser();
 
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
-  const [hasVisitResponse, setHasVisitResponse] = useState(false); 
+  const [hasVisitResponse, setHasVisitResponse] = useState(false);
 
   useEffect(() => {
     // 1. Hàm fetch count ban đầu (vẫn giữ nguyên)
@@ -29,7 +29,7 @@ export const NotificationProvider = ({ children }) => {
 
     if (socket && user?._id) {
       socket.emit("joinUserRoom", user._id);
-      fetchInitialCount(); 
+      fetchInitialCount();
     }
 
     // 2. Lắng nghe thông báo popup (cho cả owner và customer)
@@ -56,7 +56,7 @@ export const NotificationProvider = ({ children }) => {
       socket?.off("visit_request_update");
       socket?.off("owner_pending_count_update"); // Nhớ off event mới
     };
-  }, [socket, user]); 
+  }, [socket, user]);
 
   // Không cần hàm decrementPendingCount nữa
   // const decrementPendingCount = () => {

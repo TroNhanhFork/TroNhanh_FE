@@ -6,6 +6,7 @@ import { login, saveAccessToken, loginGoogle, assignRole } from '../../../servic
 import { initAutoLogout } from '../../../services/autoLogout';
 import useUser from '../../../contexts/UserContext';
 import styles from './LoginPage.module.css';
+import { useSocket } from "../../../contexts/SocketContext";
 import { GoogleLogin } from "@react-oauth/google";
 import {jwtDecode} from "jwt-decode";
 
@@ -17,6 +18,7 @@ const LoginPage = () => {
   const { fetchUser } = useUser();
   const navigate = useNavigate();
   const [messageApi, contextHolder] = antMessage.useMessage();
+  const { socket } = useSocket();
 
 
   const [roleModalVisible, setRoleModalVisible] = useState(false);
@@ -29,6 +31,12 @@ const LoginPage = () => {
       const res = await login(values);
       saveAccessToken(res.data.accessToken, 30 * 60 * 1000, res.data.refreshToken);
       await fetchUser();
+
+      if (socket && !socket.connected) {
+        socket.auth = { userId: res.data.user._id };
+        socket.connect();
+      }
+
       initAutoLogout();
 
       const role = res.data.user.role;

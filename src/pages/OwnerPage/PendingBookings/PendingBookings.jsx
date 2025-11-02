@@ -119,7 +119,10 @@ const PendingBookings = () => {
                                     <div className="booking-request-details">
                                         <p><strong>Email:</strong> {booking.userId?.email || 'N/A'}</p>
                                         <p><strong>Điện thoại:</strong> {booking.userId?.phone || 'N/A'}</p>
-                                        <p><strong>Nhà trọ:</strong> {booking.boardingHouseId?.name || 'N/A'}</p>
+                                        <p>
+                                            <strong>Nhà trọ:</strong>{' '}
+                                            {booking.boardingHouseId.name || 'N/A'}
+                                        </p>
                                         <p><strong>Giá phòng:</strong> {booking.roomId?.price?.toLocaleString('vi-VN') || 'N/A'} VNĐ</p>
                                         {/* Hiển thị thêm thông tin từ guestInfo nếu có */}
                                         {booking.guestInfo && (
