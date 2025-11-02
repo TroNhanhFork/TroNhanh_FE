@@ -34,7 +34,8 @@ const MyBookings = () => {
     }, [messageApi]);
 
     const handlePayNow = (bookingId, boardingHouseId, roomId) => {
-        navigate("/customer/checkout", { state: { bookingId, boardingHouseId, roomId } });
+        // Navigate to checkout and request immediate payment
+        navigate("/customer/checkout", { state: { bookingId, boardingHouseId, roomId, autoPay: true } });
     };
 
     const handleCancelRequest = async (bookingId) => {
@@ -49,19 +50,21 @@ const MyBookings = () => {
                     return { ...b, contractStatus: 'cancelled_by_tenant' };
                 }
                 return b;
-            }); 
+            });
             setBookings(updatedBookings);
         } catch (error) {
             messageApi.error({ content: 'Hủy yêu cầu thất bại.', key: `cancel_${bookingId}` });
         }
 
     };
-
+    
     const getStatusTag = (booking) => {
         const { contractStatus, status } = booking; // contractStatus is for approval, status is for payment/completion
 
         if (status === 'paid') return <Tag color="success">Đã thanh toán</Tag>;
         if (status === 'completed') return <Tag color="default">Đã hoàn thành</Tag>; // For past stays
+        if (status === 'cancelled') return <Tag color="default">Đã hủy</Tag>; // For past stays
+
         if (contractStatus === 'pending_approval') return <Tag color="processing">Chờ duyệt</Tag>;
         if (contractStatus === 'approved') return <Tag color="warning">Chờ thanh toán</Tag>;
         if (contractStatus === 'rejected') return <Tag color="error">Đã từ chối</Tag>;

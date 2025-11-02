@@ -10,11 +10,14 @@ import {
   LogoutOutlined,
   BarChartOutlined,
   CalendarOutlined,
+  EditOutlined
 } from "@ant-design/icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./sidebar.css";
 import useUser from "../../../../contexts/UserContext";
 import { useNotifications } from '../../../../contexts/NotificationContext';
+import { IoBookOutline, IoContractOutline } from "react-icons/io5";
+import { BookImageIcon } from "lucide-react";
 const { Title, Text } = Typography;
 
 const Sidebar = () => {
@@ -61,21 +64,24 @@ const Sidebar = () => {
         <Menu.Item key="statistics" icon={<BarChartOutlined />}>
           <Link to="/owner/statistics">Statistics</Link>
         </Menu.Item>
+        <Menu.Item key="user-profile" icon={<UserOutlined />}>
+          <Link to="/owner/user-profile">Personal Profile</Link>
+        </Menu.Item>
         <Menu.Item key="report" icon={<FileTextOutlined />}>
           <Link to="/owner/report">Report</Link>
         </Menu.Item>
         <Menu.Item key="boarding-house" icon={<HomeOutlined />}>
           <Link to="/owner/boarding-house">BoardingHouse</Link>
         </Menu.Item>
-        <Menu.Item key="contract" icon={<HomeOutlined />}>
+        <Menu.Item key="contract" icon={<EditOutlined />}>
           <Link to="/owner/contract">Contract</Link>
         </Menu.Item>
-        <Menu.Item key="pending-bookings" icon={<HomeOutlined />}>
+        <Menu.Item key="pending-bookings" icon={<CreditCardOutlined />}>
           <Link to="/owner/pending-bookings">Pending Bookings</Link>
         </Menu.Item>
         <Menu.Item key="visit-requests" icon={<CalendarOutlined />}>
- <Link to="/owner/visit-requests">Visit Requests</Link>
- </Menu.Item>
+          <Link to="/owner/visit-requests">Visit Requests</Link>
+        </Menu.Item>
         <Menu.Item key="rating" icon={<StarOutlined />}>
           <Link to="/owner/rating">Rating</Link>
         </Menu.Item>
