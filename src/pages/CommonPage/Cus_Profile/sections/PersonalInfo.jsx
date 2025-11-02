@@ -17,7 +17,6 @@ import {
 } from '@ant-design/icons';
 import {
   updateUserInfo,
-  changePassword
 } from '../../../../services/profileServices';
 import useUser from '../../../../contexts/UserContext';
 import './PersonalInfo.css';
@@ -35,13 +34,6 @@ const PersonalInfo = () => {
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [messageApi, contextHolder] = antMessage.useMessage();
-  const [passwords, setPasswords] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
-
   useEffect(() => {
 
     if (user) {
@@ -60,29 +52,29 @@ const PersonalInfo = () => {
     setFieldValues((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = async (field) => {
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append(field, fieldValues[field]);
-      await updateUserInfo(formData);
-      await fetchUser();
-      messageApi.success("Cập nhật thành công");
-      setEditingField('');
-    } catch (err) {
-      console.error(err);
-      const res = err.response;
-      if (res?.status === 400 && Array.isArray(res.data?.errors)) {
-        res.data.errors.forEach((e) => {
-          messageApi.error(` ${e.msg}`);
-        });
-      } else {
-        messageApi.error("Cập nhật thất bại");
-      }
-    } finally {
-      setLoading(false);
+const handleSave = async (field) => {
+  setLoading(true);
+  try {
+    const formData = new FormData();
+    formData.append(field, fieldValues[field]);
+    await updateUserInfo(formData);
+    await fetchUser();
+    messageApi.success("Cập nhật thành công");
+    setEditingField('');
+  } catch (err) {
+    console.error(err);
+    const res = err.response;
+    if (res?.status === 400 && Array.isArray(res.data?.errors)) {
+      res.data.errors.forEach((e) => {
+        messageApi.error(` ${e.msg}`);
+      });
+    } else {
+      messageApi.error("Cập nhật thất bại");
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
 
   const handleAvatarChange = async ({ file }) => {
@@ -99,40 +91,6 @@ const PersonalInfo = () => {
 
   const handleAvatarClick = () => setIsModalVisible(true);
   const handleModalClose = () => setIsModalVisible(false);
-
-  const handlePasswordChange = (field, value) => {
-    setPasswords((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmitPassword = async () => {
-    if (!passwords.currentPassword || !passwords.newPassword || !passwords.confirmPassword) {
-      return messageApi.error("Vui lòng nhập đầy đủ thông tin");
-    }
-    if (passwords.newPassword !== passwords.confirmPassword) {
-      return messageApi.error("Mật khẩu xác nhận không khớp");
-    }
-    const currentPassword = passwords.currentPassword
-    const newPassword = passwords.newPassword
-    const confirmPassword = passwords.confirmPassword
-    const data = {
-      currentPassword,
-      newPassword,
-      confirmPassword,
-    };
-
-    setLoading(true);
-    try {
-      await changePassword(data);
-      messageApi.success("Đổi mật khẩu thành công");
-      setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setIsChangingPassword(false);
-    } catch (err) {
-      console.error(err);
-      messageApi.error(err.response?.data?.message || "Đổi mật khẩu thất bại");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (error) return <p style={{ color: 'red', textAlign: 'center', marginTop: 40 }}>{error}</p>;
   if (!user) return <p style={{ textAlign: 'center', marginTop: 40 }}>Loading...</p>;
@@ -179,65 +137,6 @@ const PersonalInfo = () => {
           <Text className="label-style">Email:</Text>
           <div className="flex-content">
             <Text>{user.email}</Text>
-          </div>
-        </div>
-        <Divider style={{ margin: '12px 0' }} />
-
-        <div className="flex-row">
-          <Text className="label-style">Mật khẩu:</Text>
-          <div className="flex-content-inline">
-            {!isChangingPassword ? (
-              <>
-                <Text>********</Text>
-                <Button
-                  type="link"
-                  icon={<EditOutlined />}
-                  onClick={() => setIsChangingPassword(true)}
-                  size="small"
-                  style={{ marginLeft: 8, padding: 0 }}
-                >
-                  Đổi mật khẩu
-                </Button>
-              </>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <Input.Password
-                  placeholder="Mật khẩu hiện tại"
-                  size="small"
-                  value={passwords.currentPassword}
-                  onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-                />
-                <Input.Password
-                  placeholder="Mật khẩu mới"
-                  size="small"
-                  value={passwords.newPassword}
-                  onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                />
-                <Input.Password
-                  placeholder="Xác nhận mật khẩu mới"
-                  size="small"
-                  value={passwords.confirmPassword}
-                  onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Button
-                    type="primary"
-                    icon={<SaveOutlined />}
-                    size="small"
-                    onClick={handleSubmitPassword}
-                    loading={loading}
-                  >
-                    Lưu
-                  </Button>
-                  <Button
-                    onClick={() => setIsChangingPassword(false)}
-                    size="small"
-                  >
-                    Hủy
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
         <Divider style={{ margin: '12px 0' }} />

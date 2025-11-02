@@ -31,7 +31,6 @@ const { Option } = Select;
 const CheckoutPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { bookingId: stateBookingId, boardingHouseId: stateBoardingHouseId, roomId: stateRoomId, fromContract, autoPay } = location.state || {};
   // KHÔNG DÙNG propertyId nữa, luồng mới dựa trên bookingId
   // const propertyId = location.state?.accommodationId; 
 
@@ -66,129 +65,67 @@ const CheckoutPage = () => {
   // --- Fetch Booking và Data liên quan (Logic mới) ---
   useEffect(() => {
     const fetchBookingDetails = async () => {
-      const bookingId = stateBookingId;
-      // If bookingId provided, fetch booking and populate
-  if (bookingId) {
-        setLoading(true);
-        try {
-          const bookingData = await bookingService.getBookingById(bookingId);
-          if (!bookingData) throw new Error("Không tìm thấy thông tin đặt phòng.");
-          if (bookingData.status === 'paid') {
-            throw new Error('Đơn đặt phòng này đã được thanh toán.');
-          }
-          setBooking(bookingData);
+      const { bookingId } = location.state || {};
 
-          const houseData = bookingData.boardingHouseId;
-          const specificRoom = bookingData.roomId;
-          setBoardingHouseDetails(houseData);
-          setRoomDetails(specificRoom);
-
-          const info = bookingData.guestInfo || {};
-          const nameParts = user?.name?.trim()?.split(" ") || [];
-          const userFirstName = nameParts[0] || "";
-          const userLastName = nameParts.slice(1).join(' ') || "";
-
-          setFirstName(info.firstName || userFirstName);
-          setLastName(info.lastName || userLastName);
-          setEmail(info.email || user?.email || "");
-          setPhone(info.phone || user?.phone || "");
-          setPurpose(info.purpose || "");
-          setStartDate(info.startDate ? dayjs(info.startDate) : dayjs());
-          setLeaseDuration(info.leaseDuration || 6);
-          setGuests(info.guests || 1);
-        } catch (err) {
-          setError(err.message || "Lỗi khi tải thông tin đặt phòng.");
-          console.error("Checkout fetch error:", err);
-        } finally {
-          setLoading(false);
-        }
-        // after booking is fetched and state updated, return to avoid executing other branches
+      if (!bookingId) {
+        setError("Thông tin đặt phòng không hợp lệ.");
+        setLoading(false);
         return;
       }
 
-      // If no bookingId, but boardingHouseId + roomId provided (starting flow), fetch boarding house and room
-      const boardingHouseId = stateBoardingHouseId;
-      const roomId = stateRoomId;
-      if (boardingHouseId && roomId) {
-        setLoading(true);
-        try {
-          const houseData = await getBoardingHouseById(boardingHouseId);
-          const specificRoom = houseData.rooms.find(r => r._id === roomId);
-          if (!specificRoom) throw new Error('Không thể tải thông tin phòng.');
-          setBoardingHouseDetails(houseData);
-          setRoomDetails(specificRoom);
+      setLoading(true);
+      try {
+        // 1. Fetch booking data (đã bao gồm populate)
+        const bookingData = await bookingService.getBookingById(bookingId);
 
-          // Prefill from user
-          const nameParts = user?.name?.trim()?.split(" ") || [];
-          const userFirstName = nameParts[0] || "";
-          const userLastName = nameParts.slice(1).join(' ') || "";
-          setFirstName(userFirstName);
-          setLastName(userLastName);
-          setEmail(user?.email || "");
-          setPhone(user?.phone || "");
-          setStartDate(dayjs());
-          setLeaseDuration(6);
-          setGuests(1);
-        } catch (err) {
-          setError(err.message || 'Không thể tải thông tin nhà trọ.');
-        } finally {
-          setLoading(false);
+        // 2. Validate status (như cũ)
+        if (!bookingData) throw new Error("Không tìm thấy thông tin đặt phòng.");
+        if (bookingData.contractStatus !== 'approved') {
+          throw new Error(`Yêu cầu đặt phòng này ${bookingData.contractStatus === 'pending_approval' ? 'đang chờ duyệt' : 'đã bị từ chối'}. Không thể thanh toán.`);
         }
-        return;
-      }
+        if (bookingData.status === 'paid') {
+          throw new Error('Đơn đặt phòng này đã được thanh toán.');
+        }
+        setBooking(bookingData);
 
-      // Neither bookingId nor boardingHouseId provided
-      setError("Thông tin đặt phòng không hợp lệ.");
-      setLoading(false);
+        // 3. (SỬA LỖI) Lấy trực tiếp dữ liệu đã populate
+        // KHÔNG CẦN GỌI API NỮA
+        const houseData = bookingData.boardingHouseId;
+        const specificRoom = bookingData.roomId;
+
+        // Kiểm tra xem backend có populate đúng không
+        if (!houseData || typeof houseData !== 'object' || !specificRoom || typeof specificRoom !== 'object') {
+          throw new Error("Không thể tải thông tin chi tiết phòng hoặc nhà trọ (Dữ liệu populate bị thiếu).");
+        }
+
+        setBoardingHouseDetails(houseData);
+        setRoomDetails(specificRoom);
+
+        // 4. Pre-fill form (Ưu tiên guestInfo từ booking, fallback về user)
+        const info = bookingData.guestInfo || {};
+        const nameParts = user?.name.trim().split(" ") || [];
+        const userFirstName = nameParts[0] || "";
+        const userLastName = nameParts.slice(1).join(' ') || "";
+
+        setFirstName(info.firstName || userFirstName);
+        setLastName(info.lastName || userLastName);
+        setEmail(info.email || user?.email || "");
+        setPhone(info.phone || user?.phone || "");
+        setPurpose(info.purpose || "");
+        setStartDate(info.startDate ? dayjs(info.startDate) : dayjs()); // Default là hôm nay nếu chưa có
+        setLeaseDuration(info.leaseDuration || 6); // Default 6 tháng
+        setGuests(info.guests || 1);
+
+      } catch (err) {
+        setError(err.message || "Lỗi khi tải thông tin đặt phòng.");
+        console.error("Checkout fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchBookingDetails();
-  }, [stateBookingId, stateBoardingHouseId, stateRoomId, user]); // Phụ thuộc vào location.state và user
-
-  // Create booking and navigate to contract
-  const handleContinueToContract = async () => {
-    if (!stateBoardingHouseId || !stateRoomId) return messageApi.error('Thiếu thông tin phòng.');
-    // Validate form fields
-    const allFieldsFilled = startDate && leaseDuration && guests && purpose && firstName && lastName && email && phone;
-    if (!allFieldsFilled) {
-      return messageApi.warning("Vui lòng điền đầy đủ thông tin khách và chi tiết đặt phòng.");
-    }
-
-    try {
-      setLoading(true);
-      const payload = {
-        boardingHouseId: stateBoardingHouseId,
-        roomId: stateRoomId,
-        guestInfo: {
-          firstName, lastName, email, phone, purpose,
-          startDate: startDate.format ? startDate.format('YYYY-MM-DD') : startDate,
-          leaseDuration, guests
-        }
-      };
-      const newBooking = await bookingService.requestBooking(payload);
-      messageApi.success('Yêu cầu đặt phòng đã được tạo. Tiếp tục sang hợp đồng.');
-      // Navigate to contract with bookingId
-      navigate(`/customer/contract/${stateBoardingHouseId}/${stateRoomId}`, { state: { bookingId: newBooking._id } });
-    } catch (err) {
-      console.error('Error creating booking:', err);
-      messageApi.error(err.response?.data?.message || 'Không thể tạo yêu cầu đặt phòng.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // If we arrived with autoPay and booking data is present, start payment automatically
-  useEffect(() => {
-    if (autoPay && stateBookingId && booking && roomDetails && boardingHouseDetails) {
-      // Default to PayOS and initiate payment
-      setPaymentMethod('payos');
-      // Slight delay to ensure UI settles
-      const t = setTimeout(() => {
-        handleBook();
-      }, 300);
-      return () => clearTimeout(t);
-    }
-  }, [autoPay, stateBookingId, booking, roomDetails, boardingHouseDetails]);
+  }, [location.state, user]); // Phụ thuộc vào location.state và user
 
   // --- Xử lý kết quả trả về từ VNPay ---
   useEffect(() => {
@@ -295,32 +232,16 @@ const CheckoutPage = () => {
   }
 
   // Đảm bảo data đã về trước khi render
-  // - nếu đang ở chế độ thanh toán (có stateBookingId) thì cần booking + room + house
-  // - nếu bắt đầu flow từ trang chi tiết (không có bookingId) thì chỉ cần roomDetails + boardingHouseDetails
-  if (stateBookingId) {
-    if (!booking || !roomDetails || !boardingHouseDetails) {
-      return (
-        <div className="checkout-container">
-          <Result
-            status="warning"
-            title="Không tìm thấy dữ liệu"
-            subTitle="Không thể tải chi tiết đặt phòng. Vui lòng thử lại."
-          />
-        </div>
-      );
-    }
-  } else {
-    if (!roomDetails || !boardingHouseDetails) {
-      return (
-        <div className="checkout-container">
-          <Result
-            status="warning"
-            title="Không tìm thấy dữ liệu"
-            subTitle="Không thể tải chi tiết đặt phòng. Vui lòng thử lại."
-          />
-        </div>
-      );
-    }
+  if (!booking || !roomDetails || !boardingHouseDetails) {
+    return (
+      <div className="checkout-container">
+        <Result
+          status="warning"
+          title="Không tìm thấy dữ liệu"
+          subTitle="Không thể tải chi tiết đặt phòng. Vui lòng thử lại."
+        />
+      </div>
+    );
   }
 
   // --- Render JSX ---
@@ -371,16 +292,10 @@ const CheckoutPage = () => {
             >
               <Option value="payos">Thanh toán qua PayOS (Thẻ ATM, QR, Visa)</Option>
             </Select>
-            <p className="terms-note">Bằng việc nhấn nút bên dưới, bạn đồng ý với các điều khoản...</p>
-            {stateBookingId ? (
-              <Button className="book-button" onClick={handleBook} disabled={!user || !paymentMethod}>
-                Thanh toán
-              </Button>
-            ) : (
-              <Button className="book-button" type="primary" onClick={handleContinueToContract} disabled={!user}>
-                Tiếp tục sang hợp đồng
-              </Button>
-            )}
+            <p className="terms-note">Bằng việc nhấn "Thanh toán", bạn đồng ý với các điều khoản...</p>
+            <Button className="book-button" onClick={handleBook} disabled={!user || !paymentMethod}>
+              Thanh toán
+            </Button>
           </div>
         </Col>
 

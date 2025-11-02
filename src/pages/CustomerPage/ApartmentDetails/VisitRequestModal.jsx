@@ -6,7 +6,7 @@ import api from "../../../services/api"; // <-- Đảm bảo đường dẫn nà
 
 const { TextArea } = Input;
 
-const VisitRequestModal = ({ visible, onClose, onSuccess, boardingHouseId, ownerId }) => {
+const VisitRequestModal = ({ visible, onClose, onSuccess, accommodationId, ownerId }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [messageApi, contextHolder] = message.useMessage();
@@ -30,7 +30,7 @@ const VisitRequestModal = ({ visible, onClose, onSuccess, boardingHouseId, owner
       // 2. Chuẩn bị data (Axios tự động stringify)
       const rawBody = {
         ...values,
-        boardingHouseId: boardingHouseId,
+        accommodationId: accommodationId,
         ownerId: ownerId,
       };
 

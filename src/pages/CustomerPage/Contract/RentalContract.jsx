@@ -1,10 +1,10 @@
 // file: src/pages/Customer/RentalContract/RentalContract.jsx
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Spin, Card, Checkbox, message } from 'antd';
 import { getContractTemplateForHouse, getBoardingHouseById } from '../../../services/boardingHouseAPI';
-import { getBookingById } from '../../../services/bookingService';
+import { requestBooking } from '../../../services/bookingService';
 import useUser from '../../../contexts/UserContext';
 import './RentalContract.css';
 
@@ -12,8 +12,6 @@ const RentalContract = () => {
     const { boardingHouseId, roomId } = useParams();
     const navigate = useNavigate();
     const { user } = useUser();
-    const location = useLocation();
-    const { bookingId } = location.state || {};
 
     // ✅ SỬA LỖI: Khởi tạo messageApi và contextHolder
     const [messageApi, contextHolder] = message.useMessage();
@@ -44,17 +42,6 @@ const RentalContract = () => {
                 setTemplate(templateData); // Giả sử API trả về toàn bộ object template
                 setBoardingHouse(houseData);
                 setRoom(selectedRoom);
-
-                // Nếu có bookingId (đi từ Checkout), lấy thông tin booking để tham chiếu
-                if (bookingId) {
-                    try {
-                        const booking = await getBookingById(bookingId);
-                        // You can use booking if needed (not stored currently)
-                        console.log('Fetched booking for contract preview', booking);
-                    } catch (err) {
-                        console.warn('Không thể tải booking cho hợp đồng:', err);
-                    }
-                }
             } catch (error) {
                 messageApi.error(error.response?.data?.message || "Không thể tải thông tin hợp đồng. Có thể chủ nhà chưa tạo mẫu.");
                 console.error("Fetch contract data error:", error);
@@ -65,7 +52,7 @@ const RentalContract = () => {
         };
 
         fetchData();
-    }, [boardingHouseId, roomId, navigate, messageApi, bookingId]);
+    }, [boardingHouseId, roomId, navigate, messageApi]);
 
     const renderContractContent = () => {
         if (!template || !user || !room || !boardingHouse) return "";
@@ -96,20 +83,20 @@ const RentalContract = () => {
         }
         try {
             setLoading(true);
-            if (bookingId) {
-                // If we arrived here from Checkout with a bookingId, proceed to payment
-                messageApi.success('Bạn đã đồng ý hợp đồng. Tiếp tục sang thanh toán.');
-                navigate('/customer/checkout', { state: { bookingId, fromContract: true } });
-                return;
-            }
+            await requestBooking({ boardingHouseId, roomId });
 
-            // If no bookingId, we don't create booking here in the new flow.
-            messageApi.info('Yêu cầu đặt phòng chưa được tạo. Vui lòng bắt đầu từ trang thanh toán để tạo yêu cầu trước khi ký hợp đồng.');
-            setTimeout(() => navigate('/customer/my-bookings'), 1500);
+            // ✅ HIỂN THỊ THÔNG BÁO
+            messageApi.success('Yêu cầu đặt phòng đã được gửi. Vui lòng đợi chủ nhà xác nhận.', 2);
+
+            // ✅ THÊM TIMEOUT TRƯỚC KHI ĐIỀU HƯỚNG
+            setTimeout(() => {
+                navigate('/customer/my-bookings');
+            }, 2000); // Đợi 2000ms (2 giây) rồi mới chuyển trang
+
         } catch (error) {
-            messageApi.error(error.response?.data?.message || 'Có lỗi xảy ra.');
-            console.error("Error in contract continue flow:", error);
-            setLoading(false);
+            messageApi.error(error.response?.data?.message || 'Gửi yêu cầu thất bại.');
+            console.error("Error requesting booking:", error);
+            setLoading(false); // ✅ Chỉ setLoading(false) nếu có lỗi
         }
         // Không cần setLoading(false) ở finally nữa nếu thành công vì sẽ chuyển trang
     };

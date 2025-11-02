@@ -368,11 +368,6 @@
   border-top: 1px solid #DDEBDD;
 }
 
-.occupancy-chart-center-subtitle {
-  font-size: 13px;
-  color: #888;
-}
-
 .summary-item {
   display: flex;
   flex-direction: column;

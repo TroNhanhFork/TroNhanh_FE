@@ -28,16 +28,3 @@ export const updateUserInfo = (formData) =>
       "Content-Type": "multipart/form-data",
     },
   });
-
-export const changePassword = async (data, token) => {
-  return api.put(
-    "/customer/change-password",
-    data, // phải là object có { currentPassword, newPassword, confirmPassword }
-    {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      }
-    }
-  );
-};
