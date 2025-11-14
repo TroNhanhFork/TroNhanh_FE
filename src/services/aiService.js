@@ -9,3 +9,13 @@ export const sendMessage = async (message)=>{
         throw error;
     }
 }
+
+export const summarizeReviews = async (reviews) => {
+  try {
+    const res = await api.post("/ai/analyze-sentiment", { reviews });
+    return res.data.summary;
+  } catch (err) {
+    console.error("Error summarizing reviews:", err);
+    throw err;
+  }
+};

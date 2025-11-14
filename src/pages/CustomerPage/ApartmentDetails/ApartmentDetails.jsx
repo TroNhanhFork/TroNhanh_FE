@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { Brain } from "lucide-react";
 import {
   Row,
   Col,
@@ -16,6 +17,7 @@ import {
   List,
   Spin,
   Carousel,
+  Typography,
   Tabs
 } from "antd";
 import {
@@ -58,7 +60,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import Slider from "react-slick";
 import { getValidAccessToken } from "../../../services/authService";
 import VisitRequestModal from "./VisitRequestModal";
-
+import { summarizeReviews } from "../../../services/aiService";
 const { Option } = Select;
 const { TextArea } = Input;
 
@@ -122,6 +124,8 @@ const RoomCard = ({ room, onBook, bookingStatus, onView }) => (
 
 
 const PropertyDetails = () => {
+  const { Title, Paragraph } = Typography;
+
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
@@ -151,6 +155,9 @@ const PropertyDetails = () => {
   // Room details modal
   const [roomModalVisible, setRoomModalVisible] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [summary, setSummary] = useState("");
+  const [loadingSummary, setLoadingSummary] = useState(false);
+
   const AmenitiesList = ({ amenities }) => {
     let parsedAmenities = [];
 
@@ -162,6 +169,26 @@ const PropertyDetails = () => {
       parsedAmenities = []; // Nếu parse lỗi thì để rỗng
     }
   }
+
+  const handleSummarizeReviews = async () => {
+    try {
+      setLoadingSummary(true);
+      const reviews = boardingHouse?.reviews?.map(r => r.comment) || [];
+      if (reviews.length === 0) {
+        messageApi.warning("Không có đánh giá nào để tóm tắt.");
+        return;
+      }
+
+      const aiSummary = await summarizeReviews(reviews);
+      setSummary(aiSummary);
+    } catch (err) {
+      messageApi.error("Không thể tóm tắt đánh giá.");
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
+
   // Tạo function riêng để fetch boarding-house data
   const fetchBoardingHouseData = async () => {
     try {
@@ -1183,6 +1210,70 @@ const PropertyDetails = () => {
           )}
         </Col>
       </Row>
+
+      <div className="mb-6">
+        {/* Header + Button */}
+        <div className="flex justify-between items-center mb-4">
+          <Title level={4} className="m-0">
+            Đánh giá của người thuê
+          </Title>
+
+          <Button
+            type="primary"
+            loading={loadingSummary}
+            onClick={handleSummarizeReviews}
+            icon={<Brain size={18} />}
+            style={{
+              background: "linear-gradient(to right, #6366F1, #3B82F6)",
+              border: "none",
+              fontWeight: 500,
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            Tóm tắt bằng AI
+          </Button>
+        </div>
+
+        {/* Summary Card */}
+        {summary && (
+          <Card
+            bordered={false}
+            style={{
+              borderRadius: "16px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              backgroundColor: "#f9fafb",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            {/* Gradient top line */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "4px",
+                background: "linear-gradient(to right, #6366F1, #3B82F6)",
+              }}
+            />
+
+            <div className="flex items-center gap-2 mb-2">
+              <Brain size={20} className="text-indigo-600" />
+              <Title level={5} className="m-0">
+                Tóm tắt AI
+              </Title>
+            </div>
+
+            <Paragraph style={{ whiteSpace: "pre-line", lineHeight: 1.6 }}>
+              {summary}
+            </Paragraph>
+          </Card>
+        )}
+      </div>
 
       <Divider />
       <h1 className="text-heading">Policy detail</h1>
