@@ -19,3 +19,13 @@ export const summarizeReviews = async (reviews) => {
     throw err;
   }
 };
+
+export const getAiRecommendations = async (filters, rooms) => {
+  try {
+    const res = await api.post("/ai/recommend-simple", { filters, rooms });
+    return res.data.recommended || [];
+  } catch (err) {
+    console.error("getAiRecommendations error:", err);
+    throw err;
+  }
+};
