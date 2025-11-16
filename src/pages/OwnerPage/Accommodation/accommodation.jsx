@@ -18,7 +18,9 @@ import {
 } from "antd";
 import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { BulbOutlined } from "@ant-design/icons";
 import { geocodeWithOpenCage } from "../../../services/OpenCage";
+import { generateBoardingHouseDescription } from "../../../services/geminiService";
 import "./accommodation.css";
 import {
     getOwnerBoardingHouses,
@@ -60,6 +62,7 @@ const ManageBoardingHouses = () => {
     const [manageExistingRooms, setManageExistingRooms] = useState([]); // existing rooms fetched
     const [existingFilesMap, setExistingFilesMap] = useState({}); // { roomId: [File, ...] }
     const [editingBoardingHouse, setEditingBoardingHouse] = useState(null);
+    const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -217,6 +220,47 @@ const ManageBoardingHouses = () => {
             return;
         }
         setIsAddModalVisible(true);
+    };
+
+    const handleGenerateDescription = async () => {
+        try {
+            setIsGeneratingDescription(true);
+            
+            // Lấy thông tin từ form
+            const formValues = form.getFieldsValue();
+            const { name, location, rooms, amenities } = formValues;
+            
+            // Validate các field cần thiết
+            if (!name || !location?.street || !location?.district) {
+                messageApi.warning('Vui lòng điền tên nhà trọ và địa chỉ trước khi tạo mô tả!');
+                return;
+            }
+            
+            // Chuẩn bị thông tin để gửi đến AI
+            const boardingHouseInfo = {
+                name,
+                location: {
+                    street: location.street,
+                    district: location.district,
+                    city: 'Đà Nẵng'
+                },
+                rooms: rooms || [],
+                amenities: amenities || []
+            };
+            
+            // Gọi Gemini API để tạo description
+            const generatedDescription = await generateBoardingHouseDescription(boardingHouseInfo);
+            
+            // Set description vào form
+            form.setFieldsValue({ description: generatedDescription });
+            messageApi.success('Đã tạo mô tả thành công!');
+            
+        } catch (error) {
+            console.error('Error generating description:', error);
+            messageApi.error(error.message || 'Không thể tạo mô tả. Vui lòng thử lại!');
+        } finally {
+            setIsGeneratingDescription(false);
+        }
     };
 
     const columns = [
@@ -432,10 +476,27 @@ const ManageBoardingHouses = () => {
                         </Form.Item>
                         <Form.Item
                             name="description"
-                            label="Mô tả chung"
+                            label={
+                                <Space>
+                                    <span>Mô tả chung</span>
+                                    <Button
+                                        type="primary"
+                                        size="small"
+                                        icon={<BulbOutlined />}
+                                        loading={isGeneratingDescription}
+                                        onClick={handleGenerateDescription}
+                                        style={{ marginLeft: 8 }}
+                                    >
+                                        Generate Description
+                                    </Button>
+                                </Space>
+                            }
                             rules={[{ required: true }]}
                         >
-                            <Input.TextArea rows={4} />
+                            <Input.TextArea 
+                                rows={4} 
+                                placeholder="Nhập mô tả hoặc nhấn 'Generate Description' để tạo tự động"
+                            />
                         </Form.Item>
                         <Form.Item label="Tiện ích" name="amenities">
                             <Select
