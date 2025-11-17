@@ -1,10 +1,10 @@
-// file: src/pages/Customer/RentalContract/RentalContract.jsx
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Button, Spin, Card, Checkbox, message } from 'antd';
+import { Button, Spin, Card, Checkbox, message, Modal } from 'antd';
+import SignaturePad from 'react-signature-canvas';
 import { getContractTemplateForHouse, getBoardingHouseById } from '../../../services/boardingHouseAPI';
 import { getBookingById } from '../../../services/bookingService';
+import { saveContract, exportContract } from '../../../services/contractService';
 import useUser from '../../../contexts/UserContext';
 import './RentalContract.css';
 
@@ -15,14 +15,18 @@ const RentalContract = () => {
     const location = useLocation();
     const { bookingId } = location.state || {};
 
-    // ✅ SỬA LỖI: Khởi tạo messageApi và contextHolder
     const [messageApi, contextHolder] = message.useMessage();
-
     const [template, setTemplate] = useState(null);
     const [boardingHouse, setBoardingHouse] = useState(null);
     const [room, setRoom] = useState(null);
     const [loading, setLoading] = useState(true);
     const [agreed, setAgreed] = useState(false);
+
+    const [sigModalOpen, setSigModalOpen] = useState(false);
+    const sigPadRef = useRef(null);
+    const [signatureDataUrl, setSignatureDataUrl] = useState(null);
+
+    const [savedContractId, setSavedContractId] = useState(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -31,142 +35,167 @@ const RentalContract = () => {
                     getContractTemplateForHouse(boardingHouseId),
                     getBoardingHouseById(boardingHouseId)
                 ]);
-                console.log("Signature :", templateData.signatureImage);
-
                 const selectedRoom = houseData.rooms.find(r => r._id === roomId);
-
                 if (!selectedRoom) {
-                    messageApi.error("Phòng trọ không hợp lệ hoặc không còn tồn tại.");
-                    navigate(-1); // Quay lại trang trước
+                    messageApi.error('Phòng trọ không hợp lệ.');
+                    navigate(-1);
                     return;
                 }
-
-                setTemplate(templateData); // Giả sử API trả về toàn bộ object template
+                setTemplate(templateData);
                 setBoardingHouse(houseData);
                 setRoom(selectedRoom);
 
-                // Nếu có bookingId (đi từ Checkout), lấy thông tin booking để tham chiếu
                 if (bookingId) {
                     try {
                         const booking = await getBookingById(bookingId);
-                        // You can use booking if needed (not stored currently)
-                        console.log('Fetched booking for contract preview', booking);
+                        console.log('Fetched booking', booking);
                     } catch (err) {
-                        console.warn('Không thể tải booking cho hợp đồng:', err);
+                        console.warn('Cannot fetch booking', err);
                     }
                 }
-            } catch (error) {
-                messageApi.error(error.response?.data?.message || "Không thể tải thông tin hợp đồng. Có thể chủ nhà chưa tạo mẫu.");
-                console.error("Fetch contract data error:", error);
-                navigate(-1); // Quay lại nếu có lỗi
+            } catch (err) {
+                messageApi.error('Không thể tải hợp đồng.');
+                console.error(err);
+                navigate(-1);
             } finally {
                 setLoading(false);
             }
         };
-
         fetchData();
-    }, [boardingHouseId, roomId, navigate, messageApi, bookingId]);
+    }, [boardingHouseId, roomId, bookingId, navigate, messageApi]);
 
     const renderContractContent = () => {
-        if (!template || !user || !room || !boardingHouse) return "";
-
+        if (!template || !user || !room || !boardingHouse) return '';
         const replacements = {
             '{{tenantName}}': user.name,
             '{{tenantEmail}}': user.email,
             '{{customerPhone}}': user.phone,
             '{{roomNumber}}': room.roomNumber,
-            '{{roomPrice}}': room.price.toLocaleString('vi-VN'),
-            '{{roomArea}}': room.area,
-            '{{houseAddress}}': `${boardingHouse.location.addressDetail}, ${boardingHouse.location.street}, ${boardingHouse.location.district}`,
-            '{{ownerName}}': boardingHouse.ownerId.name,
-            '{{ownerPhone}}': boardingHouse.ownerId.phone,
-            '{{currentDate}}': new Date().toLocaleDateString('vi-VN'),
+            '{{roomPrice}}': room.price?.toLocaleString('vi-VN') || '',
+            '{{roomArea}}': room.area || '',
+            '{{houseAddress}}': `${boardingHouse.location?.addressDetail || ''}, ${boardingHouse.location?.street || ''}, ${boardingHouse.location?.district || ''}`,
+            '{{ownerName}}': boardingHouse.ownerId?.name || '',
+            '{{ownerPhone}}': boardingHouse.ownerId?.phone || '',
+            '{{currentDate}}': new Date().toLocaleDateString('vi-VN')
         };
-        let content = template.content;
-        for (const key in replacements) {
+        let content = template.content || '';
+        Object.keys(replacements).forEach(key => {
             content = content.replace(new RegExp(key, 'g'), replacements[key]);
-        }
+        });
         return content;
+    };
+
+    const handleOpenSig = () => setSigModalOpen(true);
+    const handleClearSig = () => sigPadRef.current?.clear();
+    const handleSaveSig = () => {
+        if (!sigPadRef.current || sigPadRef.current.isEmpty()) {
+            messageApi.warning('Vui lòng ký trước khi lưu.');
+            return;
+        }
+        const dataUrl = sigPadRef.current.toDataURL('image/png');
+        setSignatureDataUrl(dataUrl);
+        setSigModalOpen(false);
+        messageApi.success('Đã lưu chữ ký.');
     };
 
     const handleContinue = async () => {
         if (!agreed) {
-            messageApi.warning("Bạn phải đồng ý với các điều khoản để tiếp tục.");
+            messageApi.warning('Bạn phải đồng ý với điều khoản.');
             return;
         }
         try {
             setLoading(true);
-            if (bookingId) {
-                // If we arrived here from Checkout with a bookingId, proceed to payment
-                messageApi.success('Bạn đã đồng ý hợp đồng. Tiếp tục sang thanh toán.');
-                navigate('/customer/checkout', { state: { bookingId, fromContract: true } });
-                return;
-            }
+            const payload = {
+                bookingId: bookingId || null,
+                boardingHouseId,
+                roomId,
+                tenantId: user._id,
+                ownerId: boardingHouse.ownerId._id,
+                content: renderContractContent(),
+                signatureTenant: signatureDataUrl || null
+            };
+            const res = await saveContract(payload);
+            const saved = res.data;
+            setSavedContractId(saved._id);
+            messageApi.success('Hợp đồng đã được lưu.');
 
-            // If no bookingId, we don't create booking here in the new flow.
-            messageApi.info('Yêu cầu đặt phòng chưa được tạo. Vui lòng bắt đầu từ trang thanh toán để tạo yêu cầu trước khi ký hợp đồng.');
-            setTimeout(() => navigate('/customer/my-bookings'), 1500);
-        } catch (error) {
-            messageApi.error(error.response?.data?.message || 'Có lỗi xảy ra.');
-            console.error("Error in contract continue flow:", error);
+            if (bookingId) {
+                navigate('/customer/checkout', { state: { bookingId, contractId: saved._id, fromContract: true } });
+            } else {
+                setTimeout(() => navigate('/customer/my-bookings'), 1200);
+            }
+        } catch (err) {
+            console.error(err);
+            messageApi.error('Không thể lưu hợp đồng!');
+        } finally {
             setLoading(false);
         }
-        // Không cần setLoading(false) ở finally nữa nếu thành công vì sẽ chuyển trang
     };
 
-    if (loading) {
-        return <div className="loading-container"><Spin size="large" /></div>;
-    }
-
-    if (!template) {
-        // Xử lý trường hợp chủ nhà chưa có mẫu hợp đồng
-        return <div className="loading-container">Chủ nhà chưa cung cấp mẫu hợp đồng cho khu trọ này.</div>
-    }
-
-    const owner = boardingHouse.ownerId;
-    const today = new Date();
+    if (loading) return <div className="loading-container"><Spin size="large" /></div>;
+    if (!template) return <div className="loading-container">Chủ nhà chưa cung cấp mẫu hợp đồng.</div>;
 
     return (
         <>
             {contextHolder}
             <div className="contract-container">
-                <Card title={template.title} bordered={false} className="contract-card">
-                    {/* Phần nội dung hợp đồng được render động */}
-                    <div className="contract-terms" style={{ whiteSpace: 'pre-wrap' }}>
-                        {renderContractContent()}
-                    </div>
+                <Card title={template.title} bordered={false}>
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{renderContractContent()}</div>
 
-                    <div className="signature-section">
-                        <div className="signature-block">
-                            <h4>ĐẠI DIỆN BÊN A</h4>
+                    <div className="signature-section" style={{ marginTop: 16 }}>
+                        <div style={{ marginBottom: 16 }}>
+                            <strong>Chữ ký chủ trọ (Bên A):</strong>
                             {template.signatureImage ? (
-                                <img src={`http://localhost:5000${template.signatureImage}`} alt="Chữ ký chủ trọ" className="signature-image-display" />
+                                <img
+                                    src={`http://localhost:5000${template.signatureImage}`}
+                                    alt="signature-owner"
+                                    style={{ width: 250, border: '1px solid #eee', marginTop: 8, display: 'block' }}
+                                />
                             ) : (
-                                <div className="signature-image"><span className="signature-text">{owner?.name}</span></div>
+                                <p style={{ color: 'red', marginTop: 8 }}>Chủ trọ chưa tạo chữ ký.</p>
                             )}
-                            <p>{owner.name}</p>
                         </div>
-                        <div className="signature-block">
-                            <h4>ĐẠI DIỆN BÊN B</h4>
-                            <div className="signature-image"><span className="signature-text">{user?.name}</span></div>
-                            <p>{user.name}</p>
+
+                        <div>
+                            <strong>Chữ ký người thuê (Bên B):</strong>
+                            {signatureDataUrl ? (
+                                <img
+                                    src={signatureDataUrl}
+                                    alt="signature"
+                                    style={{ width: 250, border: '1px solid #eee', marginTop: 8, display: 'block' }}
+                                />
+                            ) : (
+                                <div style={{ marginTop: 8 }}>
+                                    <Button onClick={handleOpenSig}>Ký hợp đồng</Button>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    <div className="agreement-section">
-                        <Checkbox checked={agreed} onChange={(e) => setAgreed(e.target.checked)}>
-                            Tôi đã đọc, hiểu rõ và đồng ý với tất cả các điều khoản trong hợp đồng này.
+
+                    <div style={{ marginTop: 16 }}>
+                        <Checkbox checked={agreed} onChange={e => setAgreed(e.target.checked)}>
+                            Tôi đã đọc, hiểu và đồng ý với điều khoản.
                         </Checkbox>
                     </div>
 
-                    <div className="action-buttons">
-                        <Button onClick={() => navigate(-1)}>Quay lại</Button>
-                        <Button type="primary" disabled={!agreed} onClick={handleContinue}>
-                            Đồng ý và Tiếp tục
-                        </Button>
+                    <div style={{ marginTop: 16 }}>
+                        <Button onClick={() => navigate(-1)} style={{ marginRight: 8 }}>Quay lại</Button>
+                        <Button type="primary" disabled={!agreed} onClick={handleContinue}>Lưu hợp đồng</Button>
                     </div>
                 </Card>
             </div>
+
+            <Modal open={sigModalOpen} onCancel={() => setSigModalOpen(false)} footer={null} width={600}>
+                <div style={{ textAlign: 'center' }}>
+                    <h3>Ký tên</h3>
+                    <SignaturePad ref={sigPadRef} canvasProps={{ width: 520, height: 200, className: 'signature-canvas' }} />
+                    <div style={{ marginTop: 12 }}>
+                        <Button onClick={handleClearSig} style={{ marginRight: 8 }}>Xóa</Button>
+                        <Button type="primary" onClick={handleSaveSig}>Lưu chữ ký</Button>
+                    </div>
+                </div>
+            </Modal>
         </>
     );
 };
