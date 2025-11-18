@@ -48,6 +48,7 @@ const ManageBoardingHouses = () => {
     const [form] = Form.useForm();
     const [manageForm] = Form.useForm();
     const { validateFiles, isValidating } = useImageValidation();
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [boardingHouses, setBoardingHouses] = useState([]);
     const [membershipInfo, setMembershipInfo] = useState(null);
@@ -120,6 +121,7 @@ const ManageBoardingHouses = () => {
     };
 
     const handleManageRoomsSubmit = async (values) => {
+        setIsSubmitting(true);
         try {
             // ✅ VALIDATE ALL NEW ROOM IMAGES FIRST
             const allNewRoomImages = [];
@@ -208,6 +210,8 @@ const ManageBoardingHouses = () => {
         } catch (err) {
             console.error("Error managing rooms", err);
             messageApi.error(err.response?.data?.message || "Lỗi khi cập nhật phòng");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -308,6 +312,7 @@ const ManageBoardingHouses = () => {
     ];
 
     const handleAddFormSubmit = async (values) => {
+        setIsSubmitting(true);
         try {
             const { name, description, location, rooms } = values;
             const fullAddress = `${location.street}, ${location.district}, Đà Nẵng`;
@@ -386,10 +391,13 @@ const ManageBoardingHouses = () => {
             messageApi.error(
                 error.response?.data?.message || "Lỗi khi thêm nhà trọ."
             );
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
     const handleUpdateFormSubmit = async (values) => {
+        setIsSubmitting(true);
         try {
             const { name, description, location, amenities } = values;
             const fullAddress = `${location.street}, ${location.district}, Đà Nẵng`;
@@ -441,6 +449,8 @@ const ManageBoardingHouses = () => {
             messageApi.error(
                 error.response?.data?.message || "Lỗi khi cập nhật nhà trọ."
             );
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -485,6 +495,7 @@ const ManageBoardingHouses = () => {
                     width={800}
                     okText="Thêm mới"
                     cancelText="Hủy"
+                    confirmLoading={isValidating || isSubmitting}
                 >
                     <Form form={form} layout="vertical" onFinish={handleAddFormSubmit}>
                         <Form.Item
@@ -755,6 +766,7 @@ const ManageBoardingHouses = () => {
                     width={900}
                     okText="Lưu"
                     cancelText="Huỷ"
+                    confirmLoading={isValidating || isSubmitting}
                 >
                     <div style={{ marginBottom: 12 }}>
                         <h4>Ảnh cho phòng hiện có</h4>
@@ -882,6 +894,7 @@ const ManageBoardingHouses = () => {
                     width={800}
                     okText="Lưu thay đổi"
                     cancelText="Hủy"
+                    confirmLoading={isValidating || isSubmitting}
                 >
                     {/* Dùng useEffect để điền dữ liệu vào form khi modal mở */}
                     {useEffect(() => {
