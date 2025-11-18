@@ -104,7 +104,7 @@ const RoommateCommunity = () => {
                                     title={
                                         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                                             <Avatar
-                                                src={post.userId?.avatar ? `http://localhost:5000${post.userId.avatar}` : undefined}
+                                                src={post.userId?.avatar ? `https://tronhanh-be.onrender.com${post.userId.avatar}` : undefined}
                                                 style={{ backgroundColor: "#004d40" }}
                                             >
                                                 {!post.userId?.avatar && post.userId?.name?.[0]?.toUpperCase()}
@@ -118,7 +118,7 @@ const RoommateCommunity = () => {
                                     cover={
                                         post.images && post.images.length > 0 ? (
                                             <img
-                                                src={`http://localhost:5000${post.images[0]}`}
+                                                src={`https://tronhanh-be.onrender.com${post.images[0]}`}
                                                 alt="post"
                                                 style={{ width: '100%', maxHeight: 220, objectFit: 'cover', borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
                                             />
@@ -136,7 +136,7 @@ const RoommateCommunity = () => {
                                                     {post.images.map((img, idx) => (
                                                         <Image
                                                             key={idx}
-                                                            src={`http://localhost:5000${img}`}
+                                                            src={`https://tronhanh-be.onrender.com${img}`}
                                                             width={90}
                                                             height={60}
                                                             style={{ objectFit: 'cover', borderRadius: 6 }}

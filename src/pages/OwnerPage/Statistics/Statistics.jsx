@@ -82,7 +82,7 @@ const Statistics = () => {
         });
       } else {
         // Fallback to old method if API fails
-        const boardingHousesRes = await axios.get(`http://localhost:5000/api/boardingHouse?ownerId=${user._id}`);
+        const boardingHousesRes = await axios.get(`https://tronhanh-be.onrender.com/api/boardingHouse?ownerId=${user._id}`);
         const boardingHouses = boardingHousesRes.data;
 
         const totalBoardingHouses = boardingHouses.length;
@@ -198,7 +198,7 @@ const Statistics = () => {
   const fetchBoardingHouseDetailsByBooking = async (bookingId) => {
     try {
       setModalLoading(true);
-      const res = await axios.get(`http://localhost:5000/api/boarding-houses/booking/${bookingId}/details`);
+      const res = await axios.get(`https://tronhanh-be.onrender.com/api/boarding-houses/booking/${bookingId}/details`);
 
       // Kiểm tra dữ liệu trả về
       if (res.data?.success && res.data?.boardingHouse) {
@@ -747,7 +747,7 @@ const Statistics = () => {
                       <div className="boardingHouse-image-container">
                         <Image.PreviewGroup>
                           {bookingDetails.boardingHouse.photos.slice(0, 4).map((photo, index) => {
-                            const src = `http://localhost:5000${photo}`;
+                            const src = `https://tronhanh-be.onrender.com${photo}`;
                             return (
                               <div key={index} className="boardingHouse-thumb">
                                 <Image

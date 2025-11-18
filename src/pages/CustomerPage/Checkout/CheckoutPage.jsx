@@ -388,7 +388,7 @@ const CheckoutPage = () => {
         <Col xs={24} md={10}>
           <div className="summary-card">
             <img
-              src={boardingHouseDetails?.photos?.[0] ? `http://localhost:5000${boardingHouseDetails.photos[0]}` : "/default-image.jpg"}
+              src={boardingHouseDetails?.photos?.[0] ? `https://tronhanh-be.onrender.com${boardingHouseDetails.photos[0]}` : "/default-image.jpg"}
               alt={boardingHouseDetails?.name || 'Boarding House'}
               className="summary-image"
             />

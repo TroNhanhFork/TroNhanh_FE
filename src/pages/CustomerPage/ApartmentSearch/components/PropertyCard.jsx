@@ -43,7 +43,7 @@ const PropertyCard = ({ property }) => {
                     alt={property.name}
                     src={
                         property.photos && property.photos.length > 0
-                            ? `http://localhost:5000${property.photos[0]}`
+                            ? `https://tronhanh-be.onrender.com${property.photos[0]}`
                             : "/default-image.jpg"
                     }
                     style={{ width: "200px", height: "150px", objectFit: "cover" }}

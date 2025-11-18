@@ -7,9 +7,9 @@
 //   const [socket, setSocket] = useState(null);
 
 //   useEffect(() => {
-//     console.log("Testing direct socket connection to http://localhost:5000");
+//     console.log("Testing direct socket connection to https://tronhanh-be.onrender.com");
 
-//     const testSocket = io("http://localhost:5000", {
+//     const testSocket = io("https://tronhanh-be.onrender.com", {
 //       transports: ["polling", "websocket"],
 //     });
 

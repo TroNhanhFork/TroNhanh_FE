@@ -10,7 +10,7 @@ export default function ViewContract() {
     const downloadPDF = async () => {
         const id = selectedContract._id;
 
-        const res = await fetch(`http://localhost:5000/api/contracts/export/${id}`, {
+        const res = await fetch(`https://tronhanh-be.onrender.com/api/contracts/export/${id}`, {
             method: "GET",
         });
 
@@ -29,7 +29,7 @@ export default function ViewContract() {
     };
 
     useEffect(() => {
-        fetch(`http://localhost:5000/api/contracts`)
+        fetch(`https://tronhanh-be.onrender.com/api/contracts`)
             .then(res => res.json())
             .then(data => {
                 setContracts(data);
@@ -113,7 +113,7 @@ export default function ViewContract() {
                                 <div style={{ marginTop: 8 }}>
                                     {selectedContract.ownerSignature ? (
                                         <img
-                                            src={`http://localhost:5000${selectedContract.ownerSignature}`}
+                                            src={`https://tronhanh-be.onrender.com${selectedContract.ownerSignature}`}
                                             alt="signature-owner"
                                             style={{
                                                 width: 200,

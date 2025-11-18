@@ -92,7 +92,7 @@ const VisitRequests = () => {
                                 item.boardingHouseId?.photos?.[0] && (
                                     <img
                                         alt="boardingHouse"
-                                        src={`http://localhost:5000${item.boardingHouseId.photos[0]}`}
+                                        src={`https://tronhanh-be.onrender.com${item.boardingHouseId.photos[0]}`}
                                         style={{ height: 200, objectFit: 'cover' }}
                                     />
                                 )

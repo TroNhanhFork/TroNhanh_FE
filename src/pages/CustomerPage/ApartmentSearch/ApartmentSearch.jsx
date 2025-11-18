@@ -138,7 +138,7 @@ const ApartmentSearch = () => {
           <img
             src={
               room.photos && room.photos.length > 0
-                ? `http://localhost:5000${room.photos[0]}`
+                ? `https://tronhanh-be.onrender.com${room.photos[0]}`
                 : "/image/default-image.jpg"
             }
             alt={room.name}

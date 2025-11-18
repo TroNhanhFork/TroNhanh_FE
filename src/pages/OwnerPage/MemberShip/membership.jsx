@@ -31,7 +31,7 @@ const Membership = () => {
   // Lấy danh sách gói membership
   const fetchMembershipPackages = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/membership-packages');
+      const res = await axios.get('https://tronhanh-be.onrender.com/api/membership-packages');
       setPackages(res.data.packages);
     } catch (err) {
       console.error("❌ Failed to load membership packages:", err);
@@ -41,7 +41,7 @@ const Membership = () => {
   // Lấy gói membership hiện tại từ MongoDB
   const fetchCurrentPackage = async (userId) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/payment/current/${userId}`);
+      const res = await axios.get(`https://tronhanh-be.onrender.com/api/payment/current/${userId}`);
       const pkg = res.data.package;
       if (pkg && pkg._id) {
         setCurrentPackageId(String(pkg._id)); // ✅ Ép kiểu rõ ràng
@@ -116,7 +116,7 @@ const Membership = () => {
       console.log("type:", "membership");
 
       // Gọi API backend để tạo PayOS payment
-      const res = await axios.post("http://localhost:5000/api/payment/create", {
+      const res = await axios.post("https://tronhanh-be.onrender.com/api/payment/create", {
         packageId: pkg._id,
         userId: userId,
         type: "membership" // Hoặc "booking" nếu là booking

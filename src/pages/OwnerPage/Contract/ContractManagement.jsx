@@ -41,7 +41,7 @@ const ContractManagement = () => {
                 const template = await getOwnerContractTemplate();
                 form.setFieldsValue({ title: template.title, content: template.content });
                 if (template.signatureImage) {
-                    setExistingSignature(`http://localhost:5000${template.signatureImage}`);
+                    setExistingSignature(`https://tronhanh-be.onrender.com${template.signatureImage}`);
                 }
             } catch (error) {
                 console.log("Chưa có mẫu hợp đồng.");

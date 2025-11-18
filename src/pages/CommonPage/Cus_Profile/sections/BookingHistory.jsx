@@ -240,7 +240,7 @@ const BookingHistory = () => {
                           {selectedBooking.boardinghouse.photos.map((photo, index) => (
                             <div key={index}>
                               <img
-                                src={`http://localhost:5000${photo}`}
+                                src={`https://tronhanh-be.onrender.com${photo}`}
                                 alt={`boardinghouse-${index}`}
                                 style={{
                                   width: "100%",

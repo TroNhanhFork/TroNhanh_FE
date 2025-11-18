@@ -20,7 +20,7 @@ const orderCode = query.get("orderCode");
     } else {
       setStatus("fail");
   if (user?._id && orderCode) {
-  axios.post("http://localhost:5000/api/payment/cancel", { orderCode })
+  axios.post("https://tronhanh-be.onrender.com/api/payment/cancel", { orderCode })
     .then(() => console.log("Đã cập nhật trạng thái cancel thành công"))
     .catch(err => console.error("Lỗi khi cập nhật cancel:", err));
 }

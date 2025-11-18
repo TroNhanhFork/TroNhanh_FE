@@ -660,7 +660,7 @@ const ManageBoardingHouses = () => {
                                     {detailedHouse.photos.map((photo, index) => (
                                         <div key={index}>
                                             <img
-                                                src={`http://localhost:5000${photo}`}
+                                                src={`https://tronhanh-be.onrender.com${photo}`}
                                                 alt={`photo-${index}`}
                                                 style={{
                                                     width: "100%",
@@ -934,7 +934,7 @@ const ManageBoardingHouses = () => {
                                     {editingBoardingHouse.photos?.map((photo) => (
                                         <img
                                             key={photo}
-                                            src={`http://localhost:5000${photo}`}
+                                            src={`https://tronhanh-be.onrender.com${photo}`}
                                             alt="ảnh cũ"
                                             style={{
                                                 width: 102,

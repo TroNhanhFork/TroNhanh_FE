@@ -165,7 +165,7 @@ const OwnerVisitRequests = () => {
                 item.accommodationId?.photos?.[0] && (
                   <img
                     alt="accommodation"
-                    src={`http://localhost:5000${item.accommodationId.photos[0]}`}
+                    src={`https://tronhanh-be.onrender.com${item.accommodationId.photos[0]}`}
                     style={{ height: 200, objectFit: 'cover' }}
                   />
                 )

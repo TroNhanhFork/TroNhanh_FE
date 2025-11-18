@@ -147,7 +147,7 @@ const RentalContract = () => {
                             <strong>Chữ ký chủ trọ (Bên A):</strong>
                             {template.signatureImage ? (
                                 <img
-                                    src={`http://localhost:5000${template.signatureImage}`}
+                                    src={`https://tronhanh-be.onrender.com${template.signatureImage}`}
                                     alt="signature-owner"
                                     style={{ width: 250, border: '1px solid #eee', marginTop: 8, display: 'block' }}
                                 />

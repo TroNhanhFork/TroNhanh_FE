@@ -94,7 +94,7 @@ const Favorites = () => {
                       <Link to={`/customer/property/${house._id}`}>
                         <img
                           alt={house.name} // ✅ Sửa alt text
-                          src={house.photos?.[0] ? `http://localhost:5000${house.photos[0]}` : "/default-image.jpg"}
+                          src={house.photos?.[0] ? `https://tronhanh-be.onrender.com${house.photos[0]}` : "/default-image.jpg"}
                           style={{ height: "200px", objectFit: "cover", width: '100%' }}
                         />
                       </Link>

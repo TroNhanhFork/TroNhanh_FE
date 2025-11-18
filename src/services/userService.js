@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getValidAccessToken } from './authService';
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://tronhanh-be.onrender.com/api';
 
 // Create axios instance with base configuration
 const userAPI = axios.create({
@@ -11,7 +11,7 @@ const userAPI = axios.create({
 });
 // axios instance
 const chatAPI = axios.create({
-    baseURL: "http://localhost:5000/api/chats"
+    baseURL: "https://tronhanh-be.onrender.com/api/chats"
 });
 
 // Add token to requests

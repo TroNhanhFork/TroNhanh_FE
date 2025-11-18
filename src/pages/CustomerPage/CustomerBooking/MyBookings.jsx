@@ -93,7 +93,7 @@ const MyBookings = () => {
                         // Need to populate these details in the backend API response
                         const house = booking.boardingHouseId;
                         const room = booking.roomId || booking.propertyId; // Handle both possibilities
-                        const imageUrl = house?.photos?.[0] ? `http://localhost:5000${house.photos[0]}` : '/default-image.jpg';
+                        const imageUrl = house?.photos?.[0] ? `https://tronhanh-be.onrender.com${house.photos[0]}` : '/default-image.jpg';
 
                         return (
                             <List.Item>

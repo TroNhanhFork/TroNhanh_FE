@@ -2,10 +2,10 @@ import axiosInstance from './axiosInstance';
 
 // --- URL CONSTANTS ---
 // URL đã thay đổi từ 'accommodation' sang 'boarding-houses'
-const API_BOARDING_HOUSE_URL = 'http://localhost:5000/api/boarding-houses';
-const API_ROOM_URL = 'http://localhost:5000/api/rooms';
-const API_FAV_URL = 'http://localhost:5000/api/favorites';
-const API_CONTRACT_URL = 'http://localhost:5000/api/contracts';
+const API_BOARDING_HOUSE_URL = 'https://tronhanh-be.onrender.com/api/boarding-houses';
+const API_ROOM_URL = 'https://tronhanh-be.onrender.com/api/rooms';
+const API_FAV_URL = 'https://tronhanh-be.onrender.com/api/favorites';
+const API_CONTRACT_URL = 'https://tronhanh-be.onrender.com/api/contracts';
 
 // ================================================================
 // BOARDING HOUSE APIs (NHÀ TRỌ)

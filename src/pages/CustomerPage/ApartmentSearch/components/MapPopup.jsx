@@ -62,7 +62,7 @@ const MapPopup = ({ visible, onClose, room }) => {
 
       // 1. Lấy danh sách POI
       const res = await fetch(
-        `http://localhost:5000/api/ai/nearby-places?lat=${roomPos[0]}&lng=${roomPos[1]}&keyword=${category}`
+        `https://tronhanh-be.onrender.com/api/ai/nearby-places?lat=${roomPos[0]}&lng=${roomPos[1]}&keyword=${category}`
       );
       const data = await res.json();
       setPlaces(data);
@@ -71,7 +71,7 @@ const MapPopup = ({ visible, onClose, room }) => {
       const allRoutes = await Promise.all(
         data.map(async (poi) => {
           const routeRes = await fetch(
-            `http://localhost:5000/api/ai/route?fromLat=${roomPos[0]}&fromLng=${roomPos[1]}&toLat=${poi.lat}&toLng=${poi.lng}`
+            `https://tronhanh-be.onrender.com/api/ai/route?fromLat=${roomPos[0]}&fromLng=${roomPos[1]}&toLat=${poi.lat}&toLng=${poi.lng}`
           );
           const routeData = await routeRes.json();
 

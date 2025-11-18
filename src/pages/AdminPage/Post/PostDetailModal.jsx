@@ -123,7 +123,7 @@ const PostDetailModal = ({ post, onClose }) => {
                             key={index}
                             width={120}
                             height={120}
-                            src={`http://localhost:5000${photo}`}
+                            src={`https://tronhanh-be.onrender.com${photo}`}
                             style={{ objectFit: "cover", borderRadius: 4 }}
                             placeholder={
                               <div style={{

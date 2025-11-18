@@ -372,7 +372,7 @@ const PropertyDetails = () => {
 
     try {
       // Create or get existing chat
-      const res = await axios.post("http://localhost:5000/api/chats/get-or-create", {
+      const res = await axios.post("https://tronhanh-be.onrender.com/api/chats/get-or-create", {
         user1Id: user._id,
         user2Id: boardingHouse.ownerId._id,
       });
@@ -531,7 +531,7 @@ const PropertyDetails = () => {
     }
     try {
       // ✅ SỬA: Dùng boardingHouse._id
-      const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews`, {
+      const response = await fetch(`https://tronhanh-be.onrender.com/api/boarding-houses/${boardingHouse._id}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ rating: reviewRating, comment: reviewContent, purpose: reviewPurpose }),
@@ -554,7 +554,7 @@ const PropertyDetails = () => {
   const handleEditReview = async (reviewId) => {
     try {
       // ✅ SỬA: Dùng boardingHouse._id
-      const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
+      const response = await fetch(`https://tronhanh-be.onrender.com/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ rating: editedReviewRating, comment: editedReviewContent, purpose: editedReviewPurpose }),
@@ -580,7 +580,7 @@ const PropertyDetails = () => {
     if (!window.confirm("Bạn có chắc muốn xóa đánh giá này?")) return;
     try {
       // ✅ SỬA: Dùng boardingHouse._id
-      const response = await fetch(`http://localhost:5000/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
+      const response = await fetch(`https://tronhanh-be.onrender.com/api/boarding-houses/${boardingHouse._id}/reviews/${reviewId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -667,7 +667,7 @@ const PropertyDetails = () => {
         <Col xs={24}>
           <div className="boardingHouse-main-image-wrapper">
             <img
-              src={boardingHouse.photos?.[0] ? `http://localhost:5000${boardingHouse.photos[0]}` : "/image/default-image.jpg"}
+              src={boardingHouse.photos?.[0] ? `https://tronhanh-be.onrender.com${boardingHouse.photos[0]}` : "/image/default-image.jpg"}
               alt={boardingHouse.name}
               className="boardingHouse-main-image"
             />
@@ -835,7 +835,7 @@ const PropertyDetails = () => {
               <Carousel autoplay>
                 {selectedRoom.photos.map((p, idx) => (
                   <div key={idx} style={{ textAlign: 'center' }}>
-                    <img src={`http://localhost:5000${p}`} alt={`room-${idx}`} style={{ maxHeight: 360, width: '100%', objectFit: 'cover' }} />
+                    <img src={`https://tronhanh-be.onrender.com${p}`} alt={`room-${idx}`} style={{ maxHeight: 360, width: '100%', objectFit: 'cover' }} />
                   </div>
                 ))}
               </Carousel>
@@ -877,7 +877,7 @@ const PropertyDetails = () => {
                               <Avatar
                                 size={64}
                                 src={selectedRoom.roommatePost.userId?.avatar ?
-                                  `http://localhost:5000${selectedRoom.roommatePost.userId.avatar}` : null}
+                                  `https://tronhanh-be.onrender.com${selectedRoom.roommatePost.userId.avatar}` : null}
                                 style={{
                                   backgroundColor: selectedRoom.roommatePost.userId?.avatar ? 'transparent' : '#004d40',
                                 }}

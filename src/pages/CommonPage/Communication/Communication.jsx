@@ -42,7 +42,7 @@ const Communication = ({ role = "customer" }) => {
     const typingTimeoutRef = useRef(null);
     const autoloadedRef = useRef(false);
 
-    const API = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+    const API = process.env.REACT_APP_API_URL || "https://tronhanh-be.onrender.com/api";
 
     const filteredChats = chatList.filter((chat) =>
         chat.otherUser?.name?.toLowerCase().includes(searchText.toLowerCase())
