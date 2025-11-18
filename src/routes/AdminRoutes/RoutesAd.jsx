@@ -7,6 +7,7 @@ import Posts from "../../pages/AdminPage/Post/Posts";
 import Membership from "../../pages/AdminPage/Membership/Membership";
 import Communication from "../../pages/OwnerPage/Communication/communication";
 import Reports from "../../pages/AdminPage/Reports/Reports";
+import FlaggedImages from "../../pages/AdminPage/FlaggedImages";
 
 const RoutesAd = () => {
   return (
@@ -19,6 +20,7 @@ const RoutesAd = () => {
         <Route path="membership" element={<Membership />} />
         <Route path="/chat/:customerId" element={<Communication />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="flagged-images" element={<FlaggedImages />} />
       </Route>
     </Routes>
   );
