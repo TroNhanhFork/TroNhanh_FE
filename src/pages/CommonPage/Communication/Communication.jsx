@@ -39,9 +39,9 @@ const Communication = ({ role = "customer" }) => {
     const remoteVideoRef = useRef(null);
     const peerConnectionRef = useRef(null);
     const localStreamRef = useRef(null);
-    
+
     // FIX: Thêm hàng đợi ICE Candidate để tránh mất gói tin khi chưa connect xong
-    const iceCandidatesQueue = useRef([]); 
+    const iceCandidatesQueue = useRef([]);
     const incomingOfferRef = useRef(null);
 
     const typingTimeoutRef = useRef(null);
@@ -65,7 +65,7 @@ const Communication = ({ role = "customer" }) => {
 
     useEffect(() => {
         if (!user?._id) {
-            setChatList([]); 
+            setChatList([]);
             return;
         }
 
@@ -145,7 +145,7 @@ const Communication = ({ role = "customer" }) => {
 
         const handleConnect = () => setConnected(true);
         const handleDisconnect = () => setConnected(false);
-        
+
         const handleNewMessage = (msg) => {
             const roomId = msg.roomId;
             const incomingMsg = msg.message || msg;
@@ -284,15 +284,19 @@ const Communication = ({ role = "customer" }) => {
         };
 
         pc.ontrack = (event) => {
-            console.log("📡 Remote track received:", event.streams);
-            // FIX: Use streams[0] or create new stream from track
-            const remoteStream = event.streams[0] || new MediaStream([event.track]);
-            
-            if (remoteVideoRef.current) {
-                remoteVideoRef.current.srcObject = remoteStream;
-                // Attempt to play if autoplay is blocked
-                remoteVideoRef.current.play().catch(e => console.error("Autoplay error:", e));
+            console.log("📡 Remote track received:", event.track);
+
+            let remoteStream = remoteVideoRef.current?.srcObject;
+
+            if (!remoteStream) {
+                remoteStream = new MediaStream();
+                if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
             }
+
+            // Thêm track vào stream
+            remoteStream.addTrack(event.track);
+
+            remoteVideoRef.current?.play().catch(e => console.error("Autoplay error:", e));
         };
 
         return pc;
@@ -302,7 +306,7 @@ const Communication = ({ role = "customer" }) => {
     const startCall = async () => {
         try {
             if (!selectedUser) return antMessage.warning("Please select someone to call");
-            
+
             setCallEnded(false);
             iceCandidatesQueue.current = []; // Reset queue for new call
 
@@ -334,7 +338,7 @@ const Communication = ({ role = "customer" }) => {
         console.log("📞 Incoming offer from:", fromUserId);
         const callerFromList = chatList.find((c) => c.otherUser?.userId === fromUserId);
         const callerName = callerFromList?.otherUser?.name || "Caller";
-        
+
         setSelectedUser({ userId: fromUserId, name: callerName });
         setCallerId(fromUserId);
         incomingOfferRef.current = offer;
@@ -401,7 +405,11 @@ const Communication = ({ role = "customer" }) => {
             if (peerConnectionRef.current && peerConnectionRef.current.remoteDescription) {
                 // Connection ready -> Add immediately
                 try {
-                    await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+                    if (peerConnectionRef.current.remoteDescription) {
+                        await peerConnectionRef.current.addIceCandidate(candidate);
+                    } else {
+                        iceCandidatesQueue.current.push(candidate);
+                    }
                 } catch (err) {
                     console.warn("Failed to add remote ICE candidate:", err);
                 }
@@ -490,7 +498,7 @@ const Communication = ({ role = "customer" }) => {
             socket?.emit("sendMessage", { roomId: chatId, message: data });
             setNewMessage("");
             scrollToBottom();
-            
+
             setChatList((prev) => {
                 const idx = prev.findIndex((c) => c._id === chatId);
                 const updatedAt = data.time || new Date().toISOString();
@@ -535,7 +543,7 @@ const Communication = ({ role = "customer" }) => {
         const diffSec = Math.floor(diffMs / 1000);
         const diffMin = Math.floor(diffSec / 60);
         const diffHr = Math.floor(diffMin / 60);
-        
+
         if (diffSec < 60) return "Just now";
         if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? "s" : ""} ago`;
         if (diffHr < 24) return `${diffHr} hour${diffHr > 1 ? "s" : ""} ago`;
@@ -579,11 +587,11 @@ const Communication = ({ role = "customer" }) => {
                 <div style={{ display: "flex", gap: "10px" }}>
                     <div style={{ flex: 1 }}>
                         <p>You</p>
-                        <video ref={localVideoRef} autoPlay muted style={{ width: "100%", borderRadius: "8px", background: "#000" }} />
+                        <video ref={localVideoRef} autoPlay playsInline  muted style={{ width: "100%", borderRadius: "8px", background: "#000" }} />
                     </div>
                     <div style={{ flex: 1 }}>
                         <p>{otherLabel}</p>
-                        <video ref={remoteVideoRef} autoPlay style={{ width: "100%", borderRadius: "8px", background: "#000" }} />
+                        <video ref={remoteVideoRef} autoPlay playsInline  style={{ width: "100%", borderRadius: "8px", background: "#000" }} />
                     </div>
                 </div>
             </Modal>
