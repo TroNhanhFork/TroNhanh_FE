@@ -431,46 +431,44 @@ const PropertyDetails = () => {
     // 3. Render JSX
     return (
       <Card className="booking-card">
-        <h3 className="booking-price">
-          {boardingHouse.minPrice?.toLocaleString("vi-VN")} -{" "}
-          {boardingHouse.maxPrice?.toLocaleString("vi-VN")} VNĐ/tháng
-        </h3>
+        <div className="booking-header">
+          <h3 className="booking-price">
+            {rooms.minPrice?.toLocaleString("vi-VN")} - {rooms.maxPrice?.toLocaleString("vi-VN")} VNĐ/tháng
+          </h3>
+        </div>
+
         <Divider />
 
-        {/* Hiển thị thông báo nếu user đã đặt */}
-        {userBooking && (
-          <Result
-            status="success"
-            title="Bạn đã có một yêu cầu cho nhà trọ này!"
-            subTitle="Kiểm tra trạng thái phòng của bạn bên dưới."
-            style={{ padding: '16px 0' }}
-          />
-        )}
+        {/* Thông báo trạng thái */}
+        <div className="status-wrapper">
+          {userBooking && (
+            <Result
+              status="success"
+              title="Bạn đã có một yêu cầu cho nhà trọ này!"
+              subTitle="Kiểm tra trạng thái phòng của bạn bên dưới."
+            />
+          )}
 
-        {/* Hiển thị thông báo nếu hết phòng VÀ user chưa đặt */}
-        {!userBooking && !hasAvailableRooms && (
-          <Result
-            status="warning"
-            title="Đã hết phòng"
-            subTitle="Rất tiếc, tất cả các phòng tại đây đã được đặt."
-            style={{ padding: '16px 0' }}
-          />
-        )}
+          {!userBooking && !hasAvailableRooms && (
+            <Result
+              status="warning"
+              title="Đã hết phòng"
+              subTitle="Rất tiếc, tất cả các phòng tại đây đã được đặt."
+            />
+          )}
+        </div>
 
-        <h4>Danh sách phòng:</h4>
-        <div style={{ maxHeight: "300px", overflowY: "auto", paddingRight: "8px" }}>
-          {/* Lặp qua TẤT CẢ các phòng */}
-          {rooms.map((room) => {
+        <h4 className="section-title">Danh sách phòng</h4>
+
+        <div className="room-list">
+          {rooms?.map((room) => {
             let cardProps = {};
 
             if (userBookedRoomId === room._id) {
-              // 1. Đây là phòng user đã đặt/yêu cầu
               cardProps.bookingStatus = userBookingStatus;
-            } else if (room.status === 'Available') {
-              // 2. Phòng này còn trống
+            } else if (room.status === "Available") {
               cardProps.onBook = handleBookRoom;
             } else {
-              // 3. Phòng này đã bị người khác đặt ('Booked') hoặc 'Unavailable'
               cardProps.bookingStatus = room.status;
             }
 
@@ -487,22 +485,26 @@ const PropertyDetails = () => {
 
         <Divider />
 
-        <Button
-          icon={<MessageOutlined />}
-          onClick={handleScheduleVisitClick} // Giả sử hàm này tồn tại
-          style={{ width: "100%", marginTop: "8px" }}
-        >
-          Yêu cầu xem phòng
-        </Button>
-        <Button
-          icon={<MessageOutlined />}
-          onClick={handleContactOwner}
-          style={{ width: '100%', marginTop: '8px' }}
-          type="primary"
-        >
-          Liên hệ chủ nhà
-        </Button>
+        <div className="button-group">
+          <Button
+            icon={<MessageOutlined />}
+            onClick={handleScheduleVisitClick}
+            className="btn-full"
+          >
+            Yêu cầu xem phòng
+          </Button>
+
+          <Button
+            type="primary"
+            icon={<MessageOutlined />}
+            onClick={handleContactOwner}
+            className="btn-full"
+          >
+            Liên hệ chủ nhà
+          </Button>
+        </div>
       </Card>
+
     );
   };
   const sliderSettings = {
