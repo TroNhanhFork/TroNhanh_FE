@@ -135,6 +135,27 @@ export const createOrUpdateContractTemplate = async (payload) => {
     return response.data;
 };
 
+// AI contact generation
+export async function aiGenerateContract(payload) {
+    const res = await fetch('/api/ai/generate-contract', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    return res.json();
+}
+
+export async function aiSaveContract(payload) {
+    const res = await fetch('/api/ai/generate-contract/save', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    return res.json();
+}
+
 // ================================================================
 // FAVORITE APIs (YÊU THÍCH)
 // ================================================================
