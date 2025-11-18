@@ -40,19 +40,20 @@ const BookingHistory = () => {
   const handleViewDetails = async (booking) => {
     try {
       console.log('Booking object:', booking);
-      console.log('PropertyId:', booking.roomId);
+      console.log('PropertyId:', booking.room._id);
 
       // Lấy ID từ roomId (có thể là object hoặc string)
-      const roomId = booking.roomId?._id || booking.roomId;
+      const roomId = booking.room._id;
       console.log('Extracted roomId:', roomId);
 
+      const boardingHouseId = booking.boardingHouse._id;
       if (!roomId) {
         messageApi.error('Property ID not found!');
         return;
       }
 
       // Fetch chi tiết boardinghouse
-      const boardinghouseData = await getBoardingHouseById(roomId);
+      const boardinghouseData = await getBoardingHouseById(boardingHouseId);
       setSelectedBooking({
         ...booking,
         boardinghouse: boardinghouseData
@@ -206,7 +207,7 @@ const BookingHistory = () => {
 
         {/* Modal chi tiết booking */}
         <Modal
-          title="Booking Details"
+          title="Chi tiết đặt phòng"
           open={isModalVisible}
           onCancel={() => setIsModalVisible(false)}
           footer={null}
@@ -215,79 +216,94 @@ const BookingHistory = () => {
         >
           {selectedBooking && (
             <div className="booking-detail-modal">
-              {/* Thông tin boardinghouse */}
+
+              {/* Thông tin nhà trọ */}
               {selectedBooking.boardinghouse && (
                 <Card
                   title={
                     <div className="detail-section-title">
-                      <HomeOutlined /> Accommodation Information
+                      <HomeOutlined /> Thông tin nhà trọ
                     </div>
                   }
                   className="detail-card"
                 >
-                  {/* Hình ảnh boardinghouse */}
-                  {selectedBooking.boardinghouse.photos && selectedBooking.boardinghouse.photos.length > 0 && (
-                    <div style={{ marginBottom: '16px' }}>
-                      <Carousel
-                        autoplay
-                        arrows
-                        prevArrow={<AiOutlineLeft className="custom-arrow arrow-left" />}
-                        nextArrow={<AiOutlineRight className="custom-arrow arrow-right" />}
-                      >
-                        {selectedBooking.boardinghouse.photos.map((photo, index) => (
-                          <div key={index}>
-                            <img
-                              src={`http://localhost:5000${photo}`}
-                              alt={`boardinghouse-${index}`}
-                              style={{
-                                width: "100%",
-                                maxHeight: "250px",
-                                objectFit: "cover",
-                                borderRadius: "8px"
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </Carousel>
-                    </div>
-                  )}
+                  {/* Hình ảnh nhà trọ */}
+                  {selectedBooking.boardinghouse.photos &&
+                    selectedBooking.boardinghouse.photos.length > 0 && (
+                      <div style={{ marginBottom: '16px' }}>
+                        <Carousel
+                          autoplay
+                          arrows
+                          prevArrow={<AiOutlineLeft className="custom-arrow arrow-left" />}
+                          nextArrow={<AiOutlineRight className="custom-arrow arrow-right" />}
+                        >
+                          {selectedBooking.boardinghouse.photos.map((photo, index) => (
+                            <div key={index}>
+                              <img
+                                src={`http://localhost:5000${photo}`}
+                                alt={`boardinghouse-${index}`}
+                                style={{
+                                  width: "100%",
+                                  maxHeight: "250px",
+                                  objectFit: "cover",
+                                  borderRadius: "8px"
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </Carousel>
+                      </div>
+                    )}
 
                   <div className="boardinghouse-info">
                     <h3>{selectedBooking.boardinghouse.title}</h3>
-                    <p><strong>Address:</strong> {selectedBooking.boardinghouse.location?.addressDetail}, {selectedBooking.boardinghouse.location?.street}, {selectedBooking.boardinghouse.location?.district}</p>
-                    <p><strong>Room Price:</strong> {selectedBooking.boardinghouse.price?.toLocaleString()} VND</p>
-                    <p><strong>Description:</strong> {selectedBooking.boardinghouse.description}</p>
+
+                    <p><strong>Địa chỉ:</strong>
+                      {selectedBooking.boardinghouse.location?.addressDetail},
+                      {selectedBooking.boardinghouse.location?.street},
+                      {selectedBooking.boardinghouse.location?.district}
+                    </p>
+
+                    <p><strong>Phòng:</strong> {selectedBooking.room?.roomNumber}</p>
+
+                    <p><strong>Giá phòng:</strong>
+                      {selectedBooking.room?.price?.toLocaleString('vi-VN')} VND / tháng
+                    </p>
+
+                    <p><strong>Ngày nhận phòng:</strong>
+                      {selectedBooking.checkInDate
+                        ? dayjs(selectedBooking.checkInDate).format('DD/MM/YYYY')
+                        : 'N/A'}
+                    </p>
+
+                    <p><strong>Ngày trả phòng:</strong>
+                      {selectedBooking.checkOutDate
+                        ? dayjs(selectedBooking.checkOutDate).format('DD/MM/YYYY')
+                        : 'N/A'}
+                    </p>
+
+                    <p><strong>Số khách:</strong> {selectedBooking.guests || 1} người</p>
+
+                    <p><strong>Mục đích thuê:</strong>
+                      {selectedBooking.guestInfo?.purpose || 'Không có'}
+                    </p>
+
+                    <p><strong>Tổng tiền:</strong>
+                      {selectedBooking.totalPrice?.toLocaleString('vi-VN')} VND
+                    </p>
+
+                    <p><strong>Mã giao dịch:</strong>
+                      {selectedBooking.paymentInfo?.payosOrderCode || 'N/A'}
+                    </p>
+
+                    <p><strong>Mô tả:</strong> {selectedBooking.boardinghouse.description}</p>
                   </div>
                 </Card>
               )}
-
-              {/* Thông tin booking */}
-              <Card
-                title={
-                  <div className="detail-section-title">
-                    <CalendarOutlined /> Booking Information
-                  </div>
-                }
-                className="detail-card"
-                style={{ marginTop: '16px' }}
-              >
-                <div className="booking-info-inline">
-                  <span className="info-inline-item">
-                    <strong>Transaction Code:</strong> {selectedBooking.paymentInfo?.payosOrderCode || 'N/A'}
-                  </span>
-                  <span className="info-divider">|</span>
-                  <span className="info-inline-item">
-                    <strong>Guests:</strong> {selectedBooking.guests || 1} people
-                  </span>
-                  <span className="info-divider">|</span>
-                  <span className="info-inline-item">
-                    <strong>Purpose:</strong> {selectedBooking.guestInfo?.purpose || 'N/A'}
-                  </span>
-                </div>
-              </Card>
             </div>
           )}
         </Modal>
+
       </div>
     </>
   );

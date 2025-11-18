@@ -27,11 +27,13 @@ const Filters = ({ onSearch, resultText }) => {
     elevator: false,
     washingMachine: false,
   });
+
   const [street, setStreet] = useState("");
   const [addressDetail, setAddressDetail] = useState("");
 
-  const [guestCount, setGuestCount] = useState("");
-  const [errors, setErrors] = useState({});
+  // ⭐ NEW AREA FILTER
+  const [areaMin, setAreaMin] = useState(null);
+  const [areaMax, setAreaMax] = useState(null);
 
   const districtOptions = [
     { label: "Liên Chiểu", value: "Liên Chiểu" },
@@ -50,6 +52,10 @@ const Filters = ({ onSearch, resultText }) => {
       bedrooms: selectedBedrooms,
       bathrooms: selectedBathrooms,
       features,
+      area: {
+        min: areaMin,
+        max: areaMax,
+      },
     };
 
     onSearch(filters);
@@ -61,83 +67,6 @@ const Filters = ({ onSearch, resultText }) => {
       [featureName]: checked,
     }));
   };
-
-  const moreFiltersMenu = (
-    <Menu>
-      <Menu.Item key="bedrooms" disabled>
-        <strong>Bedrooms</strong>
-      </Menu.Item>
-      <Menu.Item key="bedroom-select" style={{ padding: 8 }}>
-        <Select
-          style={{ width: "100%" }}
-          placeholder="Select Bedrooms"
-          value={selectedBedrooms}
-          onChange={setSelectedBedrooms}
-        >
-          <Select.Option value="studio">Studio</Select.Option>
-          <Select.Option value="1">1</Select.Option>
-          <Select.Option value="2">2</Select.Option>
-          <Select.Option value="3">3</Select.Option>
-        </Select>
-      </Menu.Item>
-
-      <Menu.Divider />
-
-      <Menu.Item key="bathrooms" disabled>
-        <strong>Bathrooms</strong>
-      </Menu.Item>
-      <Menu.Item key="bathroom-select" style={{ padding: 8 }}>
-        <Select
-          style={{ width: "100%" }}
-          placeholder="Select Bathrooms"
-          value={selectedBathrooms}
-          onChange={setSelectedBathrooms}
-        >
-          <Select.Option value="1">1</Select.Option>
-          <Select.Option value="2">2</Select.Option>
-          <Select.Option value="3">3</Select.Option>
-        </Select>
-      </Menu.Item>
-
-      <Menu.Divider />
-
-      <Menu.Item key="features" disabled>
-        <strong>Features</strong>
-      </Menu.Item>
-      <Menu.Item key="features-checkboxes" style={{ padding: 8 }}>
-        <Space direction="vertical">
-          <Checkbox
-            checked={features.disabledAccess}
-            onChange={(e) =>
-              handleFeatureChange("disabledAccess", e.target.checked)
-            }
-          >
-            Disabled accesses
-          </Checkbox>
-          <Checkbox
-            checked={features.parking}
-            onChange={(e) => handleFeatureChange("parking", e.target.checked)}
-          >
-            Parking
-          </Checkbox>
-          <Checkbox
-            checked={features.elevator}
-            onChange={(e) => handleFeatureChange("elevator", e.target.checked)}
-          >
-            Elevator
-          </Checkbox>
-          <Checkbox
-            checked={features.washingMachine}
-            onChange={(e) =>
-              handleFeatureChange("washingMachine", e.target.checked)
-            }
-          >
-            Washing machine
-          </Checkbox>
-        </Space>
-      </Menu.Item>
-    </Menu>
-  );
 
   return (
     <div style={{ padding: "24px 16px" }}>
@@ -227,27 +156,36 @@ const Filters = ({ onSearch, resultText }) => {
           />
         </div>
 
-        {/* Guests */}
-        {/* <div
+        {/* ⭐ AREA Filter */}
+        <div
           style={{
             display: "flex",
             alignItems: "center",
             padding: "8px 16px",
             flex: "1",
-            minWidth: "120px",
+            minWidth: "150px",
             borderRight: "1px solid #004d47",
+            gap: "8px",
           }}
         >
-          <UserOutlined style={{ marginRight: 8 }} />
           <InputNumber
-            placeholder="Guests"
-            min={1}
-            style={{ flex: 1 }}
+            placeholder="Area min (m²)"
+            value={areaMin}
+            onChange={setAreaMin}
+            min={0}
             bordered={false}
-            value={guestCount}
-            onChange={setGuestCount}
+            style={{ width: "100%" }}
           />
-        </div> */}
+          <span>-</span>
+          <InputNumber
+            placeholder="Area max (m²)"
+            value={areaMax}
+            onChange={setAreaMax}
+            min={0}
+            bordered={false}
+            style={{ width: "100%" }}
+          />
+        </div>
 
         {/* Search button */}
         <div>
@@ -279,7 +217,6 @@ const Filters = ({ onSearch, resultText }) => {
           gap: "12px",
         }}
       >
-
         {/* Result summary */}
         {resultText && (
           <div style={{ fontSize: "16px" }}>
@@ -287,13 +224,6 @@ const Filters = ({ onSearch, resultText }) => {
           </div>
         )}
 
-        {/* Sort by */}
-        <div style={{ fontSize: "16px" }}>
-          <span style={{ fontWeight: "bold" }}>Sort by: </span>
-          <span style={{ color: "#49735A", cursor: "pointer" }}>
-            Availability <DownOutlined style={{ fontSize: "12px" }} />
-          </span>
-        </div>
       </div>
     </div>
   );

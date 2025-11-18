@@ -9,3 +9,23 @@ export const sendMessage = async (message)=>{
         throw error;
     }
 }
+
+export const summarizeReviews = async (reviews) => {
+  try {
+    const res = await api.post("/ai/analyze-sentiment", { reviews });
+    return res.data.summary;
+  } catch (err) {
+    console.error("Error summarizing reviews:", err);
+    throw err;
+  }
+};
+
+export const getAiRecommendations = async (filters, rooms) => {
+  try {
+    const res = await api.post("/ai/recommend-simple", { filters, rooms });
+    return res.data.recommended || [];
+  } catch (err) {
+    console.error("getAiRecommendations error:", err);
+    throw err;
+  }
+};

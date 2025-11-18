@@ -2,11 +2,17 @@ import { Tag } from "antd";
 import { Link } from "react-router-dom";
 
 const PropertyCard = ({ property }) => {
-    // ✅ Tạo một biến để hiển thị khoảng giá cho dễ đọc
+    // ✅ Giá
     const priceRange =
         property.minPrice && property.maxPrice
             ? `${property.minPrice?.toLocaleString("vi-VN")} - ${property.maxPrice?.toLocaleString("vi-VN")} VNĐ/tháng`
             : "Chưa có thông tin giá";
+
+    // ✅ Area (diện tích)
+    const areaRange =
+        property.minArea && property.maxArea
+            ? `${property.minArea} - ${property.maxArea} m²`
+            : "Chưa có thông tin diện tích";
 
     return (
         <Link
@@ -34,7 +40,7 @@ const PropertyCard = ({ property }) => {
                 }}
             >
                 <img
-                    alt={property.name} // ✅ Dùng 'name' cho alt text
+                    alt={property.name}
                     src={
                         property.photos && property.photos.length > 0
                             ? `http://localhost:5000${property.photos[0]}`
@@ -43,23 +49,43 @@ const PropertyCard = ({ property }) => {
                     style={{ width: "200px", height: "150px", objectFit: "cover" }}
                 />
 
-                <div style={{ padding: "16px", flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    {/* ✅ Sửa 'title' thành 'name' */}
+                <div
+                    style={{
+                        padding: "16px",
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                    }}
+                >
                     <h3 style={{ margin: 0, marginBottom: "8px" }}>{property.name}</h3>
                     <p style={{ margin: 0, marginBottom: "12px", color: "#555" }}>
                         {property.location?.street}, {property.location?.district}
                     </p>
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                        {/* ✅ Hiển thị số phòng trống thay vì status */}
+
+                    {/* Tag + Price */}
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "16px",
+                            marginBottom: "8px",
+                        }}
+                    >
                         <Tag color={property.availableRoomsCount > 0 ? "green" : "orange"}>
                             {property.availableRoomsCount > 0
                                 ? `Còn ${property.availableRoomsCount} phòng trống`
                                 : "Hết phòng"}
                         </Tag>
-                        {/* ✅ Hiển thị khoảng giá */}
+
                         <span style={{ fontSize: "16px", fontWeight: "bold" }}>
                             {priceRange}
                         </span>
+                    </div>
+
+                    {/* ⭐ NEW AREA SECTION */}
+                    <div style={{ fontSize: "15px", color: "#333", marginTop: "4px" }}>
+                        <strong>Diện tích: </strong> {areaRange}
                     </div>
                 </div>
             </div>

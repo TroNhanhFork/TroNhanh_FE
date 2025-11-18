@@ -1,14 +1,13 @@
 // File: src/pages/OwnerPage/Rating/rating.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "./rating.css";
-import { Button, Table, Tag, Spin, message } from "antd";
-import { Rate } from "antd";
+import { Button, Table, Tag, Spin, message, Rate } from "antd";
 import { getOwnerRatings } from "../../../services/boardingHouseAPI";
+import "./rating.css";
 
 const Rating = () => {
   const navigate = useNavigate();
-  const [accommodations, setAccommodations] = useState([]);
+  const [boardingHouses, setBoardingHouses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [overallAvgRating, setOverallAvgRating] = useState(null);
 
@@ -19,28 +18,27 @@ const Rating = () => {
   const fetchOwnerRatings = async () => {
     try {
       setLoading(true);
-      console.log('🔍 [DEBUG] Calling getOwnerRatings API...');
       const response = await getOwnerRatings();
-      console.log('📝 [DEBUG] API Response:', response);
-      
-      if (response.success && response.accommodations) {
-        console.log('✅ [DEBUG] API Success, accommodations:', response.accommodations);
-        setAccommodations(response.accommodations);
-        
+
+      if (response.success && response.boardingHouses) {
+        setBoardingHouses(response.boardingHouses);
+
         // Tính tổng average rating
-        const accommodationsWithRatings = response.accommodations.filter(acc => acc.totalReviews > 0);
-        if (accommodationsWithRatings.length > 0) {
-          const totalRating = accommodationsWithRatings.reduce((sum, acc) => sum + acc.averageRating, 0);
-          const avgRating = (totalRating / accommodationsWithRatings.length).toFixed(1);
+        const housesWithRatings = response.boardingHouses.filter(h => h.totalReviews > 0);
+        if (housesWithRatings.length > 0) {
+          const totalRating = housesWithRatings.reduce((sum, h) => sum + h.averageRating, 0);
+          const avgRating = (totalRating / housesWithRatings.length).toFixed(1);
           setOverallAvgRating(avgRating);
+        } else {
+          setOverallAvgRating(null);
         }
       } else {
-        console.log('❌ [DEBUG] API Failed or no accommodations found');
-        message.error('Không thể tải dữ liệu ratings');
+        console.log("❌ [DEBUG] API Failed or no boarding houses found");
+        message.error("Không thể tải dữ liệu ratings");
       }
     } catch (error) {
-      console.error('💥 [DEBUG] Error fetching owner ratings:', error);
-      message.error('Có lỗi xảy ra khi tải dữ liệu');
+      console.error("💥 [DEBUG] Error fetching owner ratings:", error);
+      message.error("Có lỗi xảy ra khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -48,49 +46,41 @@ const Rating = () => {
 
   const columns = [
     {
-      title: "Accommodation Name",
-      dataIndex: "title",
-      key: "title",
+      title: "Tên nhà trọ",
+      dataIndex: "name",
+      key: "name",
     },
     {
-      title: "Status", 
-      dataIndex: "status",
-      key: "status",
-      render: (status) => {
-        let displayStatus = status;
-        let color = "default";
-        
-        switch(status) {
-          case "Available":
-            displayStatus = "Available";
-            color = "green";
-            break;
-          case "Booked":
-            displayStatus = "Booked";
-            color = "blue";
-            break;
-          case "Unavailable":
-            displayStatus = "Unavailable";
-            color = "volcano";
-            break;
-          default:
-            displayStatus = status;
-            color = "default";
-        }
-        
-        return <Tag color={color}>{displayStatus}</Tag>;
-      },
+      title: "Đánh giá trung bình",
+      key: "averageRating",
+      render: (_, record) => (
+        record.totalReviews > 0 ? (
+          <Rate disabled allowHalf value={record.averageRating} />
+        ) : (
+          <span>Chưa có đánh giá</span>
+        )
+      ),
+    },
+    {
+      title: "Số lượt đánh giá",
+      dataIndex: "totalReviews",
+      key: "totalReviews",
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (date) => new Date(date).toLocaleDateString(),
     },
     {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
         <Button
-          className="view-rating-btn"
-          onClick={() => navigate(`/owner/rating/${record._id}`)}
           type="primary"
+          onClick={() => navigate(`/owner/rating/${record._id}`)}
         >
-          View Ratings
+          Xem đánh giá
         </Button>
       ),
     },
@@ -98,7 +88,7 @@ const Rating = () => {
 
   if (loading) {
     return (
-      <div className="rating-wrapper" style={{ textAlign: 'center', marginTop: 50 }}>
+      <div className="rating-wrapper" style={{ textAlign: "center", marginTop: 50 }}>
         <Spin size="large" />
         <p>Đang tải dữ liệu...</p>
       </div>
@@ -107,17 +97,18 @@ const Rating = () => {
 
   return (
     <div className="rating-wrapper">
-      <h2>Your Accommodations</h2>
+      <h2>Danh sách nhà trọ của bạn</h2>
+
       {overallAvgRating && (
-        <div className="overall-rating">
-          <strong>Overall Average Rating:</strong>{" "}
+        <div className="overall-rating" style={{ marginBottom: 16 }}>
+          <strong>Đánh giá trung bình chung:</strong>{" "}
           <Rate disabled allowHalf value={parseFloat(overallAvgRating)} /> ({overallAvgRating})
         </div>
       )}
 
       <Table
         className="rating-table"
-        dataSource={accommodations.map((a) => ({ ...a, key: a._id }))}
+        dataSource={boardingHouses.map(h => ({ ...h, key: h._id }))}
         columns={columns}
         pagination={{ pageSize: 10 }}
       />

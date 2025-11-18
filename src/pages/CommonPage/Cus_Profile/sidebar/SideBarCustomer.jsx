@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu,Badge } from 'antd';
-import { UserOutlined, HeartOutlined, MessageOutlined, WarningOutlined, HistoryOutlined,CalendarOutlined } from '@ant-design/icons';
+import { UserOutlined, HeartOutlined, MessageOutlined, WarningOutlined, FileOutlined, HistoryOutlined,CalendarOutlined } from '@ant-design/icons';
 import { useNotifications } from '../../../../contexts/NotificationContext';
 const Sidebar = ({ selectedKey, onSelect }) => {
   const { hasVisitResponse, clearCustomerVisitNotif } = useNotifications();
@@ -28,6 +28,9 @@ const Sidebar = ({ selectedKey, onSelect }) => {
       </Menu.Item>
       <Menu.Item key="/customer/profile/booking-history" icon={<HistoryOutlined />}>
         Booking History
+      </Menu.Item>
+      <Menu.Item key="/customer/profile/contracts" icon={<FileOutlined />}>
+        Contracts
       </Menu.Item>
      <Menu.Item 
         key="/customer/profile/visit-requests" 

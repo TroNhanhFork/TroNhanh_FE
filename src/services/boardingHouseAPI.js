@@ -92,7 +92,7 @@ export const deleteBoardingHouse = async (id) => {
  * @param {object} roomsData - Dữ liệu các phòng mới, ví dụ: { rooms: [{ roomNumber, price, area }] }
  */
 export const addRoomsToBoardingHouse = async (boardingHouseId, roomsData) => {
-    const response = await axiosInstance.post(`${API_BOARDING_HOUSE_URL}/${boardingHouseId}/rooms`, roomsData);
+    const response = await axiosInstance.post(`${API_ROOM_URL}/${boardingHouseId}/rooms`, roomsData);
     return response.data;
 };
 

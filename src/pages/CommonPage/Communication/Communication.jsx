@@ -8,7 +8,6 @@ import useUser from "../../../contexts/UserContext";
 import { getUserChatById } from "../../../services/userService";
 import "./Communication.css";
 import { useLocation } from "react-router-dom";
-import { formatTimeAgo } from "../../../utils/time";
 
 const { Search } = Input;
 
