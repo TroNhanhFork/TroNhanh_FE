@@ -7,7 +7,7 @@ export default function HeroSection() {
 
     return (
         <div className="homepage-image-wrapper">
-            <img src="HomepageImage.jpg" alt="Couple on couch" className="homepage-image" />
+            <img src="HomePageImage.jpg" alt="Couple on couch" className="homepage-image" />
             <div className="overlay-box">
                 <h1 className="overlay-title">Find your perfect rental</h1>
                 <p className="overlay-description">
