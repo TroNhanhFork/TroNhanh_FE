@@ -40,7 +40,7 @@ const Communication = ({ role = "customer" }) => {
     const peerConnectionRef = useRef(null);
     const localStreamRef = useRef(null);
 
-    // FIX: Thêm hàng đợi ICE Candidate để tránh mất gói tin khi chưa connect xong
+    // ICE queue & incoming offer
     const iceCandidatesQueue = useRef([]);
     const incomingOfferRef = useRef(null);
 
@@ -135,9 +135,10 @@ const Communication = ({ role = "customer" }) => {
         };
 
         fetchChats();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?._id, initialOtherUserId, location?.state]);
 
-    // --- 2. SOCKET EVENTS ---
+    // --- 2. SOCKET EVENTS (including webrtc signalling) ---
     useEffect(() => {
         if (!socket) return;
 
@@ -193,14 +194,14 @@ const Communication = ({ role = "customer" }) => {
         socket.on("typing", handleTyping);
         socket.on("end-call", handleEndCall);
 
-        // Forwarded WebRTC events
-        const onOffer = (e) => handleWebRTCOfferLocal(e.detail || {});
-        const onAnswer = (e) => handleWebRTCAnswerLocal(e.detail || {});
-        const onIce = (e) => handleICECandidateLocal(e.detail || {});
+        // --- WebRTC signalling handlers via socket ---
+        const socketOfferHandler = (payload) => handleWebRTCOfferLocal(payload || {});
+        const socketAnswerHandler = (payload) => handleWebRTCAnswerLocal(payload || {});
+        const socketIceHandler = (payload) => handleICECandidateLocal(payload || {});
 
-        window.addEventListener("webrtc-offer", onOffer);
-        window.addEventListener("webrtc-answer", onAnswer);
-        window.addEventListener("webrtc-ice-candidate", onIce);
+        socket.on("webrtc-offer", socketOfferHandler);
+        socket.on("webrtc-answer", socketAnswerHandler);
+        socket.on("webrtc-ice-candidate", socketIceHandler);
 
         return () => {
             socket.off("connect", handleConnect);
@@ -209,10 +210,11 @@ const Communication = ({ role = "customer" }) => {
             socket.off("typing", handleTyping);
             socket.off("end-call", handleEndCall);
 
-            window.removeEventListener("webrtc-offer", onOffer);
-            window.removeEventListener("webrtc-answer", onAnswer);
-            window.removeEventListener("webrtc-ice-candidate", onIce);
+            socket.off("webrtc-offer", socketOfferHandler);
+            socket.off("webrtc-answer", socketAnswerHandler);
+            socket.off("webrtc-ice-candidate", socketIceHandler);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [socket, chatId, selectedUser?.userId]);
 
     const scrollToBottom = () => {
@@ -278,25 +280,58 @@ const Communication = ({ role = "customer" }) => {
                     socket?.emit?.("webrtc-ice-candidate", {
                         toUserId: targetId,
                         candidate: event.candidate,
+                        fromUserId: user?._id,
                     });
                 }
             }
         };
 
+        // Build remote stream manually by adding tracks to a MediaStream
         pc.ontrack = (event) => {
-            console.log("📡 Remote track received:", event.track);
-
-            let remoteStream = remoteVideoRef.current?.srcObject;
-
-            if (!remoteStream) {
-                remoteStream = new MediaStream();
-                if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
+            // event.track may be called multiple times (audio + video)
+            try {
+                // create remote stream if not exists
+                let remoteStream = remoteVideoRef.current?.srcObject;
+                if (!remoteStream) {
+                    remoteStream = new MediaStream();
+                    if (remoteVideoRef.current) {
+                        remoteVideoRef.current.srcObject = remoteStream;
+                    }
+                }
+                if (event.track) {
+                    remoteStream.addTrack(event.track);
+                }
+                // attempt to play
+                remoteVideoRef.current?.play().catch(e => console.error("Autoplay error:", e));
+            } catch (err) {
+                console.error("ontrack error:", err);
             }
+        };
 
-            // Thêm track vào stream
-            remoteStream.addTrack(event.track);
+        pc.onconnectionstatechange = () => {
+            console.log("PeerConnection state:", pc.connectionState);
+            if (pc.connectionState === "disconnected" || pc.connectionState === "failed" || pc.connectionState === "closed") {
+                // optional: end call if connection lost
+            }
+        };
 
-            remoteVideoRef.current?.play().catch(e => console.error("Autoplay error:", e));
+        // If negotiation needed (e.g., after adding tracks), create and send offer
+        pc.onnegotiationneeded = async () => {
+            try {
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                const targetId = selectedUser?.userId;
+                if (targetId) {
+                    socket?.emit?.("webrtc-offer", {
+                        toUserId: targetId,
+                        roomId: chatId,
+                        offer,
+                        fromUserId: user?._id,
+                    });
+                }
+            } catch (err) {
+                console.error("Negotiation needed error:", err);
+            }
         };
 
         return pc;
@@ -315,8 +350,11 @@ const Communication = ({ role = "customer" }) => {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localStreamRef.current = stream;
             if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+            // add tracks
             stream.getTracks().forEach((t) => peerConnectionRef.current.addTrack(t, stream));
 
+            // create offer explicitly (onnegotiationneeded might also fire)
             const offer = await peerConnectionRef.current.createOffer();
             await peerConnectionRef.current.setLocalDescription(offer);
 
@@ -324,6 +362,7 @@ const Communication = ({ role = "customer" }) => {
                 toUserId: selectedUser.userId,
                 roomId: chatId,
                 offer,
+                fromUserId: user?._id,
             });
 
             setInCall(true);
@@ -334,16 +373,20 @@ const Communication = ({ role = "customer" }) => {
     };
 
     // --- INCOMING CALL (Receiver) ---
-    const handleWebRTCOfferLocal = async ({ fromUserId, offer }) => {
-        console.log("📞 Incoming offer from:", fromUserId);
-        const callerFromList = chatList.find((c) => c.otherUser?.userId === fromUserId);
-        const callerName = callerFromList?.otherUser?.name || "Caller";
+    const handleWebRTCOfferLocal = async ({ fromUserId, offer, fromUser }) => {
+        try {
+            console.log("📞 Incoming offer from:", fromUserId || fromUser);
+            const callerFromList = chatList.find((c) => c.otherUser?.userId === (fromUserId || fromUser));
+            const callerName = callerFromList?.otherUser?.name || "Caller";
 
-        setSelectedUser({ userId: fromUserId, name: callerName });
-        setCallerId(fromUserId);
-        incomingOfferRef.current = offer;
-        iceCandidatesQueue.current = []; // Reset queue for incoming call
-        setIncomingCall(true);
+            setSelectedUser({ userId: fromUserId || fromUser, name: callerName });
+            setCallerId(fromUserId || fromUser);
+            incomingOfferRef.current = offer;
+            iceCandidatesQueue.current = []; // Reset queue for incoming call
+            setIncomingCall(true);
+        } catch (err) {
+            console.error("handleWebRTCOfferLocal error:", err);
+        }
     };
 
     // --- ACCEPT CALL (Receiver) ---
@@ -362,22 +405,25 @@ const Communication = ({ role = "customer" }) => {
 
             if (incomingOfferRef.current) {
                 await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(incomingOfferRef.current));
-                // FIX: Process any ICE candidates that arrived while waiting
-                processIceQueue();
+                // process queued ICE candidates that might have arrived
+                await processIceQueue();
             }
 
             const answer = await peerConnectionRef.current.createAnswer();
             await peerConnectionRef.current.setLocalDescription(answer);
 
+            // send answer back to caller
             socket?.emit?.("webrtc-answer", {
                 toUserId: callerId,
                 roomId: chatId,
                 answer,
+                fromUserId: user?._id,
             });
 
             incomingOfferRef.current = null;
         } catch (err) {
             console.error("❌ Error accepting call:", err);
+            antMessage.error("Failed to accept call.");
         }
     };
 
@@ -389,35 +435,39 @@ const Communication = ({ role = "customer" }) => {
 
     // --- HANDLE ANSWER (Caller) ---
     const handleWebRTCAnswerLocal = async ({ answer }) => {
-        console.log("📞 Received answer");
-        if (peerConnectionRef.current && answer) {
-            if (!peerConnectionRef.current.currentRemoteDescription) {
-                await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
-                // FIX: Process ICE queue now that remote description is set
-                processIceQueue();
+        try {
+            console.log("📞 Received answer");
+            if (peerConnectionRef.current && answer) {
+                // If remoteDescription not set, set it now
+                if (!peerConnectionRef.current.currentRemoteDescription) {
+                    await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+                    // process queued ICE now that remote description is set
+                    await processIceQueue();
+                }
             }
+        } catch (err) {
+            console.error("handleWebRTCAnswerLocal error:", err);
         }
     };
 
     // --- HANDLE ICE CANDIDATE (Both) ---
     const handleICECandidateLocal = async ({ candidate }) => {
-        if (candidate) {
-            if (peerConnectionRef.current && peerConnectionRef.current.remoteDescription) {
-                // Connection ready -> Add immediately
+        try {
+            if (!candidate) return;
+            // If peerConnection exists and remoteDescription is set, add immediately
+            if (peerConnectionRef.current && peerConnectionRef.current.remoteDescription && peerConnectionRef.current.remoteDescription.type) {
                 try {
-                    if (peerConnectionRef.current.remoteDescription) {
-                        await peerConnectionRef.current.addIceCandidate(candidate);
-                    } else {
-                        iceCandidatesQueue.current.push(candidate);
-                    }
+                    await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
                 } catch (err) {
-                    console.warn("Failed to add remote ICE candidate:", err);
+                    console.warn("Failed to add remote ICE candidate immediately:", err);
                 }
             } else {
-                // Connection NOT ready -> Queue it
+                // Queue it to be added later
                 console.log("🧊 Queueing ICE candidate (RemoteDesc not set yet)");
                 iceCandidatesQueue.current.push(candidate);
             }
+        } catch (err) {
+            console.error("handleICECandidateLocal error:", err);
         }
     };
 
@@ -430,7 +480,8 @@ const Communication = ({ role = "customer" }) => {
         if (peerConnectionRef.current) {
             peerConnectionRef.current.ontrack = null;
             peerConnectionRef.current.onicecandidate = null;
-            peerConnectionRef.current.close();
+            peerConnectionRef.current.onnegotiationneeded = null;
+            try { peerConnectionRef.current.close(); } catch (e) { /* ignore */ }
             peerConnectionRef.current = null;
         }
 
@@ -441,20 +492,20 @@ const Communication = ({ role = "customer" }) => {
 
         if (remoteVideoRef.current) {
             if (remoteVideoRef.current.srcObject) {
-                remoteVideoRef.current.srcObject.getTracks().forEach((t) => t.stop());
+                try { remoteVideoRef.current.srcObject.getTracks().forEach((t) => t.stop()); } catch (e) {}
             }
             remoteVideoRef.current.srcObject = null;
         }
 
         if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach((t) => t.stop());
+            try { localStreamRef.current.getTracks().forEach((t) => t.stop()); } catch (e) {}
             localStreamRef.current = null;
         }
 
         iceCandidatesQueue.current = [];
 
         if (!fromRemote && selectedUser?.userId) {
-            socket?.emit?.("end-call", { toUserId: selectedUser.userId, roomId: chatId });
+            socket?.emit?.("end-call", { toUserId: selectedUser.userId, roomId: chatId, fromUserId: user?._id });
         }
     };
 
@@ -587,11 +638,11 @@ const Communication = ({ role = "customer" }) => {
                 <div style={{ display: "flex", gap: "10px" }}>
                     <div style={{ flex: 1 }}>
                         <p>You</p>
-                        <video ref={localVideoRef} autoPlay playsInline  muted style={{ width: "100%", borderRadius: "8px", background: "#000" }} />
+                        <video ref={localVideoRef} autoPlay playsInline muted style={{ width: "100%", borderRadius: "8px", background: "#000" }} />
                     </div>
                     <div style={{ flex: 1 }}>
                         <p>{otherLabel}</p>
-                        <video ref={remoteVideoRef} autoPlay playsInline  style={{ width: "100%", borderRadius: "8px", background: "#000" }} />
+                        <video ref={remoteVideoRef} autoPlay playsInline style={{ width: "100%", borderRadius: "8px", background: "#000" }} />
                     </div>
                 </div>
             </Modal>
