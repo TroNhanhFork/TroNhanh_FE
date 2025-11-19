@@ -433,7 +433,6 @@ const PropertyDetails = () => {
       <Card className="booking-card">
         <div className="booking-header">
           <h3 className="booking-price">
-            {rooms.minPrice?.toLocaleString("vi-VN")} - {rooms.maxPrice?.toLocaleString("vi-VN")} VNĐ/tháng
           </h3>
         </div>
 

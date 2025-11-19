@@ -292,10 +292,6 @@ const BookingHistory = () => {
                       {selectedBooking.totalPrice?.toLocaleString('vi-VN')} VND
                     </p>
 
-                    <p><strong>Mã giao dịch:</strong>
-                      {selectedBooking.paymentInfo?.payosOrderCode || 'N/A'}
-                    </p>
-
                     <p><strong>Mô tả:</strong> {selectedBooking.boardinghouse.description}</p>
                   </div>
                 </Card>
